@@ -40,6 +40,21 @@ public class Mahasiswa extends User {
 
     @Override
     public void displayInfo() {
-        
+        System.out.println("===== Info Mahasiswa =====");
+        System.out.println("User ID  : " + getUserId());
+        System.out.println("Nama     : " + getName());
+        System.out.println("Username : " + getUsername());
+        System.out.println("NIM      : " + nim);
+        System.out.println("Fakultas : " + fakultas);
+        System.out.println("Jurusan  : " + jurusan);
+        System.out.println("Kelas    : " + kelas);
+        System.out.println("Role     : " + getRole());
+        System.out.println("==========================");
     }
+    
+    @Override
+    public String toString() {
+        return "Mahasiswa{userId='" + getUserId() + "', name='" + getName() + "', nim='" + nim + "', jurusan='" + jurusan + "'}";
+    }
+    
 }

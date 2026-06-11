@@ -22,14 +22,25 @@ public class Admin extends User{
 
     @Override
     public void displayInfo() {
-        
+        System.out.println("===== Info Admin =====");
+        System.out.println("User ID  : " + getUserId());
+        System.out.println("Nama     : " + getName());
+        System.out.println("Username : " + getUsername());
+        System.out.println("Admin ID : " + adminID);
+        System.out.println("Role     : " + getRole());
+        System.out.println("======================");
     }
-    
-    public void validateReport() {
-        
+ 
+    public void validateReport(String reportId) {
+        System.out.println("Laporan dengan ID " + reportId + " divalidasi oleh " + getName());
     }
-
-    public void verifyClaim() {
-        
+ 
+    public void verifyClaim(String claimId) {
+        System.out.println("Klaim dengan ID " + claimId + " diverifikasi oleh " + getName());
+    }
+ 
+    @Override
+    public String toString() {
+        return "Admin{userId='" + getUserId() + "', name='" + getName() + "', adminID='" + adminID + "'}";
     }
 }

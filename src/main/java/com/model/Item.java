@@ -2,6 +2,8 @@ package com.model;
 
 import com.enumeration.ItemStatus;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 public class Item {
     private String itemID;
@@ -18,6 +20,8 @@ public class Item {
         this.description = description;
         this.category = category;
         this.location = location;
+        this.status      = ItemStatus.DICARI;
+        this.date        = LocalDateTime.now();
     }
 
     public String getItemID() {
@@ -55,7 +59,10 @@ public class Item {
     public void setCategory(Category category) {
         this.category = category;
     }
-
+    
+    public void setDescription(String description) {
+        this.description = description;
+    }
     public void setStatus(ItemStatus status) {
         this.status = status;
     }
@@ -64,17 +71,41 @@ public class Item {
         this.location = location;
     }
     
-    public void updateStatus(){
+    public void updateStatus(ItemStatus status){
+        this.status = status;
+        this.date   = LocalDateTime.now();
+        System.out.println("Status Item " + name + "' diubah menjadi: " + status);
     }
     
-    public void updateStatus(LocalDateTime date){
+    public void updateStatus(ItemStatus status, LocalDateTime date){
+        this.status = status;
+        this.date   = date;
+        System.out.println("StatusItem'" + name + "' diubah menjadi: " + status
+                + " pada " + date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")));
     }
     
-    public void displayItem(){
+    public void displayItem() {
+        System.out.println("===== Info Item =====");
+        System.out.println("Item ID     : " + itemID);
+        System.out.println("Nama        : " + name);
+        System.out.println("Deskripsi   : " + description);
+        System.out.println("Kategori    : " + (category != null ? category.getName() : "-"));
+        System.out.println("Status      : " + status);
+        System.out.println("Lokasi      : " + location);
+        System.out.println("Tanggal     : " + date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")));
+        System.out.println("=====================");
+    }
+    
+    @Override
+    public String toString() {
+        return "Item{itemID='" + itemID + "', name='" + name + "', status=" + status + "', location='" + location + "'}";
     }
     
     @Override
     public boolean equals(Object o){
-        return false;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Item item = (Item) o;
+        return Objects.equals(itemID, item.itemID);
     }
 }

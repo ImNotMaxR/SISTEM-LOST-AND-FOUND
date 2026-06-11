@@ -54,9 +54,9 @@ public class UserManager implements Managerable{
                     userMap.put(user.getUserId(), user);
                 }
             }
-            System.out.println("[UserManager] " + users.size() + " user berhasil dimuat dari database.");
+            System.out.println("Data user berhasil dimuat dari database dengan jumlah: " + users.size());
         } catch (SQLException e) {
-            System.out.println("[UserManager] Gagal load users: " + e.getMessage());
+            System.out.println("Gagal load users: " + e.getMessage());
         }
     }
     
@@ -65,8 +65,7 @@ public class UserManager implements Managerable{
         String name     = rs.getString("name");
         String username = rs.getString("username");
         String password = rs.getString("password");
-        String roleStr  = rs.getString("role");
-        Role role       = Role.valueOf(roleStr);
+        Role role       = Role.valueOf(rs.getString("role"));
  
         switch (role) {
             case MAHASISWA:
@@ -158,15 +157,27 @@ public class UserManager implements Managerable{
         }
     }
     
-    public void editUser(String userID, String newUsername, String newPassword){
-        String sql = "UPDATE users SET username=?, password=? WHERE user_id=?";
+    public void editUser(User currentUser, String targetUserId, String newUsername, String newPassword){
+        if (!currentUser.getUserId().equals(targetUserId)) {
+            System.out.println("Kamu tidak bisa mengedit akun orang lain.");
+            return;
+        }
+        String sql = "UPDATE users SET username = ?, password = ? WHERE user_id = ?";
         try {
            Connection conn = dbConnection.getConnection();
            PreparedStatement ps = conn.prepareStatement(sql);
            ps.setString(1, newUsername);
            ps.setString(2, newPassword);
-           ps.setString(3, userID);
+           ps.setString(3, targetUserId);
            ps.executeUpdate();
+           
+           User user = userMap.get(targetUserId);
+            if (user != null) {
+                user.setUsername(newUsername);
+                user.setPassword(newPassword);
+            }
+            
+            System.out.println("Akun berhasil diperbarui.");
         } catch (SQLException e) {
             System.out.println("Gagal Update Data User" + e.getMessage());
         }
@@ -183,10 +194,10 @@ public class UserManager implements Managerable{
             User user = userMap.remove(userID);
             if (user != null) {
                 users.remove(user);
-                System.out.println("[UserManager] User " + userID + " berhasil dihapus.");
+                System.out.println("User dengan id: " + userID + " berhasil dihapus.");
             }
         } catch (SQLException e) {
-            System.out.println("[UserManager] Gagal hapus user: " + e.getMessage());
+            System.out.println("Gagal hapus user: " + e.getMessage());
         }
     }
     

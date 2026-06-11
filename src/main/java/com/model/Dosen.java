@@ -28,6 +28,18 @@ public class Dosen extends User{
 
     @Override
     public void displayInfo() {
-        
+        System.out.println("===== Info Dosen =====");
+        System.out.println("User ID  : " + getUserId());
+        System.out.println("Nama     : " + getName());
+        System.out.println("Username : " + getUsername());
+        System.out.println("NIP      : " + nip);
+        System.out.println("Bidang   : " + bidang);
+        System.out.println("Role     : " + getRole());
+        System.out.println("======================");
+    }
+ 
+    @Override
+    public String toString() {
+        return "Dosen{userId='" + getUserId() + "', name='" + getName() + "', nip='" + nip + "', bidang='" + bidang + "'}";
     }
 }

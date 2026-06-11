@@ -36,15 +36,11 @@ public class Category {
     }
 
     public boolean isVerificationRequired() {
-            try {
-                if (requestVerification) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } catch (Exception e) {
-                System.out.println("Gagal cek verifikasi: " + e.getMessage());
-                return false;
-            }
-        }
+            return requestVerification;
+    }
+    
+    @Override
+    public String toString() {
+        return "Category{categoryID='" + categoryID + "', name='" + name + "', requestVerification=" + requestVerification + "}";
+    }
 }

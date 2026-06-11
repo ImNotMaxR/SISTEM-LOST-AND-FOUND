@@ -28,6 +28,18 @@ public class Staff extends User{
 
     @Override
     public void displayInfo() {
-        
+        System.out.println("===== Info Staff =====");
+        System.out.println("User ID  : " + getUserId());
+        System.out.println("Nama     : " + getName());
+        System.out.println("Username : " + getUsername());
+        System.out.println("Staff ID : " + staffID);
+        System.out.println("Bagian   : " + bagian);
+        System.out.println("Role     : " + getRole());
+        System.out.println("======================");
+    }
+ 
+    @Override
+    public String toString() {
+        return "Staff{userId='" + getUserId() + "', name='" + getName() + "', staffID='" + staffID + "', bagian='" + bagian + "'}";
     }
 }

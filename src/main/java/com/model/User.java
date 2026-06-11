@@ -71,5 +71,9 @@ public abstract class User implements AuthServices{
     }
 
     public abstract void displayInfo();
-
+    
+    @Override
+    public String toString() {
+        return "ID User: " + userId + ", Nama: "+ name + ", Role: " + getRole();
+    }
 }

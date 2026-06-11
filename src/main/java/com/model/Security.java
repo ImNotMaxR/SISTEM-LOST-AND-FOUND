@@ -33,9 +33,24 @@ public class Security extends User{
 
     @Override
     public void displayInfo() {
-        
+        System.out.println("===== Info Security =====");
+        System.out.println("User ID     : " + getUserId());
+        System.out.println("Nama        : " + getName());
+        System.out.println("Username    : " + getUsername());
+        System.out.println("Security ID : " + securityID);
+        System.out.println("Bagian      : " + bagian);
+        System.out.println("Role        : " + getRole());
+        System.out.println("=========================");
     }
-    
-    public void createFoundReport() {
+ 
+    public FoundReport createFoundReport(Item item, String foundLocation) {
+        String reportId = "FR-" + System.currentTimeMillis();
+        System.out.println("Petugas " + getName() + " membuat laporan barang ditemukan untuk: " + item.getName());
+        return new FoundReport(reportId, this, item, "Barang ditemukan oleh petugas keamanan", foundLocation);
+    }
+ 
+    @Override
+    public String toString() {
+        return "Security{userId='" + getUserId() + "', name='" + getName() + "', securityID='" + securityID + "', bagian='" + bagian + "'}";
     }
 }
