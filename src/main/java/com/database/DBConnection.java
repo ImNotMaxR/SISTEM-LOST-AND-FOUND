@@ -7,7 +7,7 @@ public class DBConnection {
     private static DBConnection instance;
     private Connection connection;
     
-    private static final String URL      = "jdbc:mysql://localhost:3306/sistemlostfound?useSSL=false&serverTimezone=Asia/Jakarta&allowPublicKeyRetrieval=true";
+    private static final String URL      = "jdbc:mysql://localhost:3306/sistemlostfound";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "";
     public static String ERROR_MESSAGE = "";
