@@ -1,13 +1,35 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.model;
 
-/**
- *
- * @author MaxR
- */
-public class Admin {
+import com.enumeration.Role;
+
+public class Admin extends User{
+    private String adminID;
+
+    public Admin(String userId, String name, String username, String password, String adminID) {
+        super(userId, name, username, password);
+        this.adminID = adminID;
+        this.role = Role.ADMIN;
+    }
+
+    public String getAdminID() {
+        return adminID;
+    }
     
+    @Override
+    public Role getRole() {
+        return Role.ADMIN;
+    }
+
+    @Override
+    public void displayInfo() {
+        
+    }
+    
+    public void validateReport() {
+        
+    }
+
+    public void verifyClaim() {
+        
+    }
 }

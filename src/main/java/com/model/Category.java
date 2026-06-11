@@ -1,13 +1,50 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.model;
 
-/**
- *
- * @author MaxR
- */
 public class Category {
+    private String categoryID;
+    private String name;
+    private boolean requestVerification;
+
+    public Category(String categoryID, String name, boolean requestVerification) {
+        this.categoryID = categoryID;
+        this.name = name;
+        this.requestVerification = requestVerification;
+    }
+
+    public String getCategoryID() { 
+        return categoryID; 
+    }
     
+    public String getName() { 
+        return name; 
+    }
+    
+    public boolean isRequestVerification() {
+        return requestVerification; 
+    }
+
+    public void setCategoryID(String categoryID) {
+        this.categoryID = categoryID; 
+    }
+    
+    public void setName(String name) {
+        this.name = name; 
+    }
+    
+    public void setRequestVerification(boolean requestVerification) {
+        this.requestVerification = requestVerification;
+    }
+
+    public boolean isVerificationRequired() {
+            try {
+                if (requestVerification) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } catch (Exception e) {
+                System.out.println("Gagal cek verifikasi: " + e.getMessage());
+                return false;
+            }
+        }
 }

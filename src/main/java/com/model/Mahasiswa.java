@@ -1,15 +1,7 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.model;
 
 import com.enumeration.Role;
 
-/**
- *
- * @author MaxR
- */
 public class Mahasiswa extends User {
     private String nim;
     private String fakultas;
@@ -22,8 +14,25 @@ public class Mahasiswa extends User {
         this.fakultas = fakultas;
         this.jurusan = jurusan;
         this.kelas = kelas;
+        this.role = Role.MAHASISWA;
     }
-        
+
+    public String getNim() {
+        return nim;
+    }
+
+    public String getFakultas() {
+        return fakultas;
+    }
+
+    public String getJurusan() {
+        return jurusan;
+    }
+
+    public String getKelas() {
+        return kelas;
+    }
+
     @Override
     public Role getRole() {
         return Role.MAHASISWA;
@@ -31,8 +40,6 @@ public class Mahasiswa extends User {
 
     @Override
     public void displayInfo() {
-
+        
     }
-
-    
 }
