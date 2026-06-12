@@ -1,19 +1,27 @@
 package com.model;
 
+import com.enumeration.ItemStatus;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class StorageRecord {
     private String recordId;
     private Item item;
     private Security storedBy;
     private String storageLocation;
-    public LocalDateTime date;
+    public LocalDateTime dateStored;
+    
+    private boolean isReleased;
+    private LocalDateTime dateReleased;
 
     public StorageRecord(String recordId, Item item, Security storedBy, String storageLocation) {
         this.recordId = recordId;
         this.item = item;
         this.storedBy = storedBy;
         this.storageLocation = storageLocation;
+        this.dateStored = LocalDateTime.now();
+        this.isReleased = false;
+        this.dateReleased = null;
     }
 
     public String getRecordId() {
@@ -32,8 +40,8 @@ public class StorageRecord {
         return storageLocation;
     }
 
-    public LocalDateTime getDate() {
-        return date;
+    public LocalDateTime getDateStored() {
+        return dateStored;
     }
 
     public void setStorageLocation(String storageLocation) {

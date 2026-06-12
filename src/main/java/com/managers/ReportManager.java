@@ -22,8 +22,8 @@ public class ReportManager implements Managerable{
     private DBConnection dbConnection;
     
     public ReportManager() {
-        this.reports      = new ArrayList<>();
-        this.reportMap    = new HashMap<>();
+        this.reports = new ArrayList<>();
+        this.reportMap = new HashMap<>();
         this.dbConnection = DBConnection.getInstance();
         loadAllReportsFromDB();
     }
@@ -56,26 +56,26 @@ public class ReportManager implements Managerable{
     }
     
     private Report buildReportFromResultSet(ResultSet rs) throws SQLException {
-        String reportId   = rs.getString("report_id");
-        String type       = rs.getString("type");
-        String desc       = rs.getString("description");
-        String statusStr  = rs.getString("status");
+        String reportId = rs.getString("report_id");
+        String type = rs.getString("type");
+        String desc = rs.getString("description");
+        String statusStr = rs.getString("status");
         LocalDateTime date = rs.getTimestamp("date") != null? rs.getTimestamp("date").toLocalDateTime() : LocalDateTime.now();
-        String photoPath  = rs.getString("photo_path");
+        String photoPath = rs.getString("photo_path");
  
         // Full user object diambil dari UserManager jika dibutuhkan detail lengkap
-        String userId   = rs.getString("user_id");
+        String userId = rs.getString("user_id");
         String userName = rs.getString("user_name");
         String username = rs.getString("username");
         String password = rs.getString("password");
-        Role role       = Role.valueOf(rs.getString("role"));
+        Role role = Role.valueOf(rs.getString("role"));
  
         // Bangun Item dari join
-        String itemId      = rs.getString("item_id");
-        String itemName    = rs.getString("item_name");
-        String itemDesc    = rs.getString("item_desc");
-        String itemLoc     = rs.getString("item_location");
-        String itemStatus  = rs.getString("item_status");
+        String itemId = rs.getString("item_id");
+        String itemName = rs.getString("item_name");
+        String itemDesc = rs.getString("item_desc");
+        String itemLoc = rs.getString("item_location");
+        String itemStatus = rs.getString("item_status");
  
         Category category = null;
         String catId = rs.getString("category_id");

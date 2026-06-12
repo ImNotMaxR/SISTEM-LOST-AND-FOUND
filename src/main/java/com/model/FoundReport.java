@@ -13,7 +13,7 @@ public class FoundReport extends Report implements Reportable{
     
     public FoundReport(String reportId, User user, Item item, String description, String foundLocation) {
         super(reportId, user, item, description);
-        this.foundLocation    = foundLocation;
+        this.foundLocation = foundLocation;
         this.matchedLostReport = null;
         
         //Cek Role biar security yang bisa buat sama admin

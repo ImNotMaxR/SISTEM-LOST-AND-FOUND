@@ -59,11 +59,11 @@ public class ClaimManager implements Managerable{
             ps.setString(1, claim.getClaimId());
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                String docId   = rs.getString("document_id");
-                String type    = rs.getString("type");
-                String path    = rs.getString("file_path");
-                String desc    = rs.getString("description");
-                File file      = path != null ? new File(path) : null;
+                String docId = rs.getString("document_id");
+                String type = rs.getString("type");
+                String path = rs.getString("file_path");
+                String desc = rs.getString("description");
+                File file = path != null ? new File(path) : null;
                 VerificationDocument doc = new VerificationDocument(docId, type, file, desc);
                 claim.addDocument(doc);
             }
@@ -73,9 +73,9 @@ public class ClaimManager implements Managerable{
     }
     
     private Claim buildClaimFromResultSet(ResultSet rs) throws SQLException {
-        String claimId    = rs.getString("claim_id");
-        String statusStr  = rs.getString("status");
-        String reportId   = rs.getString("related_report_id");
+        String claimId = rs.getString("claim_id");
+        String statusStr = rs.getString("status");
+        String reportId = rs.getString("related_report_id");
  
         // Bangun User dari join
         com.model.Category category = null;
@@ -258,5 +258,4 @@ public class ClaimManager implements Managerable{
         }
         return result;
     }
-    
 }

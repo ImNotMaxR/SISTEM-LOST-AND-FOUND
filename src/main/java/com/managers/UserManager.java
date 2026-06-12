@@ -19,8 +19,8 @@ public class UserManager implements Managerable{
     private DBConnection dbConnection;
 
     public UserManager() {
-        this.users        = new ArrayList<>();
-        this.userMap      = new HashMap<>();
+        this.users = new ArrayList<>();
+        this.userMap = new HashMap<>();
         this.dbConnection = DBConnection.getInstance();
         loadAllUsersFromDB();
     }
@@ -49,11 +49,11 @@ public class UserManager implements Managerable{
     }
     
     private User buildUserFromResultSet(ResultSet rs) throws SQLException {
-        String userId   = rs.getString("user_id");
-        String name     = rs.getString("name");
+        String userId = rs.getString("user_id");
+        String name = rs.getString("name");
         String username = rs.getString("username");
         String password = rs.getString("password");
-        Role role       = Role.valueOf(rs.getString("role"));
+        Role role = Role.valueOf(rs.getString("role"));
  
         switch (role) {
             case MAHASISWA:

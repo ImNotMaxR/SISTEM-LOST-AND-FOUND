@@ -20,8 +20,8 @@ public class Item {
         this.description = description;
         this.category = category;
         this.location = location;
-        this.status      = ItemStatus.DICARI;
-        this.date        = LocalDateTime.now();
+        this.status = ItemStatus.DICARI;
+        this.date = LocalDateTime.now();
     }
 
     public String getItemID() {

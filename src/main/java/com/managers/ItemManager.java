@@ -17,8 +17,8 @@ public class ItemManager implements Managerable{
     
     
     public ItemManager() {
-        this.items        = new ArrayList<>();
-        this.itemMap      = new HashMap<>();
+        this.items = new ArrayList<>();
+        this.itemMap = new HashMap<>();
         this.dbConnection = DBConnection.getInstance();
         loadAllItemsFromDB();
     }
@@ -47,11 +47,11 @@ public class ItemManager implements Managerable{
     }
     
     private Item buildItemFromResultSet(ResultSet rs) throws SQLException {
-        String itemID      = rs.getString("item_id");
-        String name        = rs.getString("name");
+        String itemID = rs.getString("item_id");
+        String name = rs.getString("name");
         String description = rs.getString("description");
-        String statusStr   = rs.getString("status");
-        String location    = rs.getString("location");
+        String statusStr = rs.getString("status");
+        String location = rs.getString("location");
         LocalDateTime date = rs.getTimestamp("date") != null ? rs.getTimestamp("date").toLocalDateTime(): LocalDateTime.now();
  
         Category category = null;
