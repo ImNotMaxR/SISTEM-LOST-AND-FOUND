@@ -31,19 +31,8 @@ public class ReportManager implements Managerable{
     private void loadAllReportsFromDB() {
         reports.clear();
         reportMap.clear();
- 
-        String sql = "SELECT r.report_id, r.type, r.description, r.status, r.date, "
-                   + "r.editable_until, r.photo_path, r.lost_location, r.found_location, "
-                   + "r.matched_lost_report_id, "
-                   + "u.user_id, u.name AS user_name, u.username, u.password, u.role, "
-                   + "i.item_id, i.name AS item_name, i.description AS item_desc, "
-                   + "i.status AS item_status, i.location AS item_location, i.date AS item_date, "
-                   + "c.category_id, c.name AS category_name, c.request_verification "
-                   + "FROM reports r "
-                   + "JOIN users u ON r.user_id = u.user_id "
-                   + "JOIN items i ON r.item_id = i.item_id "
-                   + "LEFT JOIN categories c ON i.category_id = c.category_id";
- 
+        String sql = "SELECT r.report_id, r.type, r.description, r.status, r.date, " + "r.editable_until, r.photo_path, r.lost_location, r.found_location, " + "r.matched_lost_report_id, " + "u.user_id, u.name AS user_name, u.username, u.password, u.role, " + "i.item_id, i.name AS item_name, i.description AS item_desc, " + "i.status AS item_status, i.location AS item_location, i.date AS item_date, " + "c.category_id, c.name AS category_name, c.request_verification " + "FROM reports r " + "JOIN users u ON r.user_id = u.user_id " + "JOIN items i ON r.item_id = i.item_id " + "LEFT JOIN categories c ON i.category_id = c.category_id";
+        
         try {
             Connection conn = dbConnection.getConnection();
             PreparedStatement ps = conn.prepareStatement(sql);
@@ -53,29 +42,27 @@ public class ReportManager implements Managerable{
                 Report report = buildReportFromResultSet(rs);
                 if (report != null) {
                     reports.add(report);
-                    reportMap.put(report.getReportID(), report);
+                    reportMap.put(report.getReportId(), report);
                 }
             }
  
             // Setelah semua report dimuat, proses kecocokan FoundReport dengan LostReport
             resolveMatchedReports();
  
-            System.out.println("[ReportManager] " + reports.size() + " report berhasil dimuat dari database.");
+            System.out.println("Data Report berhasil diload dari database dengan jumlah: " + reports.size());
         } catch (SQLException e) {
-            System.out.println("[ReportManager] Gagal load reports: " + e.getMessage());
+            System.out.println("Gagal Load Report " + e.getMessage());
         }
     }
     
     private Report buildReportFromResultSet(ResultSet rs) throws SQLException {
-        String reportID   = rs.getString("report_id");
+        String reportId   = rs.getString("report_id");
         String type       = rs.getString("type");
         String desc       = rs.getString("description");
         String statusStr  = rs.getString("status");
-        LocalDateTime date = rs.getTimestamp("date") != null
-                           ? rs.getTimestamp("date").toLocalDateTime() : LocalDateTime.now();
+        LocalDateTime date = rs.getTimestamp("date") != null? rs.getTimestamp("date").toLocalDateTime() : LocalDateTime.now();
         String photoPath  = rs.getString("photo_path");
  
-        // Bangun User sederhana dari join, role saja sudah cukup untuk identifikasi
         // Full user object diambil dari UserManager jika dibutuhkan detail lengkap
         String userId   = rs.getString("user_id");
         String userName = rs.getString("user_name");
@@ -105,13 +92,13 @@ public class ReportManager implements Managerable{
         Report report = null;
         if ("LOST".equals(type)) {
             String lostLocation = rs.getString("lost_location");
-            LostReport lr = new LostReport(reportID, user, item, desc, lostLocation);
+            LostReport lr = new LostReport(reportId, user, item, desc, lostLocation);
             lr.setStatus(ReportStatus.valueOf(statusStr));
             if (photoPath != null) lr.setPhotoPath(photoPath);
             report = lr;
         } else if ("FOUND".equals(type)) {
             String foundLocation = rs.getString("found_location");
-            FoundReport fr = new FoundReport(reportID, user, item, desc, foundLocation);
+            FoundReport fr = new FoundReport(reportId, user, item, desc, foundLocation);
             fr.setStatus(ReportStatus.valueOf(statusStr));
             if (photoPath != null) fr.setPhotoPath(photoPath);
             report = fr;
@@ -168,7 +155,7 @@ public class ReportManager implements Managerable{
     @Override
     public Object findById(String id){
         for (Report report : reports) {
-            if (report.getReportID().equals(id)) {
+            if (report.getReportId().equals(id)) {
                 return report;
             }
         }
@@ -189,7 +176,7 @@ public class ReportManager implements Managerable{
             try {
                 Connection conn = dbConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql);
-                ps.setString(1, report.getReportID());
+                ps.setString(1, report.getReportId());
                 ps.setString(2, report.getUser().getUserId());
                 ps.setString(3, report.getItem().getItemID());
                 ps.setString(4, type);
@@ -204,10 +191,10 @@ public class ReportManager implements Managerable{
  
                 report.submitReport();
                 reports.add(report);
-                reportMap.put(report.getReportID(), report);
-                System.out.println("Laporan " + report.getReportID() + " berhasil disimpan.");
+                reportMap.put(report.getReportId(), report);
+                System.out.println("Laporan Dengan ID: " + report.getReportId() + " berhasil disimpan.");
             } catch (SQLException e) {
-                System.out.println("Gagal Menyimpan laporan: " + e.getMessage());
+                System.out.println("Gagal Menyimpan laporan" + e.getMessage());
             }
         }
     }
@@ -223,17 +210,17 @@ public class ReportManager implements Managerable{
             Report report = reportMap.remove(reportId);
             if (report != null) {
                 reports.remove(report);
-                System.out.println("[ReportManager] Laporan " + reportId + " berhasil dihapus.");
+                System.out.println("Laporan Dengan ID: " + reportId + " berhasil dihapus.");
             }
         } catch (SQLException e) {
-            System.out.println("[ReportManager] Gagal hapus laporan: " + e.getMessage());
+            System.out.println("Gagal hapus laporan" + e.getMessage());
         }
     }
     
     public void validateReport(String reportId, ReportStatus newStatus, com.model.Admin admin) {
         Report report = reportMap.get(reportId);
         if (report == null) {
-            System.out.println("[ReportManager] Laporan tidak ditemukan.");
+            System.out.println("Laporan tidak ditemukan.");
             return;
         }
  
@@ -244,7 +231,7 @@ public class ReportManager implements Managerable{
             FoundReport fr = (FoundReport) report;
             LostReport matched = findMatchingLostReport(fr);
             fr.setMatchedLostReport(matched);
-            updateMatchedReportInDB(fr.getReportID(), matched != null ? matched.getReportID() : null);
+            updateMatchedReportInDB(fr.getReportId(), matched != null ? matched.getReportId() : null);
         }
  
         updateReportStatusInDB(reportId, newStatus);
@@ -257,10 +244,7 @@ public class ReportManager implements Managerable{
                 LostReport lr = (LostReport) r;
                 // Cocokin berdasarkan Nama Item dan kategori
                 boolean sameName = lr.getItem().getName().equalsIgnoreCase(foundReport.getItem().getName());
-                boolean sameCategory = lr.getItem().getCategory() != null
-                        && foundReport.getItem().getCategory() != null
-                        && lr.getItem().getCategory().getCategoryID()
-                            .equals(foundReport.getItem().getCategory().getCategoryID());
+                boolean sameCategory = lr.getItem().getCategory() != null && foundReport.getItem().getCategory() != null && lr.getItem().getCategory().getCategoryID().equals(foundReport.getItem().getCategory().getCategoryID());
                 if (sameName && sameCategory) {
                     return lr;
                 }
@@ -278,7 +262,7 @@ public class ReportManager implements Managerable{
             ps.setString(2, reportId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            System.out.println("[ReportManager] Gagal update status laporan: " + e.getMessage());
+            System.out.println("Gagal update status laporan" + e.getMessage());
         }
     }
     
@@ -291,7 +275,7 @@ public class ReportManager implements Managerable{
             ps.setString(2, foundReportId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            System.out.println("[ReportManager] Gagal update matched report: " + e.getMessage());
+            System.out.println("Gagal update matched report" + e.getMessage());
         }
     }
     

@@ -28,18 +28,7 @@ public class UserManager implements Managerable{
     private void loadAllUsersFromDB() {
         users.clear();
         userMap.clear();
-        String sql = "SELECT u.user_id, u.name, u.username, u.password, u.role, "
-                   + "m.nim, m.fakultas, m.jurusan, m.kelas, "
-                   + "d.nip, d.bidang, "
-                   + "st.staff_id, st.bagian AS staff_bagian, "
-                   + "a.admin_id, "
-                   + "sc.security_id, sc.bagian AS security_bagian "
-                   + "FROM users u "
-                   + "LEFT JOIN mahasiswa m ON u.user_id = m.user_id "
-                   + "LEFT JOIN dosen d ON u.user_id = d.user_id "
-                   + "LEFT JOIN staff st ON u.user_id = st.user_id "
-                   + "LEFT JOIN admin a ON u.user_id = a.user_id "
-                   + "LEFT JOIN security sc ON u.user_id = sc.user_id";
+        String sql = "SELECT u.user_id, u.name, u.username, u.password, u.role, " + "m.nim, m.fakultas, m.jurusan, m.kelas, " + "d.nip, d.bidang, " + "st.staff_id, st.bagian AS staff_bagian, " + "a.admin_id, " + "sc.security_id, sc.bagian AS security_bagian " + "FROM users u " + "LEFT JOIN mahasiswa m ON u.user_id = m.user_id " + "LEFT JOIN dosen d ON u.user_id = d.user_id " + "LEFT JOIN staff st ON u.user_id = st.user_id " + "LEFT JOIN admin a ON u.user_id = a.user_id " + "LEFT JOIN security sc ON u.user_id = sc.user_id";
  
         try {
             Connection conn = dbConnection.getConnection();
@@ -53,9 +42,9 @@ public class UserManager implements Managerable{
                     userMap.put(user.getUserId(), user);
                 }
             }
-            System.out.println("Data user berhasil dimuat dari database dengan jumlah: " + users.size());
+            System.out.println("Data user berhasil diload dari database dengan jumlah: " + users.size());
         } catch (SQLException e) {
-            System.out.println("Gagal load users: " + e.getMessage());
+            System.out.println("Gagal load users " + e.getMessage());
         }
     }
     
@@ -68,30 +57,19 @@ public class UserManager implements Managerable{
  
         switch (role) {
             case MAHASISWA:
-                return new Mahasiswa(userId, name, username, password,
-                        rs.getString("nim"),
-                        rs.getString("fakultas"),
-                        rs.getString("jurusan"),
-                        rs.getString("kelas"));
+                return new Mahasiswa(userId, name, username, password, rs.getString("nim"), rs.getString("fakultas"), rs.getString("jurusan"), rs.getString("kelas"));
  
             case DOSEN:
-                return new Dosen(userId, name, username, password,
-                        rs.getString("nip"),
-                        rs.getString("bidang"));
+                return new Dosen(userId, name, username, password, rs.getString("nip"), rs.getString("bidang"));
  
             case STAFF:
-                return new Staff(userId, name, username, password,
-                        rs.getString("staff_id"),
-                        rs.getString("staff_bagian"));
+                return new Staff(userId, name, username, password, rs.getString("staff_id"), rs.getString("staff_bagian"));
  
             case ADMIN:
-                return new Admin(userId, name, username, password,
-                        rs.getString("admin_id"));
+                return new Admin(userId, name, username, password, rs.getString("admin_id"));
  
             case SECURITY:
-                return new Security(userId, name, username, password,
-                        rs.getString("security_id"),
-                        rs.getString("security_bagian"));
+                return new Security(userId, name, username, password, rs.getString("security_id"), rs.getString("security_bagian"));
  
             default:
                 return null;

@@ -9,8 +9,8 @@ public class LostReport extends Report implements Reportable{
     private String lostLocation;
     private String evidencePath;
     
-    public LostReport(String reportID, User user, Item item, String description, String lostLocation) {
-        super(reportID, user, item, description);
+    public LostReport(String reportId, User user, Item item, String description, String lostLocation) {
+        super(reportId, user, item, description);
         this.lostLocation = lostLocation;
         this.item.updateStatus(ItemStatus.DICARI);
     }
@@ -40,13 +40,13 @@ public class LostReport extends Report implements Reportable{
     @Override
     public void submitReport() {
         this.status = ReportStatus.PENDING;
-        System.out.println("Laporan barang hilang " + reportID + " disubmit oleh " + user.getName() + ". Menunggu validasi Admin...");
+        System.out.println("Laporan barang hilang " + reportId + " disubmit oleh " + user.getName() + ". Menunggu validasi Admin...");
     }
     
     @Override
     public void displayReport() {
         System.out.println("========== Laporan Barang Hilang ==========");
-        System.out.println("Report ID     : " + reportID);
+        System.out.println("Report ID     : " + reportId);
         System.out.println("Pelapor       : " + user.getName() + " (" + user.getRole() + ")");
         System.out.println("Barang        : " + item.getName());
         System.out.println("Kategori      : " + (item.getCategory() != null ? item.getCategory().getName() : "-"));
@@ -63,6 +63,6 @@ public class LostReport extends Report implements Reportable{
     
     @Override
     public String toString() {
-        return "LostReport{reportID='" + reportID + "', user='" + user.getName()+ "', item='" + item.getName()+ "', lostLocation='" + lostLocation + "', status=" + status + ", description=" + item.getDescription()+ '}';
+        return "LostReport{ID Report='" + reportId + "', user='" + user.getName()+ "', item='" + item.getName()+ "', lostLocation='" + lostLocation + "', status=" + status + ", description=" + item.getDescription()+ '}';
     }
 }

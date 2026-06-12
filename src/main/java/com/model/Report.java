@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public abstract class Report {
-    protected String reportID;
+    protected String reportId;
     protected User user;
     protected Item item;
     protected LocalDateTime date;
@@ -17,7 +17,7 @@ public abstract class Report {
     private static final int EDITABLE_DURATION_MINUTES = 30;
 
     public Report(String reportID, User user, Item item, String description) {
-        this.reportID      = reportID;
+        this.reportId      = reportID;
         this.user          = user;
         this.item          = item;
         this.description   = description;
@@ -27,8 +27,8 @@ public abstract class Report {
         this.photoPath     = null;
     }
 
-    public String getReportID() {
-        return reportID;
+    public String getReportId() {
+        return reportId;
     }
 
     public User getUser() {
@@ -74,15 +74,15 @@ public abstract class Report {
     
     public void submitReport() {
         this.status = ReportStatus.PENDING;
-        System.out.println("Laporan Dengan ID: " + reportID + " berhasil disubmit. Status: PENDING, menunggu validasi dari Admin.");
+        System.out.println("Laporan Dengan ID: " + reportId + " berhasil disubmit. Status: PENDING, menunggu validasi dari Admin.");
     }
     
     public void editReport(String newDescription) {
         if (isEditable()) {
             this.description = newDescription;
-            System.out.println("Laporan Dengan ID: " + reportID + " berhasil diedit.");
+            System.out.println("Laporan Dengan ID: " + reportId + " berhasil diedit.");
         } else {
-            System.out.println("Laporan Dengan ID: " + reportID + " sudah tidak bisa diedit. Waktu edit telah habis.");
+            System.out.println("Laporan Dengan ID: " + reportId + " sudah tidak bisa diedit. Waktu edit telah habis.");
         }
     }
     
@@ -102,7 +102,7 @@ public abstract class Report {
 
     @Override
     public String toString() {
-        return "Report{" + "reportID=" + reportID + ", user=" + user + ", item=" + item + ", date=" + date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")) + ", description=" + description + '}';
+        return "Report{" + "ID Report =" + reportId + ", user=" + user + ", item=" + item + ", date=" + date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")) + ", description=" + description + '}';
     }
 
     

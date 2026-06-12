@@ -11,8 +11,8 @@ public class FoundReport extends Report implements Reportable{
     //Buat Nanti Bisa cocokin FoundReport sama LostReport jadi nambah atribut
     private LostReport matchedLostReport;
     
-    public FoundReport(String reportID, User user, Item item, String description, String foundLocation) {
-        super(reportID, user, item, description);
+    public FoundReport(String reportId, User user, Item item, String description, String foundLocation) {
+        super(reportId, user, item, description);
         this.foundLocation    = foundLocation;
         this.matchedLostReport = null;
         
@@ -44,7 +44,7 @@ public class FoundReport extends Report implements Reportable{
         //Kalau Item FoundReport sama LostReport nya ini Sama status berubah
         if (lostReport != null) {
             this.item.updateStatus(ItemStatus.DITEMUKAN);
-            System.out.println("Item " + item.getName() + " cocok dengan laporan hilang " + lostReport.getReportID() + ". Status item diubah ke DITEMUKAN.");
+            System.out.println("Item " + item.getName() + " cocok dengan laporan hilang " + lostReport.getReportId() + ". Status item diubah ke DITEMUKAN.");
         } else {
             this.item.updateStatus(ItemStatus.DICARI);
             System.out.println("Tidak ada laporan hilang yang cocok untuk item " + item.getName() + ". Status item tetap DICARI.");
@@ -54,13 +54,13 @@ public class FoundReport extends Report implements Reportable{
     @Override
     public void submitReport() {
         this.status = ReportStatus.PENDING;
-        System.out.println("Laporan barang ditemukan " + reportID + " disubmit oleh " + user.getName() + ". Menunggu validasi Admin.");
+        System.out.println("Laporan barang ditemukan " + reportId + " disubmit oleh " + user.getName() + ". Menunggu validasi Admin.");
     }
     
     @Override
     public void displayReport() {
         System.out.println("========== Laporan Barang Ditemukan ==========");
-        System.out.println("Report ID        : " + reportID);
+        System.out.println("Report ID        : " + reportId);
         System.out.println("Pelapor          : " + user.getName() + " (" + user.getRole() + ")");
         System.out.println("Barang           : " + item.getName());
         System.out.println("Kategori         : " + (item.getCategory() != null ? item.getCategory().getName() : "-"));
@@ -69,13 +69,13 @@ public class FoundReport extends Report implements Reportable{
         System.out.println("Status Report    : " + status);
         System.out.println("Status Item      : " + item.getStatus());
         System.out.println("Tanggal          : " + date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")));
-        System.out.println("Cocok dgn Laporan: " + (matchedLostReport != null? matchedLostReport.getReportID() + " (" + matchedLostReport.getUser().getName() + ")": "Belum ada kecocokan"));
+        System.out.println("Cocok dgn Laporan: " + (matchedLostReport != null? matchedLostReport.getReportId() + " (" + matchedLostReport.getUser().getName() + ")": "Belum ada kecocokan"));
         System.out.println("Bisa Diklaim     : " + (isClaimable() ? "Ya" : "Tidak"));
         System.out.println("==============================================");
     } 
 
     @Override
     public String toString() {
-        return "FoundReport{reportID='" + reportID + "', user='" + user.getName()+ "', item='" + item.getName()+ "', foundLocation='" + foundLocation + "', status=" + status + ", description=" + item.getDescription()+ '}';
+        return "FoundReport{ID Report ='" + reportId + "', user='" + user.getName()+ "', item='" + item.getName()+ "', foundLocation='" + foundLocation + "', status=" + status + ", description=" + item.getDescription()+ '}';
     }
 }

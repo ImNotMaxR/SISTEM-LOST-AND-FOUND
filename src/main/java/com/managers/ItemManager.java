@@ -26,11 +26,7 @@ public class ItemManager implements Managerable{
     private void loadAllItemsFromDB() {
         items.clear();
         itemMap.clear();
- 
-        String sql = "SELECT i.item_id, i.name, i.description, i.status, i.location, i.date, "
-                   + "c.category_id, c.name AS category_name, c.request_verification "
-                   + "FROM items i "
-                   + "LEFT JOIN categories c ON i.category_id = c.category_id";
+        String sql = "SELECT i.item_id, i.name, i.description, i.status, i.location, i.date, " + "c.category_id, c.name AS category_name, c.request_verification " + "FROM items i " + "LEFT JOIN categories c ON i.category_id = c.category_id";
  
         try {
             Connection conn = dbConnection.getConnection();
@@ -44,9 +40,9 @@ public class ItemManager implements Managerable{
                     itemMap.put(item.getItemID(), item);
                 }
             }
-            System.out.println("Item Dengan Total: " + items.size() + " berhasil dimuat dari database.");
+            System.out.println("Data item berhasil diload dari database dengan jumlah: " + items.size());
         } catch (SQLException e) {
-            System.out.println("Gagal load items: " + e.getMessage());
+            System.out.println("Gagal load items " + e.getMessage());
         }
     }
     
@@ -56,25 +52,18 @@ public class ItemManager implements Managerable{
         String description = rs.getString("description");
         String statusStr   = rs.getString("status");
         String location    = rs.getString("location");
-        LocalDateTime date = rs.getTimestamp("date") != null
-                           ? rs.getTimestamp("date").toLocalDateTime()
-                           : LocalDateTime.now();
+        LocalDateTime date = rs.getTimestamp("date") != null ? rs.getTimestamp("date").toLocalDateTime(): LocalDateTime.now();
  
         Category category = null;
         String categoryId = rs.getString("category_id");
         if (categoryId != null) {
-            category = new Category(
-                categoryId,
-                rs.getString("category_name"),
-                rs.getBoolean("request_verification")
-            );
+            category = new Category(categoryId, rs.getString("category_name"), rs.getBoolean("request_verification"));
         }
- 
+        
         Item item = new Item(itemID, name, description, category, location);
         item.setStatus(ItemStatus.valueOf(statusStr));
         return item;
     }
-    
     
     @Override
     public void add(Object obj) {
@@ -94,8 +83,7 @@ public class ItemManager implements Managerable{
     }
 
     public void addItem(Item item) {
-        String sql = "INSERT INTO items (item_id, name, description, category_id, status, location, date) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO items (item_id, name, description, category_id, status, location, date) " + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try {
             Connection conn = dbConnection.getConnection();
             PreparedStatement ps = conn.prepareStatement(sql);
@@ -110,9 +98,9 @@ public class ItemManager implements Managerable{
  
             items.add(item);
             itemMap.put(item.getItemID(), item);
-            System.out.println("[ItemManager] Item '" + item.getName() + "' berhasil ditambahkan.");
+            System.out.println("Item Dengan ID: " + item.getName() + " berhasil ditambahkan.");
         } catch (SQLException e) {
-            System.out.println("[ItemManager] Gagal tambah item: " + e.getMessage());
+            System.out.println("Gagal Menambahkan Item" + e.getMessage());
         }
     }
 
@@ -134,9 +122,9 @@ public class ItemManager implements Managerable{
                 item.setDescription(newDescription);
                 item.setLocation(newLocation);
             }
-            System.out.println("[ItemManager] Item " + itemId + " berhasil diperbarui.");
+            System.out.println("Item Dengan ID: " + itemId + " berhasil diperbarui.");
         } catch (SQLException e) {
-            System.out.println("[ItemManager] Gagal edit item: " + e.getMessage());
+            System.out.println("Gagal edit item" + e.getMessage());
         }
     }
 
@@ -151,10 +139,10 @@ public class ItemManager implements Managerable{
             Item item = itemMap.remove(itemId);
             if (item != null) {
                 items.remove(item);
-                System.out.println("[ItemManager] Item " + itemId + " berhasil dihapus.");
+                System.out.println("Item Dengan ID: " + itemId + " berhasil dihapus.");
             }
         } catch (SQLException e) {
-            System.out.println("[ItemManager] Gagal hapus item: " + e.getMessage());
+            System.out.println("Gagal hapus item" + e.getMessage());
         }
     }
 
@@ -166,9 +154,7 @@ public class ItemManager implements Managerable{
         ArrayList<Item> result = new ArrayList<>();
         String lower = keyword.toLowerCase();
         for (Item item : items) {
-            if (item.getName().toLowerCase().contains(lower)
-                    || item.getDescription().toLowerCase().contains(lower)
-                    || item.getLocation().toLowerCase().contains(lower)) {
+            if (item.getName().toLowerCase().contains(lower) || item.getDescription().toLowerCase().contains(lower) || item.getLocation().toLowerCase().contains(lower)) {
                 result.add(item);
             }
         }

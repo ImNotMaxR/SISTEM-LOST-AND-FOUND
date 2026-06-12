@@ -33,24 +33,52 @@ public class VerificationDocument implements Verifiable{
     }
 
     public void setType(String type) {
+        this.type = type;
     }
     
     public void setFile(File file) {
+        this.file = file;
     }
     
     public void setDescription(String description) {
+        this.description = description;
     }
 
+    @Override
     public boolean validate() {
+        if (type == null || type.isEmpty()) {
+            System.out.println("Tipe Dokumen Tidak Boleh Kosong");
+            return false;
+        }
+        if (file == null) {
+            System.out.println("File Tidak Ada");
+            return false;
+        }
+        if (!file.exists()) {
+            System.out.println("File tidak ditemukan di path " + file.getAbsolutePath());
+            return false;
+        }
+        System.out.println("Dokumen Claim " + documentId + " valid. File: " + file.getName());
         return true;
     }
     
+    //Masih Berpikir..
     public void updateStatus() {
     }
     
-
+    public void displayDocument() {
+        System.out.println("======= Info Dokumen =======");
+        System.out.println("Dokumen ID  : " + documentId);
+        System.out.println("Tipe        : " + type);
+        System.out.println("File        : " + (file != null ? file.getName() : "-"));
+        System.out.println("Path        : " + (file != null ? file.getAbsolutePath() : "-"));
+        System.out.println("Deskripsi   : " + description);
+        System.out.println("Valid       : " + (validate() ? "Ya" : "Tidak"));
+        System.out.println("==========================");
+    }
+    
     @Override
     public String toString() {
-        return null;
+        return "VerificationDocument{documentId='" + documentId + "', type='" + type + "', file='" + (file != null ? file.getName() : "null") + "'}";
     }
 }
