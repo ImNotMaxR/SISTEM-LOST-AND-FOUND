@@ -8,11 +8,29 @@ package com.mycompany.sistemlostfound;
  *
  * @author MaxR
  */
+import com.database.DBConnection;
+import com.enumeration.ClaimStatus;
+import com.enumeration.ItemStatus;
+import com.enumeration.ReportStatus;
 import com.enumeration.Role;
+import com.managers.ClaimManager;
+import com.managers.ItemManager;
+import com.managers.ReportManager;
+import com.managers.UserManager;
 import com.model.Admin;
+import com.model.Claim;
+import com.model.Category;
+import com.model.FoundReport;
+import com.model.Item;
+import com.model.LostReport;
+import com.model.Report;
 import com.model.Security;
+import com.model.StorageRecord;
 import com.model.User;
+import com.model.VerificationDocument;
 import com.service.AuthService;
+import java.io.*;
+import java.util.UUID;
 import com.util.MissionUtil;
 
 public class AppController {
