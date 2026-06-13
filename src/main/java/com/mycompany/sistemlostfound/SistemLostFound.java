@@ -2,10 +2,12 @@ package com.mycompany.sistemlostfound;
 
 import com.database.DBConnection;
 import com.database.DBInitializer;
+import com.frame.LoginFrame;
 import com.model.User;
 import com.service.AuthService;
 import com.util.MissionUtil;
 import java.sql.*;
+import javax.swing.SwingUtilities;
 
 public class SistemLostFound {
     public static void main(String[] args) {
@@ -18,8 +20,8 @@ public class SistemLostFound {
         System.out.println("Koneksi database sukses.");
  
         // 2. Inisialisasi database (buat tabel + data dummy jika belum ada)
-        DBInitializer initializer = new DBInitializer();
-        initializer.initialize();
+//        DBInitializer initializer = new DBInitializer();
+//        initializer.initialize();
  
         // 3. Jalankan aplikasi
         AuthService authService = new AuthService();
@@ -30,41 +32,9 @@ public class SistemLostFound {
     }
  
     private static void runLoginMenu(AuthService authService) {
-        System.out.println("\n=====================================");
-        System.out.println("  SISTEM INFORMASI LOST & FOUND");
-        System.out.println("  Telkom University");
-        System.out.println("=====================================");
- 
-        boolean running = true;
-        while (running) {
-            System.out.println("\n1. Login");
-            System.out.println("2. Keluar");
-            System.out.print("Pilih: ");
-            String pilihan = MissionUtil.getUserInput();
- 
-            switch (pilihan) {
-                case "1":
-                    System.out.print("Username: ");
-                    String username = MissionUtil.getUserInput();
-                    System.out.print("Password: ");
-                    String password = MissionUtil.getUserInput();
- 
-                    User user = authService.login(username, password);
-                    if (user != null) {
-                        // Tampilkan menu sesuai role
-                        AppController controller = new AppController(authService);
-                        controller.showMenu();
-                    }
-                    break;
- 
-                case "2":
-                    System.out.println("Terima kasih. Program selesai.");
-                    running = false;
-                    break;
- 
-                default:
-                    System.out.println("Pilihan tidak valid.");
-            }
-        }
+        SwingUtilities.invokeLater(() -> {
+        LoginFrame loginFrame = new LoginFrame();
+        loginFrame.setVisible(true);
+        });
     }
 }
