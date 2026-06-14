@@ -66,6 +66,7 @@ public class FoundReport extends Report implements Reportable{
         System.out.println("Kategori         : " + (item.getCategory() != null ? item.getCategory().getName() : "-"));
         System.out.println("Deskripsi        : " + description);
         System.out.println("Lokasi Ditemukan : " + foundLocation);
+        System.out.println("Foto Bukti       : " + (photoPath != null && !photoPath.isEmpty() ? photoPath : "-"));
         System.out.println("Status Report    : " + status);
         System.out.println("Status Item      : " + item.getStatus());
         System.out.println("Tanggal          : " + date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")));

@@ -162,40 +162,42 @@ public class ReportManager implements Managerable{
         return null;
     }
     
-    public void addReport(Report report){
-         if (report instanceof FoundReport) {
+    public void addReport(Report report) {
+        // Validasi role khusus FoundReport
+        if (report instanceof FoundReport) {
             Role role = report.getUser().getRole();
             if (role != Role.SECURITY && role != Role.ADMIN) {
                 System.out.println("Pembuatan Report Gagal. Hanya Security dan Admin yang bisa membuat laporan barang ditemukan.");
                 return;
             }
-            String type = (report instanceof LostReport) ? "LOST" : "FOUND";
-            String lostLoc  = (report instanceof LostReport) ? ((LostReport) report).getLostLocation() : null;
-            String foundLoc = (report instanceof FoundReport) ? ((FoundReport) report).getFoundLocation() : null;
-            String sql = "INSERT INTO reports (report_id, user_id, item_id, type, description, status, date, editable_until, photo_path, lost_location, found_location) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            try {
-                Connection conn = dbConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql);
-                ps.setString(1, report.getReportId());
-                ps.setString(2, report.getUser().getUserId());
-                ps.setString(3, report.getItem().getItemID());
-                ps.setString(4, type);
-                ps.setString(5, report.getDescription());
-                ps.setString(6, report.getStatus().name());
-                ps.setTimestamp(7, java.sql.Timestamp.valueOf(report.getDate()));
-                ps.setTimestamp(8, java.sql.Timestamp.valueOf(report.getEditableUntil()));
-                ps.setString(9, report.getPhotoPath());
-                ps.setString(10, lostLoc);
-                ps.setString(11, foundLoc);
-                ps.executeUpdate();
+        }
+        String type     = (report instanceof LostReport) ? "LOST" : "FOUND";
+        String lostLoc  = (report instanceof LostReport) ? ((LostReport) report).getLostLocation() : null;
+        String foundLoc = (report instanceof FoundReport) ? ((FoundReport) report).getFoundLocation() : null;
+        
+        String sql = "INSERT INTO reports (report_id, user_id, item_id, type, description, status, date, editable_until, photo_path, lost_location, found_location) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try {
+            Connection conn = dbConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, report.getReportId());
+            ps.setString(2, report.getUser().getUserId());
+            ps.setString(3, report.getItem().getItemID());
+            ps.setString(4, type);
+            ps.setString(5, report.getDescription());
+            ps.setString(6, report.getStatus().name());
+            ps.setTimestamp(7, java.sql.Timestamp.valueOf(report.getDate()));
+            ps.setTimestamp(8, java.sql.Timestamp.valueOf(report.getEditableUntil()));
+            ps.setString(9, report.getPhotoPath());
+            ps.setString(10, lostLoc);
+            ps.setString(11, foundLoc);
+            ps.executeUpdate();
  
-                report.submitReport();
-                reports.add(report);
-                reportMap.put(report.getReportId(), report);
-                System.out.println("Laporan Dengan ID: " + report.getReportId() + " berhasil disimpan.");
-            } catch (SQLException e) {
-                System.out.println("Gagal Menyimpan laporan" + e.getMessage());
-            }
+            report.submitReport();
+            reports.add(report);
+            reportMap.put(report.getReportId(), report);
+            System.out.println("Laporan dengan ID: " + report.getReportId() + " berhasil disimpan.");
+        } catch (SQLException e) {
+            System.out.println("Gagal menyimpan laporan: " + e.getMessage());
         }
     }
     

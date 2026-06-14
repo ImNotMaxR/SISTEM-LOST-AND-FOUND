@@ -17,7 +17,7 @@ public class SistemLostFound {
         }
         System.out.println("Koneksi database sukses.");
  
-        // 2. Inisialisasi database (buat tabel + data dummy jika belum ada)
+        // 2. Inisialisasi database (buat tabel + data dummy jika belum ada TAPI KALAU UDAH BUAT HAPUS KECUALI INITNYA PLEASE)
         DBInitializer initializer = new DBInitializer();
         initializer.initialize();
  
