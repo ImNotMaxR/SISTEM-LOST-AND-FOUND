@@ -93,7 +93,7 @@ Proyek ini dikembangkan sebagai tugas kelompok mata kuliah **Dasar Pemrograman B
 | Nama | GitHub |
 |------|--------|
 | Rico Rezkya | [@ImNotMaxR](https://github.com/ImNotMaxR) |
-| Evan Oktavianus | [@zzitoo](https://github.com/kzitoo) |
+| Evan Oktavianus | [@kzitoo](https://github.com/kzitoo) |
 | Fadil Fauzi Firmansyah | [FadilFauzi-SE](https://github.com/FadilFauzi-SE) |
 | Muhammad Kautsar Sangadji | — |
 | Aurellya Sabrina Putri Shoury | — |
