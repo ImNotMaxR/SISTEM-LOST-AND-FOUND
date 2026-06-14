@@ -1,6 +1,7 @@
 package com.frame.dashboard;
 
 import com.frame.LoginFrame;
+import com.frame.AppDialog;
 import com.frame.dashboard.user.FoundItemsPanel;
 import com.frame.dashboard.user.LostItemsPanel;
 import com.frame.dashboard.user.UserClaimsPanel;
@@ -25,6 +26,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.util.LinkedHashMap;
 import javax.swing.BorderFactory;
@@ -33,7 +35,10 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
 import javax.swing.UIManager;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 
 public class DashboardUser extends JFrame {
 
@@ -64,10 +69,14 @@ public class DashboardUser extends JFrame {
     private void initComponents() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setTitle("Dashboard User - Sistem Lost & Found");
-        setMinimumSize(new Dimension(1260, 760));
-        setPreferredSize(new Dimension(1260, 760));
-        setResizable(false);
-        setLocationRelativeTo(null);
+        setResizable(true);
+
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        Dimension screenSize = toolkit.getScreenSize();
+        int width = Math.min(1280, screenSize.width - 120);
+        int height = Math.min(780, screenSize.height - 90);
+        setPreferredSize(new Dimension(width, height));
+        setMinimumSize(new Dimension(1120, 700));
 
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(UserDashboardComponents.SURFACE);
@@ -77,13 +86,13 @@ public class DashboardUser extends JFrame {
         root.add(createContent(), BorderLayout.CENTER);
 
         pack();
+        setLocationRelativeTo(null);
         showPage("dashboard");
     }
 
-    private JPanel createSidebar() {
+    private JScrollPane createSidebar() {
         JPanel sidebar = new JPanel(new GridBagLayout());
         sidebar.setBackground(Color.WHITE);
-        sidebar.setPreferredSize(new Dimension(248, 760));
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UserDashboardComponents.BORDER));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -94,7 +103,7 @@ public class DashboardUser extends JFrame {
         gbc.insets = new Insets(0, 16, 0, 16);
 
         gbc.gridy = 0;
-        gbc.insets = new Insets(28, 28, 30, 28);
+        gbc.insets = new Insets(20, 22, 24, 22);
         sidebar.add(createLogoLabel(), gbc);
 
         gbc.gridy = 1;
@@ -115,7 +124,7 @@ public class DashboardUser extends JFrame {
 
         gbc.gridy = 5;
         gbc.insets = new Insets(0, 8, 8, 16);
-        sidebar.add(addMenuButton("reports", "Laporan saya"), gbc);
+        sidebar.add(addMenuButton("reports", "Laporan Saya"), gbc);
 
         gbc.gridy = 6;
         gbc.insets = new Insets(14, 16, 8, 16);
@@ -123,10 +132,10 @@ public class DashboardUser extends JFrame {
 
         gbc.gridy = 7;
         gbc.insets = new Insets(0, 8, 8, 16);
-        sidebar.add(addMenuButton("found", "Lihat barang ditemukan"), gbc);
+        sidebar.add(addMenuButton("found", "Lihat Barang Ditemukan"), gbc);
 
         gbc.gridy = 8;
-        sidebar.add(addMenuButton("lost", "Lihat barang dicari"), gbc);
+        sidebar.add(addMenuButton("lost", "Lihat Barang Dicari"), gbc);
 
         gbc.gridy = 9;
         gbc.insets = new Insets(14, 16, 8, 16);
@@ -134,7 +143,7 @@ public class DashboardUser extends JFrame {
 
         gbc.gridy = 10;
         gbc.insets = new Insets(0, 8, 8, 16);
-        sidebar.add(addMenuButton("claims", "Klaim saya"), gbc);
+        sidebar.add(addMenuButton("claims", "Klaim Saya"), gbc);
 
         gbc.gridy = 11;
         gbc.insets = new Insets(14, 16, 8, 16);
@@ -142,7 +151,7 @@ public class DashboardUser extends JFrame {
 
         gbc.gridy = 12;
         gbc.insets = new Insets(0, 8, 8, 16);
-        sidebar.add(addMenuButton("profile", "Profil saya"), gbc);
+        sidebar.add(addMenuButton("profile", "Profil Saya"), gbc);
 
         gbc.gridy = 13;
         gbc.weighty = 1;
@@ -153,7 +162,65 @@ public class DashboardUser extends JFrame {
         gbc.insets = new Insets(16, 8, 22, 16);
         sidebar.add(createLogoutButton(), gbc);
 
-        return sidebar;
+        JScrollPane scrollPane = new JScrollPane(sidebar, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setBorder(null);
+        scrollPane.setBackground(Color.WHITE);
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
+        verticalScrollBar.setUnitIncrement(16);
+        verticalScrollBar.setPreferredSize(new Dimension(8, 0));
+        verticalScrollBar.setOpaque(false);
+        verticalScrollBar.setUI(new BasicScrollBarUI() {
+            @Override
+            protected void configureScrollBarColors() {
+                thumbColor = new Color(75, 145, 255);
+                trackColor = new Color(245, 248, 252);
+                thumbDarkShadowColor = thumbColor.darker();
+                thumbHighlightColor = thumbColor.brighter();
+                thumbLightShadowColor = thumbColor;
+            }
+
+            @Override
+            protected JButton createDecreaseButton(int orientation) {
+                return createZeroButton();
+            }
+
+            @Override
+            protected JButton createIncreaseButton(int orientation) {
+                return createZeroButton();
+            }
+
+            private JButton createZeroButton() {
+                JButton button = new JButton();
+                button.setPreferredSize(new Dimension(0, 0));
+                button.setMinimumSize(new Dimension(0, 0));
+                button.setMaximumSize(new Dimension(0, 0));
+                return button;
+            }
+
+            @Override
+            protected void paintThumb(java.awt.Graphics g, javax.swing.JComponent c, java.awt.Rectangle thumbBounds) {
+                if (!c.isEnabled() || thumbBounds.isEmpty()) {
+                    return;
+                }
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(thumbColor);
+                g2.fillRoundRect(thumbBounds.x, thumbBounds.y, thumbBounds.width, thumbBounds.height, 10, 10);
+                g2.dispose();
+            }
+
+            @Override
+            protected void paintTrack(java.awt.Graphics g, javax.swing.JComponent c, java.awt.Rectangle trackBounds) {
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(trackColor);
+                g2.fillRect(trackBounds.x, trackBounds.y, trackBounds.width, trackBounds.height);
+                g2.dispose();
+            }
+        });
+        scrollPane.setPreferredSize(new Dimension(248, 760));
+        return scrollPane;
     }
 
     private JPanel createContent() {
@@ -173,14 +240,14 @@ public class DashboardUser extends JFrame {
 
         if (logoUrl != null) {
             ImageIcon original = new ImageIcon(logoUrl);
-            int width = 128;
+            int width = 154;
             int height = Math.max(32, (int) Math.round(width / ((double) original.getIconWidth() / original.getIconHeight())));
             Image image = original.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
             logo.setIcon(new ImageIcon(image));
         } else {
             logo.setText("Lost & Found");
             logo.setForeground(UserDashboardComponents.PRIMARY_DARK);
-            logo.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            logo.setFont(new Font("Poppins", Font.BOLD, 14));
         }
 
         return logo;
@@ -232,7 +299,7 @@ public class DashboardUser extends JFrame {
         button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setHorizontalAlignment(JButton.LEFT);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setFont(new Font("Poppins", Font.BOLD, 14));
         button.setForeground(UserDashboardComponents.TEXT_DARK);
         button.setBackground(Color.WHITE);
         button.setBorder(BorderFactory.createCompoundBorder(
@@ -240,6 +307,16 @@ public class DashboardUser extends JFrame {
                 BorderFactory.createEmptyBorder(10, 16, 10, 16)
         ));
         button.addActionListener(event -> {
+            boolean confirmed = AppDialog.confirm(
+                    this,
+                    "Konfirmasi Logout",
+                    "Anda yakin ingin keluar dari dashboard?",
+                    "Logout",
+                    "Batal"
+            );
+            if (!confirmed) {
+                return;
+            }
             dispose();
             new LoginFrame().setVisible(true);
         });
@@ -268,7 +345,7 @@ public class DashboardUser extends JFrame {
             }
         }
 
-        return currentUser != null ? currentUser.getRole().name() : "Belum login";
+        return currentUser != null ? currentUser.getRole().name() : "Belum Login";
     }
 
     public static void main(String args[]) {
@@ -298,7 +375,7 @@ public class DashboardUser extends JFrame {
             setContentAreaFilled(false);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
             setHorizontalAlignment(JButton.LEFT);
-            setFont(new Font("Segoe UI", Font.BOLD, 14));
+            setFont(new Font("Poppins", Font.BOLD, 14));
             setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
             setActive(false);
         }

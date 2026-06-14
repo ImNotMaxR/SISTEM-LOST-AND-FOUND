@@ -10,6 +10,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import javax.swing.BorderFactory;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 public class UserProfilePanel extends JPanel {
@@ -29,7 +30,7 @@ public class UserProfilePanel extends JPanel {
         gbc.anchor = GridBagConstraints.NORTHWEST;
 
         gbc.gridy = 0;
-        content.add(UserDashboardComponents.section("Profil saya", "Informasi akun yang sedang login."), gbc);
+        content.add(UserDashboardComponents.section("Profil Saya", "Informasi Akun Yang Sedang Login."), gbc);
 
         gbc.gridy = 1;
         gbc.insets = new Insets(18, 0, 0, 0);
@@ -52,8 +53,8 @@ public class UserProfilePanel extends JPanel {
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.WEST;
 
         addRow(card, gbc, 0, "Nama", user != null ? user.getName() : "-");
@@ -83,21 +84,29 @@ public class UserProfilePanel extends JPanel {
 
     private void addRow(JPanel panel, GridBagConstraints gbc, int row, String label, String value) {
         gbc.gridy = row;
-        gbc.insets = new Insets(row == 0 ? 0 : 16, 0, 0, 0);
+        gbc.insets = new Insets(row == 0 ? 0 : 18, 16, 0, 0);
 
         JPanel rowPanel = new JPanel(new GridBagLayout());
         rowPanel.setOpaque(false);
+        rowPanel.setPreferredSize(new java.awt.Dimension(360, 24));
 
         GridBagConstraints rowGbc = new GridBagConstraints();
         rowGbc.gridx = 0;
         rowGbc.weightx = 0;
         rowGbc.anchor = GridBagConstraints.WEST;
-        rowPanel.add(UserDashboardComponents.label(label, 13, Font.BOLD, UserDashboardComponents.TEXT_MUTED), rowGbc);
+        rowGbc.fill = GridBagConstraints.NONE;
+        JLabel labelText = UserDashboardComponents.label(label, 13, Font.BOLD, UserDashboardComponents.TEXT_MUTED);
+        labelText.setPreferredSize(new java.awt.Dimension(88, 22));
+        rowPanel.add(labelText, rowGbc);
 
         rowGbc.gridx = 1;
-        rowGbc.weightx = 1;
-        rowGbc.insets = new Insets(0, 28, 0, 0);
-        rowGbc.fill = GridBagConstraints.HORIZONTAL;
+        rowGbc.insets = new Insets(0, 8, 0, 8);
+        JLabel separator = UserDashboardComponents.label(":", 13, Font.BOLD, UserDashboardComponents.TEXT_MUTED);
+        separator.setPreferredSize(new java.awt.Dimension(8, 22));
+        rowPanel.add(separator, rowGbc);
+
+        rowGbc.gridx = 2;
+        rowGbc.insets = new Insets(0, 10, 0, 0);
         rowPanel.add(UserDashboardComponents.label(value, 16, Font.BOLD, UserDashboardComponents.TEXT_DARK), rowGbc);
 
         panel.add(rowPanel, gbc);

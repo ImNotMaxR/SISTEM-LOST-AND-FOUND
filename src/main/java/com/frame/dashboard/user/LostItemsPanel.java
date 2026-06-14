@@ -26,14 +26,14 @@ public class LostItemsPanel extends JPanel {
         gbc.anchor = GridBagConstraints.NORTHWEST;
 
         gbc.gridy = 0;
-        content.add(UserDashboardComponents.section("Barang dicari", "Semua laporan barang hilang yang masih perlu dipantau."), gbc);
+        content.add(UserDashboardComponents.section("Barang Dicari", "Semua Laporan Barang Hilang yang Masih Perlu Dipantau."), gbc);
 
         JPanel grid = UserDashboardComponents.cardGrid();
         for (LostReport report : reportManager.getLostReports()) {
             grid.add(new UserDashboardComponents.ReportCard(report, report.getStatus().name(), UserDashboardComponents.ORANGE));
         }
         if (grid.getComponentCount() == 0) {
-            grid.add(UserDashboardComponents.emptyState("Belum ada barang yang dicari."));
+            grid.add(UserDashboardComponents.emptyState("Belum Ada Barang Yang Dicari."));
         }
 
         gbc.gridy = 1;

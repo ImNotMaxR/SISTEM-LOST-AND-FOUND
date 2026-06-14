@@ -27,7 +27,7 @@ public class UserClaimsPanel extends JPanel {
         gbc.anchor = GridBagConstraints.NORTHWEST;
 
         gbc.gridy = 0;
-        content.add(UserDashboardComponents.section("Klaim saya", "Pantau status pengajuan klaim barang milikmu."), gbc);
+        content.add(UserDashboardComponents.section("Klaim Saya", "Pantau Status Pengajuan Klaim Barang Milikmu."), gbc);
 
         JPanel grid = UserDashboardComponents.cardGrid();
         for (Claim claim : claimManager.getAllClaims()) {
@@ -36,7 +36,7 @@ public class UserClaimsPanel extends JPanel {
             }
         }
         if (grid.getComponentCount() == 0) {
-            grid.add(UserDashboardComponents.emptyState("Kamu belum mengajukan klaim."));
+            grid.add(UserDashboardComponents.emptyState("Kamu Belum Mengajukan Klaim."));
         }
 
         gbc.gridy = 1;

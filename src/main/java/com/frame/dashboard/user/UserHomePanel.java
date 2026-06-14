@@ -43,8 +43,8 @@ public class UserHomePanel extends JPanel {
         gbc.gridy = 2;
         gbc.insets = new Insets(16, 0, 0, 0);
         content.add(UserDashboardComponents.section(
-                "List barang hilang",
-                reportManager.getLostReports().size() + " laporan barang hilang tercatat di sistem."
+                "List Barang Hilang",
+                reportManager.getLostReports().size() + " Laporan Barang Hilang Tercatat di Sistem."
         ), gbc);
 
         gbc.gridy = 3;
@@ -105,18 +105,18 @@ public class UserHomePanel extends JPanel {
 
         gbc.gridx = 0;
         panel.add(new UserDashboardComponents.StatCard(
-                "Total barang hilang",
+                "Total Barang Hilang",
                 String.format("%02d", lostCount),
-                "Seluruh laporan kampus",
+                "Seluruh Laporan Kampus",
                 UserDashboardComponents.PRIMARY_DARK,
                 UserDashboardComponents.PRIMARY
         ), gbc);
 
         gbc.gridx = 1;
         panel.add(new UserDashboardComponents.StatCard(
-                "Laporan saya",
+                "Laporan Saya",
                 String.format("%02d", myReports),
-                "Pantau laporan akun ini",
+                "Pantau Laporan Akun Ini",
                 UserDashboardComponents.PRIMARY_LIGHT,
                 new Color(126, 203, 236)
         ), gbc);
@@ -124,9 +124,9 @@ public class UserHomePanel extends JPanel {
         gbc.gridx = 2;
         gbc.insets = new Insets(0, 0, 0, 0);
         panel.add(new UserDashboardComponents.StatCard(
-                "Barang ditemukan",
+                "Barang Ditemukan",
                 String.format("%02d", foundCount),
-                "Menunggu proses klaim",
+                "Menunggu Proses Klaim",
                 UserDashboardComponents.ORANGE,
                 new Color(255, 159, 93)
         ), gbc);
@@ -139,7 +139,7 @@ public class UserHomePanel extends JPanel {
         ArrayList<LostReport> reports = reportManager.getLostReports();
 
         if (reports.isEmpty()) {
-            grid.add(UserDashboardComponents.emptyState("Belum ada laporan barang hilang."));
+            grid.add(UserDashboardComponents.emptyState("Belum Ada Laporan Barang Hilang."));
             return grid;
         }
 

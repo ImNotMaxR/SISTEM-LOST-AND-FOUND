@@ -26,7 +26,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
@@ -104,14 +103,14 @@ public class LoginFrame extends JFrame {
 
         JLabel subtitle = new JLabel("<html>Temukan kembali barang hilang dengan lebih mudah.</html>");
         subtitle.setForeground(new Color(229, 246, 255));
-        subtitle.setFont(new Font("Segoe UI", Font.BOLD, 27));
+        subtitle.setFont(new Font("Poppins", Font.BOLD, 27));
         gbc.gridy = 1;
         gbc.insets = new Insets(0, 0, 12, 0);
         panel.add(subtitle, gbc);
 
         JLabel caption = new JLabel("<html>Laporkan, cek, dan kelola data lost & found dalam satu sistem.</html>");
         caption.setForeground(new Color(229, 246, 255));
-        caption.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        caption.setFont(new Font("Poppins", Font.PLAIN, 15));
         gbc.gridy = 2;
         gbc.insets = new Insets(0, 0, 0, 0);
         panel.add(caption, gbc);
@@ -143,7 +142,7 @@ public class LoginFrame extends JFrame {
         } else {
             logo.setText("Lost & Found");
             logo.setForeground(Color.WHITE);
-            logo.setFont(new Font("Segoe UI", Font.BOLD, 28));
+            logo.setFont(new Font("Poppins", Font.BOLD, 28));
         }
 
         logo.setPreferredSize(new Dimension(width, height));
@@ -160,7 +159,7 @@ public class LoginFrame extends JFrame {
 
         JLabel label = new JLabel(text);
         label.setForeground(Color.WHITE);
-        label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        label.setFont(new Font("Poppins", Font.PLAIN, 14));
         panel.add(label, gbc);
     }
 
@@ -182,32 +181,31 @@ public class LoginFrame extends JFrame {
 
         JLabel logoSmall = new JLabel("Lost & Found");
         logoSmall.setForeground(PRIMARY_DARK);
-        logoSmall.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        logoSmall.setFont(new Font("Poppins", Font.BOLD, 18));
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 16, 0);
         form.add(logoSmall, gbc);
 
         JLabel title = new JLabel("Login Sistem");
         title.setForeground(TEXT_DARK);
-        title.setFont(new Font("Segoe UI", Font.BOLD, 42));
+        title.setFont(new Font("Poppins", Font.BOLD, 42));
         gbc.gridy = 1;
         gbc.insets = new Insets(0, 0, 8, 0);
         form.add(title, gbc);
 
         JLabel subtitle = new JLabel("Silakan masuk menggunakan akun yang sudah terdaftar.");
         subtitle.setForeground(TEXT_MUTED);
-        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 17));
+        subtitle.setFont(new Font("Poppins", Font.PLAIN, 17));
         gbc.gridy = 2;
         gbc.insets = new Insets(0, 0, 38, 0);
         form.add(subtitle, gbc);
 
-        JLabel usernameLabel = createFieldLabel("Username");
+        JLabel usernameLabel = createFieldLabel("Username SSO");
         gbc.gridy = 3;
         gbc.insets = new Insets(0, 0, 8, 0);
         form.add(usernameLabel, gbc);
 
         txtUsername = createTextField();
-        txtUsername.setToolTipText("Masukkan username");
         gbc.gridy = 4;
         gbc.insets = new Insets(0, 0, 24, 0);
         form.add(txtUsername, gbc);
@@ -218,7 +216,6 @@ public class LoginFrame extends JFrame {
         form.add(passwordLabel, gbc);
 
         txtPassword = createPasswordField();
-        txtPassword.setToolTipText("Masukkan password");
         txtPassword.addActionListener(this::btnLoginActionPerformed);
         gbc.gridy = 6;
         gbc.insets = new Insets(0, 0, 40, 0);
@@ -239,7 +236,7 @@ public class LoginFrame extends JFrame {
 
         JLabel hint = new JLabel("Pastikan database sudah berjalan sebelum login.");
         hint.setForeground(TEXT_MUTED);
-        hint.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        hint.setFont(new Font("Poppins", Font.PLAIN, 13));
         gbc.gridy = 9;
         gbc.insets = new Insets(0, 0, 0, 0);
         form.add(hint, gbc);
@@ -258,25 +255,25 @@ public class LoginFrame extends JFrame {
     private JLabel createFieldLabel(String text) {
         JLabel label = new JLabel(text);
         label.setForeground(new Color(51, 65, 85));
-        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        label.setFont(new Font("Poppins", Font.BOLD, 13));
         return label;
     }
 
     private JTextField createTextField() {
-        JTextField field = new RoundedTextField(18);
+        JTextField field = new RoundedTextField(18, "Username SSO *tanpa @student.telkomuniversity.ac.id");
         styleInput(field);
         return field;
     }
 
     private JPasswordField createPasswordField() {
-        JPasswordField field = new RoundedPasswordField(18);
+        JPasswordField field = new RoundedPasswordField(18, "Password SSO");
         styleInput(field);
         return field;
     }
 
     private void styleInput(JTextField field) {
         field.setPreferredSize(new Dimension(360, 44));
-        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setFont(new Font("Poppins", Font.PLAIN, 14));
         field.setForeground(TEXT_DARK);
         field.setBackground(new Color(248, 252, 255));
         field.setCaretColor(PRIMARY);
@@ -296,7 +293,7 @@ public class LoginFrame extends JFrame {
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setBackground(PRIMARY_DARK);
         button.setForeground(Color.WHITE);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        button.setFont(new Font("Poppins", Font.BOLD, 15));
         return button;
     }
 
@@ -305,12 +302,7 @@ public class LoginFrame extends JFrame {
         String password = new String(txtPassword.getPassword());
 
         if (username.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(
-                    rootPane,
-                    "Username dan password wajib diisi.",
-                    "Login Belum Lengkap",
-                    JOptionPane.WARNING_MESSAGE
-            );
+            AppDialog.warning(rootPane, "Login Belum Lengkap", "Username dan password wajib diisi.");
             return;
         }
 
@@ -323,12 +315,7 @@ public class LoginFrame extends JFrame {
             if (user != null) {
                 openDashboard(user);
             } else {
-                JOptionPane.showMessageDialog(
-                        rootPane,
-                        AuthService.getLoginError(),
-                        "Login Gagal",
-                        JOptionPane.ERROR_MESSAGE
-                );
+                AppDialog.error(rootPane, "Login Gagal", AuthService.getLoginError());
             }
         } finally {
             btnLogin.setEnabled(true);
@@ -337,7 +324,7 @@ public class LoginFrame extends JFrame {
     }
 
     private void openDashboard(User user) {
-        JOptionPane.showMessageDialog(rootPane, "Selamat Datang " + user.getName());
+        AppDialog.success(rootPane, "Selamat Datang", "Halo, " + user.getName() + ". Login berhasil.");
 
         if (user instanceof Admin) {
             ReportManager rm = new ReportManager();
@@ -470,9 +457,11 @@ public class LoginFrame extends JFrame {
     private static class RoundedTextField extends JTextField {
 
         private final int radius;
+        private final String placeholder;
 
-        RoundedTextField(int radius) {
+        RoundedTextField(int radius, String placeholder) {
             this.radius = radius;
+            this.placeholder = placeholder;
         }
 
         @Override
@@ -483,15 +472,32 @@ public class LoginFrame extends JFrame {
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
             g2.dispose();
             super.paintComponent(g);
+            paintPlaceholder(g);
+        }
+
+        private void paintPlaceholder(Graphics g) {
+            if (getText() != null && !getText().isEmpty()) {
+                return;
+            }
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2.setFont(getFont());
+            g2.setColor(new Color(148, 163, 184));
+            Insets insets = getInsets();
+            int y = (getHeight() - g2.getFontMetrics().getHeight()) / 2 + g2.getFontMetrics().getAscent();
+            g2.drawString(placeholder, insets.left, y);
+            g2.dispose();
         }
     }
 
     private static class RoundedPasswordField extends JPasswordField {
 
         private final int radius;
+        private final String placeholder;
 
-        RoundedPasswordField(int radius) {
+        RoundedPasswordField(int radius, String placeholder) {
             this.radius = radius;
+            this.placeholder = placeholder;
         }
 
         @Override
@@ -502,6 +508,21 @@ public class LoginFrame extends JFrame {
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
             g2.dispose();
             super.paintComponent(g);
+            paintPlaceholder(g);
+        }
+
+        private void paintPlaceholder(Graphics g) {
+            if (getPassword().length > 0) {
+                return;
+            }
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2.setFont(getFont());
+            g2.setColor(new Color(148, 163, 184));
+            Insets insets = getInsets();
+            int y = (getHeight() - g2.getFontMetrics().getHeight()) / 2 + g2.getFontMetrics().getAscent();
+            g2.drawString(placeholder, insets.left, y);
+            g2.dispose();
         }
     }
 

@@ -24,8 +24,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.border.AbstractBorder;
 
 import com.model.Claim;
@@ -49,14 +51,14 @@ public final class UserDashboardComponents {
 
     public static JLabel label(String text, int size, int style, Color color) {
         JLabel label = new JLabel(text);
-        label.setFont(new Font("Segoe UI", style, size));
+        label.setFont(new Font("Poppins", style, size));
         label.setForeground(color);
         return label;
     }
 
     public static JTextArea paragraph(String text, int size) {
         JTextArea area = new JTextArea(text == null || text.isBlank() ? "-" : text);
-        area.setFont(new Font("Segoe UI", Font.PLAIN, size));
+        area.setFont(new Font("Poppins", Font.PLAIN, size));
         area.setForeground(TEXT_MUTED);
         area.setOpaque(false);
         area.setEditable(false);
@@ -71,7 +73,59 @@ public final class UserDashboardComponents {
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getViewport().setBackground(SURFACE);
         scrollPane.setBackground(SURFACE);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
+        verticalScrollBar.setUnitIncrement(16);
+        verticalScrollBar.setPreferredSize(new Dimension(8, 0));
+        verticalScrollBar.setOpaque(false);
+        verticalScrollBar.setUI(new BasicScrollBarUI() {
+            @Override
+            protected void configureScrollBarColors() {
+                thumbColor = PRIMARY;
+                trackColor = new Color(245, 248, 252);
+                thumbDarkShadowColor = thumbColor.darker();
+                thumbHighlightColor = thumbColor.brighter();
+                thumbLightShadowColor = thumbColor;
+            }
+
+            @Override
+            protected JButton createDecreaseButton(int orientation) {
+                return createZeroButton();
+            }
+
+            @Override
+            protected JButton createIncreaseButton(int orientation) {
+                return createZeroButton();
+            }
+
+            private JButton createZeroButton() {
+                JButton button = new JButton();
+                button.setPreferredSize(new Dimension(0, 0));
+                button.setMinimumSize(new Dimension(0, 0));
+                button.setMaximumSize(new Dimension(0, 0));
+                return button;
+            }
+
+            @Override
+            protected void paintThumb(java.awt.Graphics g, javax.swing.JComponent c, java.awt.Rectangle thumbBounds) {
+                if (!c.isEnabled() || thumbBounds.isEmpty()) {
+                    return;
+                }
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(thumbColor);
+                g2.fillRoundRect(thumbBounds.x, thumbBounds.y, thumbBounds.width, thumbBounds.height, 10, 10);
+                g2.dispose();
+            }
+
+            @Override
+            protected void paintTrack(java.awt.Graphics g, javax.swing.JComponent c, java.awt.Rectangle trackBounds) {
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(trackColor);
+                g2.fillRect(trackBounds.x, trackBounds.y, trackBounds.width, trackBounds.height);
+                g2.dispose();
+            }
+        });
         return scrollPane;
     }
 
@@ -127,7 +181,7 @@ public final class UserDashboardComponents {
 
     public static String category(Report report) {
         if (report == null || report.getItem() == null || report.getItem().getCategory() == null) {
-            return "Tanpa kategori";
+            return "Tanpa Kategori";
         }
         return report.getItem().getCategory().getName();
     }
@@ -149,7 +203,7 @@ public final class UserDashboardComponents {
         button.setContentAreaFilled(false);
         button.setHorizontalAlignment(JButton.LEFT);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setFont(new Font("Poppins", Font.BOLD, 14));
         button.setForeground(TEXT_MUTED);
         button.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
         return button;
@@ -237,9 +291,9 @@ public final class UserDashboardComponents {
 
         public StatCard(String title, String value, String subtitle, Color start, Color end) {
             super(start, end, 18);
-            setPreferredSize(new Dimension(210, 120));
+            setPreferredSize(new Dimension(230, 128));
             setLayout(new GridBagLayout());
-            setBorder(BorderFactory.createEmptyBorder(18, 18, 14, 18));
+            setBorder(BorderFactory.createEmptyBorder(18, 22, 16, 22));
 
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.gridx = 0;
@@ -250,7 +304,7 @@ public final class UserDashboardComponents {
             gbc.gridy = 0;
             add(label(title, 15, Font.BOLD, Color.WHITE), gbc);
             gbc.gridy = 1;
-            gbc.insets = new Insets(14, 0, 8, 0);
+            gbc.insets = new Insets(12, 0, 8, 0);
             add(label(value, 34, Font.BOLD, Color.WHITE), gbc);
             gbc.gridy = 2;
             gbc.insets = new Insets(0, 0, 0, 0);
@@ -262,7 +316,7 @@ public final class UserDashboardComponents {
 
         public ReportCard(Report report, String statusText, Color statusColor) {
             super(Color.WHITE, 20);
-            setPreferredSize(new Dimension(320, 320));
+            setPreferredSize(new Dimension(320, 360));
             setLayout(new GridBagLayout());
             setBorder(BorderFactory.createCompoundBorder(
                     new RoundedLineBorder(BORDER, 22, 1),
@@ -356,10 +410,17 @@ public final class UserDashboardComponents {
     public static class PhotoPanel extends JPanel {
 
         private final Report report;
+        private final boolean showTitleOverlay;
 
         PhotoPanel(Report report) {
+            this(report, false);
+        }
+
+        public PhotoPanel(Report report, boolean showTitleOverlay) {
             this.report = report;
-            setPreferredSize(new Dimension(320, 180));
+            this.showTitleOverlay = showTitleOverlay;
+            setPreferredSize(new Dimension(320, 220));
+            setMinimumSize(new Dimension(280, 180));
             setOpaque(true);
         }
 
@@ -378,6 +439,9 @@ public final class UserDashboardComponents {
                 int imgW = image.getWidth(this);
                 int imgH = image.getHeight(this);
                 if (imgW > 0 && imgH > 0) {
+                    g2.setColor(new Color(239, 246, 252));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+
                     double scale = Math.max((double) getWidth() / imgW, (double) getHeight() / imgH);
                     int drawW = (int) Math.round(imgW * scale);
                     int drawH = (int) Math.round(imgH * scale);
@@ -393,10 +457,12 @@ public final class UserDashboardComponents {
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
                 g2.setColor(new Color(255, 255, 255, 44));
                 g2.fillOval(getWidth() - 95, -35, 130, 130);
-                g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
-                String name = report.getItem().getName();
-                g2.drawString(name.length() > 24 ? name.substring(0, 24) + "..." : name, 18, getHeight() - 24);
+                if (showTitleOverlay && report != null && report.getItem() != null) {
+                    g2.setColor(Color.WHITE);
+                    g2.setFont(new Font("Poppins", Font.BOLD, 16));
+                    String name = report.getItem().getName();
+                    g2.drawString(name.length() > 34 ? name.substring(0, 34) + "..." : name, 18, getHeight() - 24);
+                }
             }
 
             g2.setClip(null);

@@ -27,7 +27,7 @@ public class UserReportsPanel extends JPanel {
         gbc.anchor = GridBagConstraints.NORTHWEST;
 
         gbc.gridy = 0;
-        content.add(UserDashboardComponents.section("Laporan saya", "Daftar laporan barang hilang yang dibuat oleh akun ini."), gbc);
+        content.add(UserDashboardComponents.section("Laporan Saya", "Daftar Laporan Barang Hilang Yang Dibuat Oleh Akun Ini."), gbc);
 
         JPanel grid = UserDashboardComponents.cardGrid();
         for (LostReport report : reportManager.getLostReports()) {
@@ -36,7 +36,7 @@ public class UserReportsPanel extends JPanel {
             }
         }
         if (grid.getComponentCount() == 0) {
-            grid.add(UserDashboardComponents.emptyState("Kamu belum memiliki laporan."));
+            grid.add(UserDashboardComponents.emptyState("Kamu Belum Memiliki Laporan."));
         }
 
         gbc.gridy = 1;

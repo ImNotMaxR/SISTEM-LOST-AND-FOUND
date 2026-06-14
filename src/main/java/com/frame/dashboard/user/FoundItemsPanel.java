@@ -26,14 +26,14 @@ public class FoundItemsPanel extends JPanel {
         gbc.anchor = GridBagConstraints.NORTHWEST;
 
         gbc.gridy = 0;
-        content.add(UserDashboardComponents.section("Barang ditemukan", "Barang yang sudah dilaporkan ditemukan oleh petugas."), gbc);
+        content.add(UserDashboardComponents.section("Barang Ditemukan", "Barang Yang Sudah Dilaporkan Ditemukan Oleh Petugas."), gbc);
 
         JPanel grid = UserDashboardComponents.cardGrid();
         for (FoundReport report : reportManager.getFoundReports()) {
             grid.add(new UserDashboardComponents.ReportCard(report, report.getStatus().name(), UserDashboardComponents.PRIMARY));
         }
         if (grid.getComponentCount() == 0) {
-            grid.add(UserDashboardComponents.emptyState("Belum ada barang ditemukan."));
+            grid.add(UserDashboardComponents.emptyState("Belum Ada Barang Ditemukan."));
         }
 
         gbc.gridy = 1;
