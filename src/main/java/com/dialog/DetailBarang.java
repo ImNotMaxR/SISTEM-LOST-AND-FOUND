@@ -24,13 +24,26 @@ public class DetailBarang extends java.awt.Dialog {
     }
     
     private void isiData() {
-        txtHeader.setText("Detail");
-        
         String photoPath = foundReport.getPhotoPath();
+
+        System.out.println("Photo path dari DB: " + photoPath);
+
         if (photoPath != null && !photoPath.isEmpty()) {
-            ImageIcon icon = new ImageIcon(photoPath);
-            java.awt.Image img = icon.getImage().getScaledInstance(250, 230, java.awt.Image.SCALE_SMOOTH);
-            txtFoto.setIcon(new ImageIcon(img));
+            String fullPath = System.getProperty("user.dir") + "\\uploads\\" + photoPath;
+
+            System.out.println("Full path: " + fullPath);
+
+            java.io.File file = new java.io.File(fullPath);
+            if (file.exists()) {
+                ImageIcon icon = new ImageIcon(fullPath);
+                java.awt.Image img = icon.getImage().getScaledInstance(250, 230, java.awt.Image.SCALE_SMOOTH);
+                txtFoto.setIcon(new ImageIcon(img));
+            } else {
+                txtFoto.setText("Foto tidak ditemukan");
+                System.out.println("File tidak ada di: " + fullPath);
+            }
+        } else {
+            txtFoto.setText("Tidak ada foto");
         }
     }
 
