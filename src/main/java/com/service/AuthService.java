@@ -1,13 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.service;
-
-/**
- *
- * @author MaxR
- */
 
 import com.database.DBConnection;
 import com.enumeration.Role;
@@ -20,25 +11,30 @@ import com.model.User;
 import java.sql.*;
 
 public class AuthService {
-    private User currentUser;
-    private DBConnection dbConnection;
+    private static User currentUser;
+    private static DBConnection dbConnection;
+    private static String loginError;
     
      public AuthService() {
         this.currentUser  = null;
         this.dbConnection = DBConnection.getInstance();
     }
  
-    public User getCurrentUser() {
+    public static User getCurrentUser() {
         return currentUser;
     }
  
-    public boolean isLoggedIn() {
+    public static boolean isLoggedIn() {
         return currentUser != null;
+    }
+    
+    public static String getLoginError() {
+        return loginError;
     }
  
     // Query DB, cocokkan username dan password
     // Bangun object sesuai role, dynamic binding terjadi di sini
-    public User login(String username, String password) {
+    public static User login(String username, String password) {
         String sql =
             "SELECT u.user_id, u.name, u.username, u.password, u.role, " +
             "m.nim, m.fakultas, m.jurusan, m.kelas, " +
@@ -63,19 +59,19 @@ public class AuthService {
             if (rs.next()) {
                 String storedPassword = rs.getString("password");
                 if (!storedPassword.equals(password)) {
-                    System.out.println("Password salah.");
+                    loginError = "Password salah";
                     return null;
                 }
  
                 User user = buildUserFromResultSet(rs);
                 if (user != null) {
-                    this.currentUser = user;
+                    AuthService.currentUser = user;
                     // Panggil login() dari interface AuthServices
                     user.login();
                 }
                 return user;
             } else {
-                System.out.println("Username tidak ditemukan.");
+                loginError = "Username tidak ditemukan.";
                 return null;
             }
  
@@ -86,7 +82,7 @@ public class AuthService {
     }
  
     // Dynamic binding: return type User, actual object Mahasiswa/Dosen/dll
-    private User buildUserFromResultSet(ResultSet rs) throws SQLException {
+    private static User buildUserFromResultSet(ResultSet rs) throws SQLException {
         String userId   = rs.getString("user_id");
         String name     = rs.getString("name");
         String uname    = rs.getString("username");
