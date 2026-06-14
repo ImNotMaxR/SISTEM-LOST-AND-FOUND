@@ -5,7 +5,10 @@
 package com.dialog;
 
 import com.model.FoundReport;
+import java.time.format.DateTimeFormatter;
 import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.SwingConstants;
 
 /**
  *
@@ -24,19 +27,37 @@ public class DetailBarang extends java.awt.Dialog {
     }
     
     private void isiData() {
+        txtHeader.setText("Detail Barang");
+        lblNamaBarang.setText(foundReport.getItem().getName());
+        lblNamaPelapor.setText(foundReport.getUser().getName());
+        
+        String deskripsi = foundReport.getDescription();
+
+        int width = lblDesc.getWidth();
+
+        lblDesc.setText(
+            "<html><div style='width:" + width + "px;'>"
+            + deskripsi
+            + "</div></html>"
+        );
+        
+        lblStatus.setText(foundReport.getStatus().toString());
+        lblTanggal.setText(foundReport.getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+        lblLokasi.setText(foundReport.getFoundLocation());
+        
         String photoPath = foundReport.getPhotoPath();
 
-        System.out.println("Photo path dari DB: " + photoPath);
+        System.out.println("Photo Path Dari DB: " + photoPath);
 
         if (photoPath != null && !photoPath.isEmpty()) {
             String fullPath = System.getProperty("user.dir") + "\\uploads\\" + photoPath;
 
-            System.out.println("Full : " + fullPath);
+            System.out.println("Full Path: " + fullPath);
 
             java.io.File file = new java.io.File(fullPath);
             if (file.exists()) {
                 ImageIcon icon = new ImageIcon(fullPath);
-                java.awt.Image img = icon.getImage().getScaledInstance(250, 230, java.awt.Image.SCALE_SMOOTH);
+                java.awt.Image img = icon.getImage().getScaledInstance(125, 160, java.awt.Image.SCALE_SMOOTH);
                 txtFoto.setIcon(new ImageIcon(img));
             } else {
                 txtFoto.setText("Foto tidak ditemukan");
@@ -57,6 +78,24 @@ public class DetailBarang extends java.awt.Dialog {
 
         txtHeader = new javax.swing.JLabel();
         txtFoto = new javax.swing.JLabel();
+        txtNamaBarang = new javax.swing.JLabel();
+        lblNamaBarang = new javax.swing.JLabel();
+        txtNamaPelapor = new javax.swing.JLabel();
+        txtDesc = new javax.swing.JLabel();
+        txtStatus = new javax.swing.JLabel();
+        txtDate = new javax.swing.JLabel();
+        txtLokasi = new javax.swing.JLabel();
+        lblNamaPelapor = new javax.swing.JLabel();
+        lblStatus = new javax.swing.JLabel();
+        lblTanggal = new javax.swing.JLabel();
+        lblLokasi = new javax.swing.JLabel();
+        txtSeperate = new javax.swing.JLabel();
+        txtSeperate1 = new javax.swing.JLabel();
+        txtSeperate2 = new javax.swing.JLabel();
+        txtSeperate3 = new javax.swing.JLabel();
+        txtSeperate4 = new javax.swing.JLabel();
+        txtSeperate5 = new javax.swing.JLabel();
+        lblDesc = new javax.swing.JLabel();
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
@@ -64,20 +103,129 @@ public class DetailBarang extends java.awt.Dialog {
             }
         });
 
+        txtHeader.setFont(new java.awt.Font("Poppins", 1, 18)); // NOI18N
+        txtHeader.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         txtHeader.setText("jLabel1");
 
+        txtFoto.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         txtFoto.setText("jLabel1");
+
+        txtNamaBarang.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        txtNamaBarang.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        txtNamaBarang.setText("Nama Barang");
+
+        lblNamaBarang.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        lblNamaBarang.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        lblNamaBarang.setText("jLabel1");
+
+        txtNamaPelapor.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        txtNamaPelapor.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        txtNamaPelapor.setText("Nama Pelapor");
+
+        txtDesc.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        txtDesc.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        txtDesc.setText("Deskripsi");
+
+        txtStatus.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        txtStatus.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        txtStatus.setText("Status Barang");
+
+        txtDate.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        txtDate.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        txtDate.setText("Tanggal");
+
+        txtLokasi.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        txtLokasi.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        txtLokasi.setText("Lokasi");
+
+        lblNamaPelapor.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        lblNamaPelapor.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        lblNamaPelapor.setText("jLabel1");
+
+        lblStatus.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        lblStatus.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        lblStatus.setText("jLabel1");
+
+        lblTanggal.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        lblTanggal.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        lblTanggal.setText("jLabel1");
+
+        lblLokasi.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        lblLokasi.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        lblLokasi.setText("jLabel1");
+
+        txtSeperate.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        txtSeperate.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        txtSeperate.setText(":");
+
+        txtSeperate1.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        txtSeperate1.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        txtSeperate1.setText(":");
+
+        txtSeperate2.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        txtSeperate2.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        txtSeperate2.setText(":");
+
+        txtSeperate3.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        txtSeperate3.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        txtSeperate3.setText(":");
+
+        txtSeperate4.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        txtSeperate4.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        txtSeperate4.setText(":");
+
+        txtSeperate5.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        txtSeperate5.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        txtSeperate5.setText(":");
+
+        lblDesc.setFont(new java.awt.Font("Poppins", 0, 12)); // NOI18N
+        lblDesc.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        lblDesc.setText("jLabel1");
+        lblDesc.setToolTipText("");
+        lblDesc.setVerticalAlignment(javax.swing.SwingConstants.TOP);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(txtHeader, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(layout.createSequentialGroup()
-                .addGap(167, 167, 167)
+                .addGap(19, 19, 19)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(txtHeader)
-                    .addComponent(txtFoto))
-                .addContainerGap(196, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(txtLokasi, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(txtDate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(txtStatus, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(18, 18, 18)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(txtSeperate3, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(txtSeperate4, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(txtSeperate5, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(lblTanggal, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(lblLokasi, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(lblStatus, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 227, Short.MAX_VALUE)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(txtDesc, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(txtNamaBarang, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(txtNamaPelapor, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(txtSeperate, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(txtSeperate1, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(txtSeperate2, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(lblNamaBarang, javax.swing.GroupLayout.PREFERRED_SIZE, 212, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(lblNamaPelapor, javax.swing.GroupLayout.PREFERRED_SIZE, 212, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(lblDesc, javax.swing.GroupLayout.PREFERRED_SIZE, 212, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addComponent(txtFoto, javax.swing.GroupLayout.PREFERRED_SIZE, 125, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -85,8 +233,50 @@ public class DetailBarang extends java.awt.Dialog {
                 .addContainerGap()
                 .addComponent(txtHeader)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(txtFoto)
-                .addContainerGap(256, Short.MAX_VALUE))
+                .addComponent(txtFoto, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(txtSeperate)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(txtSeperate1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(txtSeperate2)
+                            .addComponent(txtDesc))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(txtNamaBarang)
+                            .addComponent(lblNamaBarang))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(lblNamaPelapor)
+                            .addComponent(txtNamaPelapor))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(lblDesc, javax.swing.GroupLayout.DEFAULT_SIZE, 102, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                .addGroup(layout.createSequentialGroup()
+                                    .addComponent(txtStatus)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                    .addComponent(txtDate)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                    .addComponent(txtLokasi))
+                                .addGroup(layout.createSequentialGroup()
+                                    .addComponent(lblStatus)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                    .addComponent(lblTanggal)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                    .addComponent(lblLokasi)))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(txtSeperate3)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(txtSeperate4)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(txtSeperate5)))
+                        .addGap(20, 20, 20))))
         );
 
         pack();
@@ -119,7 +309,25 @@ public class DetailBarang extends java.awt.Dialog {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel lblDesc;
+    private javax.swing.JLabel lblLokasi;
+    private javax.swing.JLabel lblNamaBarang;
+    private javax.swing.JLabel lblNamaPelapor;
+    private javax.swing.JLabel lblStatus;
+    private javax.swing.JLabel lblTanggal;
+    private javax.swing.JLabel txtDate;
+    private javax.swing.JLabel txtDesc;
     private javax.swing.JLabel txtFoto;
     private javax.swing.JLabel txtHeader;
+    private javax.swing.JLabel txtLokasi;
+    private javax.swing.JLabel txtNamaBarang;
+    private javax.swing.JLabel txtNamaPelapor;
+    private javax.swing.JLabel txtSeperate;
+    private javax.swing.JLabel txtSeperate1;
+    private javax.swing.JLabel txtSeperate2;
+    private javax.swing.JLabel txtSeperate3;
+    private javax.swing.JLabel txtSeperate4;
+    private javax.swing.JLabel txtSeperate5;
+    private javax.swing.JLabel txtStatus;
     // End of variables declaration//GEN-END:variables
 }
