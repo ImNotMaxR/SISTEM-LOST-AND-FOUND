@@ -2,20 +2,20 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-package com.frame;
+package com.frame.dashboard;
 
 /**
  *
  * @author Evan
  */
-public class Dashboard_Dosen extends javax.swing.JFrame {
+public class DashboardSecurity extends javax.swing.JFrame {
     
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Dashboard_Dosen.class.getName());
+    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(DashboardSecurity.class.getName());
 
     /**
-     * Creates new form Dashboard_Dosen
+     * Creates new form Dashboard_Security
      */
-    public Dashboard_Dosen() {
+    public DashboardSecurity() {
         initComponents();
     }
 
@@ -29,7 +29,7 @@ public class Dashboard_Dosen extends javax.swing.JFrame {
     private void initComponents() {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Dashboard Dosen");
+        setTitle("Dashboard Security");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -68,7 +68,7 @@ public class Dashboard_Dosen extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new Dashboard_Dosen().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> new DashboardSecurity().setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

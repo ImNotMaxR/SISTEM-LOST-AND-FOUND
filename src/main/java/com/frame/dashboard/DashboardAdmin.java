@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-package com.frame;
+package com.frame.dashboard;
 
 import com.dialog.DetailBarang;
 import com.managers.ReportManager;
@@ -18,13 +18,13 @@ import javax.swing.table.DefaultTableModel;
  *
  * @author Evan
  */
-public class Dashboard_Admin extends javax.swing.JFrame {
+public class DashboardAdmin extends javax.swing.JFrame {
     
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Dashboard_Admin.class.getName());
+    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(DashboardAdmin.class.getName());
 
     private ReportManager reportManager;
     
-    public Dashboard_Admin(ReportManager reportManager) {
+    public DashboardAdmin(ReportManager reportManager) {
         initComponents();
         this.reportManager = reportManager;
         initFoundReport();
@@ -63,7 +63,7 @@ public class Dashboard_Admin extends javax.swing.JFrame {
                     for (Report r : reportManager.getValidReports()) {
                         if (r instanceof FoundReport) {
                             if (no == (int) tblFound.getValueAt(row, 0)) {
-                                DetailBarang dialog = new DetailBarang(Dashboard_Admin.this, (FoundReport) r);
+                                DetailBarang dialog = new DetailBarang(DashboardAdmin.this, (FoundReport) r);
                                 dialog.setVisible(true);
                                 break;
                             }
@@ -233,7 +233,7 @@ public class Dashboard_Admin extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> {ReportManager rm = new ReportManager(); new Dashboard_Admin(rm).setVisible(true);
+        java.awt.EventQueue.invokeLater(() -> {ReportManager rm = new ReportManager(); new DashboardAdmin(rm).setVisible(true);
 });
     }
 
