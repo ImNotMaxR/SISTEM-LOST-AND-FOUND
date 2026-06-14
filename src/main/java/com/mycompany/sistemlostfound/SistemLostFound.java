@@ -18,10 +18,10 @@ public class SistemLostFound {
             return;
         }
         System.out.println("Koneksi database sukses.");
- 
+        
         // 2. Inisialisasi database (buat tabel + data dummy jika belum ada)
-//        DBInitializer initializer = new DBInitializer();
-//        initializer.initialize();
+        DBInitializer initializer = new DBInitializer();
+        initializer.initialize();
  
         // 3. Jalankan aplikasi
         AuthService authService = new AuthService();

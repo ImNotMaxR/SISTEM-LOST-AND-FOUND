@@ -10,7 +10,6 @@ public class StorageRecord {
     private Security storedBy;
     private String storageLocation;
     public LocalDateTime dateStored;
-    
     private boolean isReleased;
     private LocalDateTime dateReleased;
 
@@ -43,24 +42,56 @@ public class StorageRecord {
     public LocalDateTime getDateStored() {
         return dateStored;
     }
+    
+    public LocalDateTime getDateReleased() {
+        return dateReleased;
+    }
 
     public void setStorageLocation(String storageLocation) {
         this.storageLocation = storageLocation;
     }
     
-    void storeItem(){
+    public void storeItem() {
+        item.updateStatus(ItemStatus.DITEMUKAN);
+        System.out.println("Item " + item.getName() + " disimpan di " + storageLocation + " oleh " + storedBy.getName());
     }
     
-    void releaseItem(){
+    public boolean isReleased() {
+        return isReleased;
+    }
+     
+    public void releaseItem() {
+        if (isReleased) {
+            System.out.println("Item " + item.getName() + " sudah diambil pada " + dateReleased.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")) + ". Tidak bisa diambil lagi.");
+            return;
+        }
+ 
+        if (item.getStatus() != ItemStatus.DIKLAIM) {
+            System.out.println("Gagal. Item " + item.getName() + " belum berstatus DIKLAIM. Pastikan klaim sudah disetujui Admin.");
+            return;
+        }
+ 
+        this.isReleased   = true;
+        this.dateReleased = LocalDateTime.now();
+        System.out.println("Item " + item.getName() + " berhasil diambil dari storage pada " + dateReleased.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")));
     }
     
-    public void displayStorage(){
+    public void displayStorage() {
+        System.out.println("===== Storage Record =====");
+        System.out.println("Record ID    : " + recordId);
+        System.out.println("Item         : " + item.getName());
+        System.out.println("Kategori     : " + (item.getCategory() != null ? item.getCategory().getName() : "-"));
+        System.out.println("Status Item  : " + item.getStatus());
+        System.out.println("Lokasi Simpan: " + storageLocation);
+        System.out.println("Disimpan oleh: " + storedBy.getName());
+        System.out.println("Tgl Masuk    : " + dateStored.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")));
+        System.out.println("Status       : " + (isReleased? "Sudah diambil pada " + dateReleased.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")): "Masih disimpan"));
+        System.out.println("==========================");
     }
 
     @Override
     public String toString() {
-        return null;
+        return "StorageRecord{recordId='" + recordId + "', item='" + item.getName() + "', location='" + storageLocation + "', isReleased=" + isReleased + "}";
     }
-    
-    
+
 }

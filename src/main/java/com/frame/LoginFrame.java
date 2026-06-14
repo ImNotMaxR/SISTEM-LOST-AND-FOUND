@@ -4,6 +4,7 @@
  */
 package com.frame;
 
+import com.managers.ReportManager;
 import com.model.Admin;
 import com.model.Dosen;
 import com.model.Mahasiswa;
@@ -119,7 +120,8 @@ public class LoginFrame extends javax.swing.JFrame {
             if (user instanceof Admin) {
                 JOptionPane.showMessageDialog(rootPane, "Selamat Datang " + user.getName());
             
-                Dashboard_Admin dAdmin = new Dashboard_Admin();
+                ReportManager rm = new ReportManager();
+                Dashboard_Admin dAdmin = new Dashboard_Admin(rm);
                 dAdmin.setVisible(true);
 
                 dispose();
