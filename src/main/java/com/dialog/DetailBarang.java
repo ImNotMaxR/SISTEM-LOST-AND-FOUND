@@ -31,7 +31,7 @@ public class DetailBarang extends java.awt.Dialog {
         if (photoPath != null && !photoPath.isEmpty()) {
             String fullPath = System.getProperty("user.dir") + "\\uploads\\" + photoPath;
 
-            System.out.println("Full path: " + fullPath);
+            System.out.println("Full : " + fullPath);
 
             java.io.File file = new java.io.File(fullPath);
             if (file.exists()) {
