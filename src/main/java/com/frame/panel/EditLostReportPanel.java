@@ -725,7 +725,6 @@ public class EditLostReportPanel extends JDialog {
                     g2.drawString(hoverText, (width - textW) / 2, (height + textH) / 2);
                 }
             }
-
             g2.dispose();
         }
     }

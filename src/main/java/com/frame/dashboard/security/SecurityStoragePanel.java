@@ -15,7 +15,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class SecurityStoragePanel extends JPanel {
-
     private final StorageManager storageManager;
     private final ClaimManager claimManager;
     private final String securityId;
