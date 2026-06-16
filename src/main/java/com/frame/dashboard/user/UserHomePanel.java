@@ -1,7 +1,6 @@
 package com.frame.dashboard.user;
 
 import com.enumeration.ItemStatus;
-import com.managers.ClaimManager;
 import com.managers.ReportManager;
 import com.model.FoundReport;
 import com.model.LostReport;
@@ -19,43 +18,50 @@ import javax.swing.JPanel;
 
 public class UserHomePanel extends JPanel {
 
-    public UserHomePanel(User user, ReportManager reportManager, ClaimManager claimManager) {
+    private static final String HEADER_SUBTITLE = "Sistem Informasi Lost & Found Kampus";
+    private static final String LOST_SECTION_TITLE = "List Barang Hilang";
+    private static final String EMPTY_LOST_REPORT_MESSAGE = "Belum Ada Laporan Barang Hilang.";
+    private static final int RECENT_REPORT_LIMIT = 6;
+
+    public UserHomePanel(User user, ReportManager reportManager) {
+        configurePanel();
+        add(UserDashboardComponents.scroll(createContent(user, reportManager)), BorderLayout.CENTER);
+    }
+
+    private void configurePanel() {
         setLayout(new BorderLayout());
         setBackground(UserDashboardComponents.SURFACE);
         setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+    }
 
+    private JPanel createContent(User user, ReportManager reportManager) {
         JPanel content = new JPanel(new GridBagLayout());
         content.setOpaque(false);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.NORTHWEST;
-
+        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
         gbc.gridy = 0;
         content.add(createHeader(user), gbc);
 
         gbc.gridy = 1;
         gbc.insets = new Insets(26, 0, 8, 0);
-        content.add(createStats(user, reportManager), gbc);
+        content.add(createStatsPanel(user, reportManager), gbc);
 
         gbc.gridy = 2;
         gbc.insets = new Insets(16, 0, 0, 0);
         content.add(UserDashboardComponents.section(
-                "List Barang Hilang",
+                LOST_SECTION_TITLE,
                 reportManager.getLostReports().size() + " Laporan Barang Hilang Tercatat di Sistem."
         ), gbc);
 
         gbc.gridy = 3;
         gbc.insets = new Insets(12, 0, 0, 0);
-        content.add(createLostGrid(reportManager), gbc);
+        content.add(createRecentLostReportsGrid(reportManager), gbc);
 
         gbc.gridy = 4;
         gbc.weighty = 1;
         content.add(new JPanel(), gbc);
 
-        add(UserDashboardComponents.scroll(content), BorderLayout.CENTER);
+        return content;
     }
 
     private JPanel createHeader(User user) {
@@ -68,34 +74,22 @@ public class UserHomePanel extends JPanel {
         gbc.weightx = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
-        panel.add(UserDashboardComponents.label("Sistem Informasi Lost & Found Kampus", 15, Font.PLAIN, UserDashboardComponents.TEXT_MUTED), gbc);
+        panel.add(UserDashboardComponents.label(HEADER_SUBTITLE, 15, Font.PLAIN, UserDashboardComponents.TEXT_MUTED), gbc);
 
         gbc.gridy = 1;
         gbc.insets = new Insets(4, 0, 0, 0);
-        panel.add(UserDashboardComponents.label("Hello, " + displayName(user), 34, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        panel.add(UserDashboardComponents.label("Hello, " + getDisplayName(user), 34, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
 
         return panel;
     }
 
-    private JPanel createStats(User user, ReportManager reportManager) {
+    private JPanel createStatsPanel(User user, ReportManager reportManager) {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setOpaque(false);
 
-        int lostCount = reportManager.getLostReports().size();
-        int myReports = 0;
-        int foundCount = 0;
-
-        for (LostReport report : reportManager.getLostReports()) {
-            if (isMine(user, report)) {
-                myReports++;
-            }
-        }
-
-        for (FoundReport report : reportManager.getFoundReports()) {
-            if (report.getItem().getStatus() == ItemStatus.DITEMUKAN || report.isValid()) {
-                foundCount++;
-            }
-        }
+        int totalLostReports = reportManager.getLostReports().size();
+        int userReportCount = countUserReports(user, reportManager);
+        int foundItemCount = countFoundItems(reportManager);
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridy = 0;
@@ -106,7 +100,7 @@ public class UserHomePanel extends JPanel {
         gbc.gridx = 0;
         panel.add(new UserDashboardComponents.StatCard(
                 "Total Barang Hilang",
-                String.format("%02d", lostCount),
+                formatCount(totalLostReports),
                 "Seluruh Laporan Kampus",
                 UserDashboardComponents.PRIMARY_DARK,
                 UserDashboardComponents.PRIMARY
@@ -115,7 +109,7 @@ public class UserHomePanel extends JPanel {
         gbc.gridx = 1;
         panel.add(new UserDashboardComponents.StatCard(
                 "Laporan Saya",
-                String.format("%02d", myReports),
+                formatCount(userReportCount),
                 "Pantau Laporan Akun Ini",
                 UserDashboardComponents.PRIMARY_LIGHT,
                 new Color(126, 203, 236)
@@ -125,7 +119,7 @@ public class UserHomePanel extends JPanel {
         gbc.insets = new Insets(0, 0, 0, 0);
         panel.add(new UserDashboardComponents.StatCard(
                 "Barang Ditemukan",
-                String.format("%02d", foundCount),
+                formatCount(foundItemCount),
                 "Menunggu Proses Klaim",
                 UserDashboardComponents.ORANGE,
                 new Color(255, 159, 93)
@@ -134,16 +128,16 @@ public class UserHomePanel extends JPanel {
         return panel;
     }
 
-    private JPanel createLostGrid(ReportManager reportManager) {
+    private JPanel createRecentLostReportsGrid(ReportManager reportManager) {
         JPanel grid = UserDashboardComponents.cardGrid();
         ArrayList<LostReport> reports = reportManager.getLostReports();
 
         if (reports.isEmpty()) {
-            grid.add(UserDashboardComponents.emptyState("Belum Ada Laporan Barang Hilang."));
+            grid.add(UserDashboardComponents.emptyState(EMPTY_LOST_REPORT_MESSAGE));
             return grid;
         }
 
-        int limit = Math.min(6, reports.size());
+        int limit = Math.min(RECENT_REPORT_LIMIT, reports.size());
         for (int i = 0; i < limit; i++) {
             LostReport report = reports.get(i);
             grid.add(new UserDashboardComponents.ReportCard(report, report.getStatus().name(), UserDashboardComponents.ORANGE));
@@ -152,7 +146,31 @@ public class UserHomePanel extends JPanel {
         return grid;
     }
 
-    private String displayName(User user) {
+    private int countUserReports(User user, ReportManager reportManager) {
+        int reportCount = 0;
+        for (LostReport report : reportManager.getLostReports()) {
+            if (isMine(user, report)) {
+                reportCount++;
+            }
+        }
+        return reportCount;
+    }
+
+    private int countFoundItems(ReportManager reportManager) {
+        int foundCount = 0;
+        for (FoundReport report : reportManager.getFoundReports()) {
+            if (report.getItem().getStatus() == ItemStatus.DITEMUKAN || report.isValid()) {
+                foundCount++;
+            }
+        }
+        return foundCount;
+    }
+
+    private String formatCount(int count) {
+        return String.format("%02d", count);
+    }
+
+    private String getDisplayName(User user) {
         if (user == null || user.getName() == null || user.getName().isBlank()) {
             return "Pengguna";
         }

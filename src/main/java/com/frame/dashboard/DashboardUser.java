@@ -10,9 +10,7 @@ import com.frame.dashboard.user.UserHomePanel;
 import com.frame.dashboard.user.UserProfilePanel;
 import com.frame.dashboard.user.UserReportsPanel;
 import com.managers.ClaimManager;
-import com.managers.ItemManager;
 import com.managers.ReportManager;
-import com.managers.UserManager;
 import com.model.Mahasiswa;
 import com.model.User;
 import com.service.AuthService;
@@ -27,7 +25,6 @@ import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
 import java.util.LinkedHashMap;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -45,28 +42,48 @@ public class DashboardUser extends JFrame {
     private static final java.util.logging.Logger logger =
             java.util.logging.Logger.getLogger(DashboardUser.class.getName());
 
+    private static final String PAGE_DASHBOARD = "dashboard";
+    private static final String PAGE_REPORTS = "reports";
+    private static final String PAGE_FOUND_ITEMS = "found";
+    private static final String PAGE_LOST_ITEMS = "lost";
+    private static final String PAGE_CLAIMS = "claims";
+    private static final String PAGE_PROFILE = "profile";
+
     private final User currentUser;
     private final ReportManager reportManager;
     private final ClaimManager claimManager;
-    private final ItemManager itemManager;
-    private final UserManager userManager;
-    private final CardLayout cardLayout;
-    private final JPanel contentPanel;
-    private final LinkedHashMap<String, SidebarButton> sidebarButtons;
+    private final CardLayout contentLayout;
+    private final JPanel pageContainer;
+    private final LinkedHashMap<String, SidebarButton> navigationButtons;
 
     public DashboardUser() {
-        this.currentUser = AuthService.getCurrentUser();
+        this(AuthService.getCurrentUser());
+    }
+
+    public DashboardUser(User currentUser) {
+        this.currentUser = currentUser;
         this.reportManager = new ReportManager();
         this.claimManager = new ClaimManager();
-        this.itemManager = new ItemManager();
-        this.userManager = new UserManager();
-        this.cardLayout = new CardLayout();
-        this.contentPanel = new JPanel(cardLayout);
-        this.sidebarButtons = new LinkedHashMap<>();
+        this.contentLayout = new CardLayout();
+        this.pageContainer = new JPanel(contentLayout);
+        this.navigationButtons = new LinkedHashMap<>();
         initComponents();
     }
 
+    // =========================
+    // UI Initialization
+    // =========================
+
     private void initComponents() {
+        configureFrame();
+        setContentPane(createMainPanel());
+
+        pack();
+        setLocationRelativeTo(null);
+        showPage(PAGE_DASHBOARD);
+    }
+
+    private void configureFrame() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setTitle("Dashboard User - Sistem Lost & Found");
         setResizable(true);
@@ -77,20 +94,36 @@ public class DashboardUser extends JFrame {
         int height = Math.min(780, screenSize.height - 90);
         setPreferredSize(new Dimension(width, height));
         setMinimumSize(new Dimension(1120, 700));
-
-        JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(UserDashboardComponents.SURFACE);
-        setContentPane(root);
-
-        root.add(createSidebar(), BorderLayout.WEST);
-        root.add(createContent(), BorderLayout.CENTER);
-
-        pack();
-        setLocationRelativeTo(null);
-        showPage("dashboard");
     }
 
-    private JScrollPane createSidebar() {
+    private JPanel createMainPanel() {
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(UserDashboardComponents.SURFACE);
+        root.add(createSidebarScrollPane(), BorderLayout.WEST);
+        root.add(createPageContainer(), BorderLayout.CENTER);
+
+        return root;
+    }
+
+    // =========================
+    // Sidebar UI
+    // =========================
+
+    private JScrollPane createSidebarScrollPane() {
+        JScrollPane scrollPane = new JScrollPane(
+                createSidebarPanel(),
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+        );
+        scrollPane.setBorder(null);
+        scrollPane.setBackground(Color.WHITE);
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        scrollPane.setPreferredSize(new Dimension(248, 760));
+        applySidebarScrollStyle(scrollPane);
+        return scrollPane;
+    }
+
+    private JPanel createSidebarPanel() {
         JPanel sidebar = new JPanel(new GridBagLayout());
         sidebar.setBackground(Color.WHITE);
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UserDashboardComponents.BORDER));
@@ -112,46 +145,46 @@ public class DashboardUser extends JFrame {
 
         gbc.gridy = 2;
         gbc.insets = new Insets(0, 16, 8, 16);
-        sidebar.add(sectionLabel("UTAMA"), gbc);
+        sidebar.add(createSectionLabel("UTAMA"), gbc);
 
         gbc.gridy = 3;
         gbc.insets = new Insets(0, 8, 12, 16);
-        sidebar.add(addMenuButton("dashboard", "Dashboard"), gbc);
+        sidebar.add(createNavigationButton(PAGE_DASHBOARD, "Dashboard"), gbc);
 
         gbc.gridy = 4;
         gbc.insets = new Insets(0, 16, 8, 16);
-        sidebar.add(sectionLabel("LAPORAN"), gbc);
+        sidebar.add(createSectionLabel("LAPORAN"), gbc);
 
         gbc.gridy = 5;
         gbc.insets = new Insets(0, 8, 8, 16);
-        sidebar.add(addMenuButton("reports", "Laporan Saya"), gbc);
+        sidebar.add(createNavigationButton(PAGE_REPORTS, "Laporan Saya"), gbc);
 
         gbc.gridy = 6;
         gbc.insets = new Insets(14, 16, 8, 16);
-        sidebar.add(sectionLabel("PENCARIAN"), gbc);
+        sidebar.add(createSectionLabel("PENCARIAN"), gbc);
 
         gbc.gridy = 7;
         gbc.insets = new Insets(0, 8, 8, 16);
-        sidebar.add(addMenuButton("found", "Lihat Barang Ditemukan"), gbc);
+        sidebar.add(createNavigationButton(PAGE_FOUND_ITEMS, "Lihat Barang Ditemukan"), gbc);
 
         gbc.gridy = 8;
-        sidebar.add(addMenuButton("lost", "Lihat Barang Dicari"), gbc);
+        sidebar.add(createNavigationButton(PAGE_LOST_ITEMS, "Lihat Barang Dicari"), gbc);
 
         gbc.gridy = 9;
         gbc.insets = new Insets(14, 16, 8, 16);
-        sidebar.add(sectionLabel("KLAIM"), gbc);
+        sidebar.add(createSectionLabel("KLAIM"), gbc);
 
         gbc.gridy = 10;
         gbc.insets = new Insets(0, 8, 8, 16);
-        sidebar.add(addMenuButton("claims", "Klaim Saya"), gbc);
+        sidebar.add(createNavigationButton(PAGE_CLAIMS, "Klaim Saya"), gbc);
 
         gbc.gridy = 11;
         gbc.insets = new Insets(14, 16, 8, 16);
-        sidebar.add(sectionLabel("AKUN"), gbc);
+        sidebar.add(createSectionLabel("AKUN"), gbc);
 
         gbc.gridy = 12;
         gbc.insets = new Insets(0, 8, 8, 16);
-        sidebar.add(addMenuButton("profile", "Profil Saya"), gbc);
+        sidebar.add(createNavigationButton(PAGE_PROFILE, "Profil Saya"), gbc);
 
         gbc.gridy = 13;
         gbc.weighty = 1;
@@ -162,10 +195,10 @@ public class DashboardUser extends JFrame {
         gbc.insets = new Insets(16, 8, 22, 16);
         sidebar.add(createLogoutButton(), gbc);
 
-        JScrollPane scrollPane = new JScrollPane(sidebar, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBorder(null);
-        scrollPane.setBackground(Color.WHITE);
-        scrollPane.getViewport().setBackground(Color.WHITE);
+        return sidebar;
+    }
+
+    private void applySidebarScrollStyle(JScrollPane scrollPane) {
         JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
         verticalScrollBar.setUnitIncrement(16);
         verticalScrollBar.setPreferredSize(new Dimension(8, 0));
@@ -219,20 +252,31 @@ public class DashboardUser extends JFrame {
                 g2.dispose();
             }
         });
-        scrollPane.setPreferredSize(new Dimension(248, 760));
-        return scrollPane;
     }
 
-    private JPanel createContent() {
-        contentPanel.setBackground(UserDashboardComponents.SURFACE);
-        contentPanel.add(new UserHomePanel(currentUser, reportManager, claimManager), "dashboard");
-        contentPanel.add(new UserReportsPanel(currentUser, reportManager), "reports");
-        contentPanel.add(new FoundItemsPanel(reportManager), "found");
-        contentPanel.add(new LostItemsPanel(reportManager), "lost");
-        contentPanel.add(new UserClaimsPanel(currentUser, claimManager), "claims");
-        contentPanel.add(new UserProfilePanel(currentUser), "profile");
-        return contentPanel;
+    // =========================
+    // Page Content UI
+    // =========================
+
+    private JPanel createPageContainer() {
+        pageContainer.setBackground(UserDashboardComponents.SURFACE);
+        rebuildPages();
+        return pageContainer;
     }
+
+    private void rebuildPages() {
+        pageContainer.removeAll();
+        pageContainer.add(new UserHomePanel(currentUser, reportManager), PAGE_DASHBOARD);
+        pageContainer.add(new UserReportsPanel(currentUser, reportManager), PAGE_REPORTS);
+        pageContainer.add(new FoundItemsPanel(reportManager), PAGE_FOUND_ITEMS);
+        pageContainer.add(new LostItemsPanel(reportManager), PAGE_LOST_ITEMS);
+        pageContainer.add(new UserClaimsPanel(currentUser, claimManager), PAGE_CLAIMS);
+        pageContainer.add(new UserProfilePanel(currentUser), PAGE_PROFILE);
+    }
+
+    // =========================
+    // Sidebar Component Factories
+    // =========================
 
     private JLabel createLogoLabel() {
         JLabel logo = new JLabel();
@@ -272,25 +316,25 @@ public class DashboardUser extends JFrame {
 
         gbc.gridy = 1;
         gbc.insets = new Insets(6, 0, 0, 0);
-        card.add(UserDashboardComponents.label(displayName(), 14, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        card.add(UserDashboardComponents.label(getDisplayName(), 14, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
 
         gbc.gridy = 2;
         gbc.insets = new Insets(4, 0, 0, 0);
-        card.add(UserDashboardComponents.label(userDetail(), 12, Font.PLAIN, UserDashboardComponents.TEXT_MUTED), gbc);
+        card.add(UserDashboardComponents.label(getUserDetail(), 12, Font.PLAIN, UserDashboardComponents.TEXT_MUTED), gbc);
 
         return card;
     }
 
-    private JLabel sectionLabel(String text) {
+    private JLabel createSectionLabel(String text) {
         JLabel label = UserDashboardComponents.label(text, 11, Font.BOLD, UserDashboardComponents.TEXT_MUTED);
         label.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         return label;
     }
 
-    private SidebarButton addMenuButton(String key, String text) {
+    private SidebarButton createNavigationButton(String pageKey, String text) {
         SidebarButton button = new SidebarButton(text);
-        button.addActionListener((ActionEvent event) -> showPage(key));
-        sidebarButtons.put(key, button);
+        button.addActionListener(event -> showPage(pageKey));
+        navigationButtons.put(pageKey, button);
         return button;
     }
 
@@ -323,21 +367,32 @@ public class DashboardUser extends JFrame {
         return button;
     }
 
-    private void showPage(String key) {
-        cardLayout.show(contentPanel, key);
-        for (String menuKey : sidebarButtons.keySet()) {
-            sidebarButtons.get(menuKey).setActive(menuKey.equals(key));
+    // =========================
+    // Navigation Actions
+    // =========================
+
+    private void showPage(String pageKey) {
+        rebuildPages();
+        contentLayout.show(pageContainer, pageKey);
+        for (String menuKey : navigationButtons.keySet()) {
+            navigationButtons.get(menuKey).setActive(menuKey.equals(pageKey));
         }
+        pageContainer.revalidate();
+        pageContainer.repaint();
     }
 
-    private String displayName() {
+    // =========================
+    // User Display Helpers
+    // =========================
+
+    private String getDisplayName() {
         if (currentUser == null || currentUser.getName() == null || currentUser.getName().isBlank()) {
             return "Pengguna";
         }
         return currentUser.getName();
     }
 
-    private String userDetail() {
+    private String getUserDetail() {
         if (currentUser instanceof Mahasiswa) {
             Mahasiswa mahasiswa = (Mahasiswa) currentUser;
             if (mahasiswa.getNim() != null && !mahasiswa.getNim().isBlank()) {
@@ -347,6 +402,10 @@ public class DashboardUser extends JFrame {
 
         return currentUser != null ? currentUser.getRole().name() : "Belum Login";
     }
+
+    // =========================
+    // Application Entry Point
+    // =========================
 
     public static void main(String args[]) {
         try {
@@ -362,6 +421,10 @@ public class DashboardUser extends JFrame {
 
         java.awt.EventQueue.invokeLater(() -> new DashboardUser().setVisible(true));
     }
+
+    // =========================
+    // Custom UI Components
+    // =========================
 
     private static class SidebarButton extends JButton {
 

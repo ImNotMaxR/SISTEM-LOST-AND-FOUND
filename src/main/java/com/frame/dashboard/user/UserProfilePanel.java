@@ -15,22 +15,29 @@ import javax.swing.JPanel;
 
 public class UserProfilePanel extends JPanel {
 
+    private static final String TITLE = "Profil Saya";
+    private static final String SUBTITLE = "Informasi Akun Yang Sedang Login.";
+    private static final int PROFILE_LABEL_WIDTH = 88;
+    private static final int PROFILE_ROW_HEIGHT = 22;
+
     public UserProfilePanel(User user) {
+        configurePanel();
+        add(UserDashboardComponents.scroll(createContent(user)), BorderLayout.CENTER);
+    }
+
+    private void configurePanel() {
         setLayout(new BorderLayout());
         setBackground(UserDashboardComponents.SURFACE);
         setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+    }
 
+    private JPanel createContent(User user) {
         JPanel content = new JPanel(new GridBagLayout());
         content.setOpaque(false);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.NORTHWEST;
-
+        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
         gbc.gridy = 0;
-        content.add(UserDashboardComponents.section("Profil Saya", "Informasi Akun Yang Sedang Login."), gbc);
+        content.add(UserDashboardComponents.section(TITLE, SUBTITLE), gbc);
 
         gbc.gridy = 1;
         gbc.insets = new Insets(18, 0, 0, 0);
@@ -40,7 +47,7 @@ public class UserProfilePanel extends JPanel {
         gbc.weighty = 1;
         content.add(new JPanel(), gbc);
 
-        add(UserDashboardComponents.scroll(content), BorderLayout.CENTER);
+        return content;
     }
 
     private JPanel createProfileCard(User user) {
@@ -53,42 +60,45 @@ public class UserProfilePanel extends JPanel {
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
-        gbc.weightx = 0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.WEST;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
 
-        addRow(card, gbc, 0, "Nama", user != null ? user.getName() : "-");
-        addRow(card, gbc, 1, "Username", user != null ? user.getUsername() : "-");
-        addRow(card, gbc, 2, "Role", user != null ? user.getRole().name() : "-");
-        addRow(card, gbc, 3, "User ID", user != null ? user.getUserId() : "-");
+        addProfileRow(card, gbc, 0, "Nama", user != null ? user.getName() : "-");
+        addProfileRow(card, gbc, 1, "Username", user != null ? user.getUsername() : "-");
+        addProfileRow(card, gbc, 2, "Role", user != null ? user.getRole().name() : "-");
+        addProfileRow(card, gbc, 3, "User ID", user != null ? user.getUserId() : "-");
 
         int nextRow = 4;
         if (user instanceof Mahasiswa) {
             Mahasiswa mahasiswa = (Mahasiswa) user;
-            addRow(card, gbc, nextRow++, "NIM", safe(mahasiswa.getNim()));
-            addRow(card, gbc, nextRow++, "Jurusan", safe(mahasiswa.getJurusan()));
-            addRow(card, gbc, nextRow++, "Fakultas", safe(mahasiswa.getFakultas()));
-            addRow(card, gbc, nextRow, "Kelas", safe(mahasiswa.getKelas()));
+            addProfileRow(card, gbc, nextRow++, "NIM", safe(mahasiswa.getNim()));
+            addProfileRow(card, gbc, nextRow++, "Jurusan", safe(mahasiswa.getJurusan()));
+            addProfileRow(card, gbc, nextRow++, "Fakultas", safe(mahasiswa.getFakultas()));
+            addProfileRow(card, gbc, nextRow, "Kelas", safe(mahasiswa.getKelas()));
         } else if (user instanceof Dosen) {
             Dosen dosen = (Dosen) user;
-            addRow(card, gbc, nextRow++, "NIP", safe(dosen.getNip()));
-            addRow(card, gbc, nextRow, "Bidang", safe(dosen.getBidang()));
+            addProfileRow(card, gbc, nextRow++, "NIP", safe(dosen.getNip()));
+            addProfileRow(card, gbc, nextRow, "Bidang", safe(dosen.getBidang()));
         } else if (user instanceof Staff) {
             Staff staff = (Staff) user;
-            addRow(card, gbc, nextRow++, "Staff ID", safe(staff.getStaffID()));
-            addRow(card, gbc, nextRow, "Bagian", safe(staff.getBagian()));
+            addProfileRow(card, gbc, nextRow++, "Staff ID", safe(staff.getStaffID()));
+            addProfileRow(card, gbc, nextRow, "Bagian", safe(staff.getBagian()));
         }
 
         return card;
     }
 
-    private void addRow(JPanel panel, GridBagConstraints gbc, int row, String label, String value) {
+    private void addProfileRow(JPanel panel, GridBagConstraints gbc, int row, String label, String value) {
         gbc.gridy = row;
-        gbc.insets = new Insets(row == 0 ? 0 : 18, 16, 0, 0);
+        gbc.insets = new Insets(row == 0 ? 0 : 18, 0, 0, 0);
 
-        JPanel rowPanel = new JPanel(new GridBagLayout());
-        rowPanel.setOpaque(false);
-        rowPanel.setPreferredSize(new java.awt.Dimension(360, 24));
+        panel.add(createProfileRow(label, value), gbc);
+    }
+
+    private JPanel createProfileRow(String label, String value) {
+        JPanel row = new JPanel(new GridBagLayout());
+        row.setOpaque(false);
 
         GridBagConstraints rowGbc = new GridBagConstraints();
         rowGbc.gridx = 0;
@@ -96,20 +106,22 @@ public class UserProfilePanel extends JPanel {
         rowGbc.anchor = GridBagConstraints.WEST;
         rowGbc.fill = GridBagConstraints.NONE;
         JLabel labelText = UserDashboardComponents.label(label, 13, Font.BOLD, UserDashboardComponents.TEXT_MUTED);
-        labelText.setPreferredSize(new java.awt.Dimension(88, 22));
-        rowPanel.add(labelText, rowGbc);
+        labelText.setPreferredSize(new java.awt.Dimension(PROFILE_LABEL_WIDTH, PROFILE_ROW_HEIGHT));
+        row.add(labelText, rowGbc);
 
         rowGbc.gridx = 1;
         rowGbc.insets = new Insets(0, 8, 0, 8);
         JLabel separator = UserDashboardComponents.label(":", 13, Font.BOLD, UserDashboardComponents.TEXT_MUTED);
-        separator.setPreferredSize(new java.awt.Dimension(8, 22));
-        rowPanel.add(separator, rowGbc);
+        separator.setPreferredSize(new java.awt.Dimension(8, PROFILE_ROW_HEIGHT));
+        row.add(separator, rowGbc);
 
         rowGbc.gridx = 2;
+        rowGbc.weightx = 1;
         rowGbc.insets = new Insets(0, 10, 0, 0);
-        rowPanel.add(UserDashboardComponents.label(value, 16, Font.BOLD, UserDashboardComponents.TEXT_DARK), rowGbc);
+        rowGbc.fill = GridBagConstraints.HORIZONTAL;
+        row.add(UserDashboardComponents.label(value, 16, Font.BOLD, UserDashboardComponents.TEXT_DARK), rowGbc);
 
-        panel.add(rowPanel, gbc);
+        return row;
     }
 
     private String safe(String value) {

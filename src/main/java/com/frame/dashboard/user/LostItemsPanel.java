@@ -11,39 +11,48 @@ import javax.swing.JPanel;
 
 public class LostItemsPanel extends JPanel {
 
+    private static final String TITLE = "Barang Dicari";
+    private static final String SUBTITLE = "Semua Laporan Barang Hilang yang Masih Perlu Dipantau.";
+    private static final String EMPTY_MESSAGE = "Belum Ada Barang Yang Dicari.";
+
     public LostItemsPanel(ReportManager reportManager) {
+        configurePanel();
+        add(UserDashboardComponents.scroll(createContent(reportManager)), BorderLayout.CENTER);
+    }
+
+    private void configurePanel() {
         setLayout(new BorderLayout());
         setBackground(UserDashboardComponents.SURFACE);
         setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+    }
 
+    private JPanel createContent(ReportManager reportManager) {
         JPanel content = new JPanel(new GridBagLayout());
         content.setOpaque(false);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.NORTHWEST;
-
+        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
         gbc.gridy = 0;
-        content.add(UserDashboardComponents.section("Barang Dicari", "Semua Laporan Barang Hilang yang Masih Perlu Dipantau."), gbc);
-
-        JPanel grid = UserDashboardComponents.cardGrid();
-        for (LostReport report : reportManager.getLostReports()) {
-            grid.add(new UserDashboardComponents.ReportCard(report, report.getStatus().name(), UserDashboardComponents.ORANGE));
-        }
-        if (grid.getComponentCount() == 0) {
-            grid.add(UserDashboardComponents.emptyState("Belum Ada Barang Yang Dicari."));
-        }
+        content.add(UserDashboardComponents.section(TITLE, SUBTITLE), gbc);
 
         gbc.gridy = 1;
         gbc.insets = new Insets(14, 0, 0, 0);
-        content.add(grid, gbc);
+        content.add(createLostItemsGrid(reportManager), gbc);
 
         gbc.gridy = 2;
         gbc.weighty = 1;
         content.add(new JPanel(), gbc);
 
-        add(UserDashboardComponents.scroll(content), BorderLayout.CENTER);
+        return content;
+    }
+
+    private JPanel createLostItemsGrid(ReportManager reportManager) {
+        JPanel grid = UserDashboardComponents.cardGrid();
+        for (LostReport report : reportManager.getLostReports()) {
+            grid.add(new UserDashboardComponents.ReportCard(report, report.getStatus().name(), UserDashboardComponents.ORANGE));
+        }
+        if (grid.getComponentCount() == 0) {
+            grid.add(UserDashboardComponents.emptyState(EMPTY_MESSAGE));
+        }
+        return grid;
     }
 }

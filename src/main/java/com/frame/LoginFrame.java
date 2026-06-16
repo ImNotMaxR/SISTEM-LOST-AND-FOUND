@@ -39,36 +39,46 @@ public class LoginFrame extends JFrame {
     private static final Color PRIMARY_DARK = new Color(44, 94, 173);
     private static final Color PRIMARY = new Color(21, 145, 220);
     private static final Color PRIMARY_LIGHT = new Color(75, 184, 250);
-    private static final Color SURFACE_LIGHT = new Color(189, 227, 242);
     private static final Color TEXT_DARK = new Color(31, 41, 55);
     private static final Color TEXT_MUTED = new Color(100, 116, 139);
 
-    private JTextField txtUsername;
-    private JPasswordField txtPassword;
-    private JButton btnLogin;
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JButton loginButton;
 
     public LoginFrame() {
         initComponents();
     }
 
+    // =========================
+    // UI Initialization
+    // =========================
+
     private void initComponents() {
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setTitle("Login - Sistem Lost & Found");
-        setMinimumSize(new Dimension(920, 560));
-        setResizable(false);
-
-        JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(Color.WHITE);
-        setContentPane(root);
-
-        root.add(createBrandWrapper(), BorderLayout.WEST);
-        root.add(createFormPanel(), BorderLayout.CENTER);
+        configureFrame();
+        setContentPane(createMainPanel());
 
         pack();
         setLocationRelativeTo(null);
     }
 
-    private JPanel createBrandWrapper() {
+    private void configureFrame() {
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setTitle("Login - Sistem Lost & Found");
+        setMinimumSize(new Dimension(920, 560));
+        setResizable(false);
+    }
+
+    private JPanel createMainPanel() {
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(Color.WHITE);
+        root.add(createBrandSection(), BorderLayout.WEST);
+        root.add(createLoginSection(), BorderLayout.CENTER);
+
+        return root;
+    }
+
+    private JPanel createBrandSection() {
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setBackground(Color.WHITE);
         wrapper.setBorder(BorderFactory.createEmptyBorder(22, 24, 22, 24));
@@ -80,12 +90,12 @@ public class LoginFrame extends JFrame {
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 1;
         gbc.weighty = 1;
-        wrapper.add(createBrandPanel(), gbc);
+        wrapper.add(createBrandCard(), gbc);
 
         return wrapper;
     }
 
-    private JPanel createBrandPanel() {
+    private JPanel createBrandCard() {
         RoundedGradientPanel panel = new RoundedGradientPanel(PRIMARY_DARK, PRIMARY_LIGHT, 28);
         panel.setLayout(new GridBagLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(44, 46, 44, 46));
@@ -118,58 +128,26 @@ public class LoginFrame extends JFrame {
         return panel;
     }
 
-    private JLabel createLogoLabel(int width, int height) {
-        JLabel logo = new JLabel();
-        java.net.URL logoUrl = getClass().getResource("/assets/icon-lost-found.png");
-
-        if (logoUrl != null) {
-            ImageIcon originalIcon = new ImageIcon(logoUrl);
-            double imageRatio = (double) originalIcon.getIconWidth() / originalIcon.getIconHeight();
-            int scaledWidth = width;
-            int scaledHeight = (int) Math.round(width / imageRatio);
-
-            if (scaledHeight > height) {
-                scaledHeight = height;
-                scaledWidth = (int) Math.round(height * imageRatio);
-            }
-
-            Image scaledImage = originalIcon.getImage().getScaledInstance(
-                    scaledWidth,
-                    scaledHeight,
-                    Image.SCALE_SMOOTH
-            );
-            logo.setIcon(new ImageIcon(scaledImage));
-        } else {
-            logo.setText("Lost & Found");
-            logo.setForeground(Color.WHITE);
-            logo.setFont(new Font("Poppins", Font.BOLD, 28));
-        }
-
-        logo.setPreferredSize(new Dimension(width, height));
-        return logo;
-    }
-
-    private void addInfoLine(JPanel panel, String text, int row) {
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(row == 0 ? 0 : 12, 0, 0, 0);
-
-        JLabel label = new JLabel(text);
-        label.setForeground(Color.WHITE);
-        label.setFont(new Font("Poppins", Font.PLAIN, 14));
-        panel.add(label, gbc);
-    }
-
-    private JPanel createFormPanel() {
+    private JPanel createLoginSection() {
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setBackground(Color.WHITE);
         wrapper.setBorder(BorderFactory.createEmptyBorder(68, 52, 54, 64));
 
+        JPanel formPanel = createLoginForm();
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        wrapper.add(formPanel, gbc);
+
+        return wrapper;
+    }
+
+    private JPanel createLoginForm() {
         JPanel form = new JPanel(new GridBagLayout());
-        form.setLayout(new GridBagLayout());
         form.setBackground(Color.WHITE);
         form.setBorder(BorderFactory.createEmptyBorder(22, 34, 22, 34));
 
@@ -205,52 +183,42 @@ public class LoginFrame extends JFrame {
         gbc.insets = new Insets(0, 0, 8, 0);
         form.add(usernameLabel, gbc);
 
-        txtUsername = createTextField();
+        usernameField = createUsernameField();
         gbc.gridy = 4;
         gbc.insets = new Insets(0, 0, 24, 0);
-        form.add(txtUsername, gbc);
+        form.add(usernameField, gbc);
 
         JLabel passwordLabel = createFieldLabel("Password");
         gbc.gridy = 5;
         gbc.insets = new Insets(0, 0, 8, 0);
         form.add(passwordLabel, gbc);
 
-        txtPassword = createPasswordField();
-        txtPassword.addActionListener(this::btnLoginActionPerformed);
+        passwordField = createPasswordField();
+        passwordField.addActionListener(this::handleLoginAction);
         gbc.gridy = 6;
         gbc.insets = new Insets(0, 0, 40, 0);
-        form.add(txtPassword, gbc);
+        form.add(passwordField, gbc);
 
-        btnLogin = createLoginButton();
-        btnLogin.addActionListener(this::btnLoginActionPerformed);
+        loginButton = createLoginButton();
+        loginButton.addActionListener(this::handleLoginAction);
         gbc.gridy = 7;
         gbc.insets = new Insets(0, 0, 28, 0);
-        form.add(btnLogin, gbc);
+        form.add(loginButton, gbc);
 
-        JPanel line = new JPanel();
-        line.setBackground(new Color(203, 213, 225));
-        line.setPreferredSize(new Dimension(360, 1));
         gbc.gridy = 8;
         gbc.insets = new Insets(0, 0, 18, 0);
-        form.add(line, gbc);
+        form.add(createDivider(), gbc);
 
-        JLabel hint = new JLabel("Pastikan database sudah berjalan sebelum login.");
-        hint.setForeground(TEXT_MUTED);
-        hint.setFont(new Font("Poppins", Font.PLAIN, 13));
         gbc.gridy = 9;
         gbc.insets = new Insets(0, 0, 0, 0);
-        form.add(hint, gbc);
+        form.add(createLoginHint(), gbc);
 
-        GridBagConstraints wrapperGbc = new GridBagConstraints();
-        wrapperGbc.gridx = 0;
-        wrapperGbc.gridy = 0;
-        wrapperGbc.fill = GridBagConstraints.BOTH;
-        wrapperGbc.weightx = 1;
-        wrapperGbc.weighty = 1;
-        wrapper.add(form, wrapperGbc);
-
-        return wrapper;
+        return form;
     }
+
+    // =========================
+    // UI Component Factories
+    // =========================
 
     private JLabel createFieldLabel(String text) {
         JLabel label = new JLabel(text);
@@ -259,19 +227,19 @@ public class LoginFrame extends JFrame {
         return label;
     }
 
-    private JTextField createTextField() {
+    private JTextField createUsernameField() {
         JTextField field = new RoundedTextField(18, "Username SSO *tanpa @student.telkomuniversity.ac.id");
-        styleInput(field);
+        applyInputStyle(field);
         return field;
     }
 
     private JPasswordField createPasswordField() {
         JPasswordField field = new RoundedPasswordField(18, "Password SSO");
-        styleInput(field);
+        applyInputStyle(field);
         return field;
     }
 
-    private void styleInput(JTextField field) {
+    private void applyInputStyle(JTextField field) {
         field.setPreferredSize(new Dimension(360, 44));
         field.setFont(new Font("Poppins", Font.PLAIN, 14));
         field.setForeground(TEXT_DARK);
@@ -282,6 +250,37 @@ public class LoginFrame extends JFrame {
                 BorderFactory.createEmptyBorder(9, 14, 9, 14)
         ));
         field.setOpaque(false);
+    }
+
+    private JLabel createLogoLabel(int width, int height) {
+        JLabel logo = new JLabel();
+        java.net.URL logoUrl = getClass().getResource("/assets/icon-lost-found.png");
+
+        if (logoUrl != null) {
+            ImageIcon originalIcon = new ImageIcon(logoUrl);
+            double imageRatio = (double) originalIcon.getIconWidth() / originalIcon.getIconHeight();
+            int scaledWidth = width;
+            int scaledHeight = (int) Math.round(width / imageRatio);
+
+            if (scaledHeight > height) {
+                scaledHeight = height;
+                scaledWidth = (int) Math.round(height * imageRatio);
+            }
+
+            Image scaledImage = originalIcon.getImage().getScaledInstance(
+                    scaledWidth,
+                    scaledHeight,
+                    Image.SCALE_SMOOTH
+            );
+            logo.setIcon(new ImageIcon(scaledImage));
+        } else {
+            logo.setText("Lost & Found");
+            logo.setForeground(Color.WHITE);
+            logo.setFont(new Font("Poppins", Font.BOLD, 28));
+        }
+
+        logo.setPreferredSize(new Dimension(width, height));
+        return logo;
     }
 
     private JButton createLoginButton() {
@@ -297,17 +296,35 @@ public class LoginFrame extends JFrame {
         return button;
     }
 
-    private void btnLoginActionPerformed(ActionEvent evt) {
-        String username = txtUsername.getText().trim();
-        String password = new String(txtPassword.getPassword());
+    private JPanel createDivider() {
+        JPanel divider = new JPanel();
+        divider.setBackground(new Color(203, 213, 225));
+        divider.setPreferredSize(new Dimension(360, 1));
+        return divider;
+    }
+
+    private JLabel createLoginHint() {
+        JLabel hint = new JLabel("Pastikan database sudah berjalan sebelum login.");
+        hint.setForeground(TEXT_MUTED);
+        hint.setFont(new Font("Poppins", Font.PLAIN, 13));
+        return hint;
+    }
+
+    // =========================
+    // Login Actions
+    // =========================
+
+    private void handleLoginAction(ActionEvent evt) {
+        String username = usernameField.getText().trim();
+        String password = new String(passwordField.getPassword());
 
         if (username.isEmpty() || password.isEmpty()) {
-            AppDialog.warning(rootPane, "Login Belum Lengkap", "Username dan password wajib diisi.");
+            AppDialog.warning(rootPane, "Login Belum Lengkap", "Username dan Password Wajib diisi.");
             return;
         }
 
-        btnLogin.setEnabled(false);
-        btnLogin.setText("Memproses...");
+        loginButton.setEnabled(false);
+        loginButton.setText("Memproses...");
 
         try {
             User user = AuthService.login(username, password);
@@ -318,8 +335,8 @@ public class LoginFrame extends JFrame {
                 AppDialog.error(rootPane, "Login Gagal", AuthService.getLoginError());
             }
         } finally {
-            btnLogin.setEnabled(true);
-            btnLogin.setText("Login");
+            loginButton.setEnabled(true);
+            loginButton.setText("Login");
         }
     }
 
@@ -334,12 +351,16 @@ public class LoginFrame extends JFrame {
             DashboardSecurity dSecurity = new DashboardSecurity();
             dSecurity.setVisible(true);
         } else {
-            DashboardUser dUser = new DashboardUser();
+            DashboardUser dUser = new DashboardUser(user);
             dUser.setVisible(true);
         }
 
         dispose();
     }
+
+    // =========================
+    // Application Entry Point
+    // =========================
 
     public static void main(String args[]) {
         try {
@@ -355,6 +376,10 @@ public class LoginFrame extends JFrame {
 
         java.awt.EventQueue.invokeLater(() -> new LoginFrame().setVisible(true));
     }
+
+    // =========================
+    // Custom UI Components
+    // =========================
 
     private static class RoundedGradientPanel extends JPanel {
 
@@ -375,79 +400,6 @@ public class LoginFrame extends JFrame {
             g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setPaint(new java.awt.GradientPaint(0, 0, startColor, getWidth(), getHeight(), endColor));
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
-            g2.dispose();
-            super.paintComponent(g);
-        }
-    }
-
-    private static class ShadowPanel extends JPanel {
-
-        private final Color backgroundColor;
-        private final Color shadowColor;
-        private final int radius;
-        private final int shadowSize = 12;
-
-        ShadowPanel(Color backgroundColor, int radius, Color shadowColor) {
-            this.backgroundColor = backgroundColor;
-            this.radius = radius;
-            this.shadowColor = shadowColor;
-            setOpaque(false);
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            for (int i = shadowSize; i > 0; i--) {
-                int alpha = Math.max(2, 28 - (i * 2));
-                g2.setColor(new Color(
-                        shadowColor.getRed(),
-                        shadowColor.getGreen(),
-                        shadowColor.getBlue(),
-                        alpha
-                ));
-                g2.fillRoundRect(
-                        shadowSize - i,
-                        shadowSize - i + 4,
-                        getWidth() - ((shadowSize - i) * 2) - shadowSize,
-                        getHeight() - ((shadowSize - i) * 2) - shadowSize,
-                        radius + i,
-                        radius + i
-                );
-            }
-
-            g2.setColor(backgroundColor);
-            g2.fillRoundRect(
-                    shadowSize,
-                    shadowSize,
-                    getWidth() - (shadowSize * 2),
-                    getHeight() - (shadowSize * 2),
-                    radius,
-                    radius
-            );
-            g2.dispose();
-            super.paintComponent(g);
-        }
-    }
-
-    private static class RoundedPanel extends JPanel {
-
-        private final Color backgroundColor;
-        private final int radius;
-
-        RoundedPanel(Color backgroundColor, int radius) {
-            this.backgroundColor = backgroundColor;
-            this.radius = radius;
-            setOpaque(false);
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(backgroundColor);
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
             g2.dispose();
             super.paintComponent(g);

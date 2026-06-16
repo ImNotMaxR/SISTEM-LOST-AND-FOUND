@@ -59,7 +59,7 @@ public class AuthService {
             if (rs.next()) {
                 String storedPassword = rs.getString("password");
                 if (!storedPassword.equals(password)) {
-                    loginError = "Password salah";
+                    loginError = "Password Anda Salah";
                     return null;
                 }
  
@@ -71,12 +71,12 @@ public class AuthService {
                 }
                 return user;
             } else {
-                loginError = "Username tidak ditemukan.";
+                loginError = "Username Anda Tidak Ditemukan.";
                 return null;
             }
  
         } catch (SQLException e) {
-            System.out.println("Gagal login: " + e.getMessage());
+            System.out.println("Gagal Login: " + e.getMessage());
             return null;
         }
     }

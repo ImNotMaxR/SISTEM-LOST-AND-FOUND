@@ -12,23 +12,41 @@ import javax.swing.JPanel;
 
 public class UserClaimsPanel extends JPanel {
 
+    private static final String TITLE = "Klaim Saya";
+    private static final String SUBTITLE = "Pantau Status Pengajuan Klaim Barang Milikmu.";
+    private static final String EMPTY_MESSAGE = "Kamu Belum Mengajukan Klaim.";
+
     public UserClaimsPanel(User user, ClaimManager claimManager) {
+        configurePanel();
+        add(UserDashboardComponents.scroll(createContent(user, claimManager)), BorderLayout.CENTER);
+    }
+
+    private void configurePanel() {
         setLayout(new BorderLayout());
         setBackground(UserDashboardComponents.SURFACE);
         setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+    }
 
+    private JPanel createContent(User user, ClaimManager claimManager) {
         JPanel content = new JPanel(new GridBagLayout());
         content.setOpaque(false);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.NORTHWEST;
-
+        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
         gbc.gridy = 0;
-        content.add(UserDashboardComponents.section("Klaim Saya", "Pantau Status Pengajuan Klaim Barang Milikmu."), gbc);
+        content.add(UserDashboardComponents.section(TITLE, SUBTITLE), gbc);
 
+        gbc.gridy = 1;
+        gbc.insets = new Insets(14, 0, 0, 0);
+        content.add(createClaimsGrid(user, claimManager), gbc);
+
+        gbc.gridy = 2;
+        gbc.weighty = 1;
+        content.add(new JPanel(), gbc);
+
+        return content;
+    }
+
+    private JPanel createClaimsGrid(User user, ClaimManager claimManager) {
         JPanel grid = UserDashboardComponents.cardGrid();
         for (Claim claim : claimManager.getAllClaims()) {
             if (isMine(user, claim)) {
@@ -36,18 +54,9 @@ public class UserClaimsPanel extends JPanel {
             }
         }
         if (grid.getComponentCount() == 0) {
-            grid.add(UserDashboardComponents.emptyState("Kamu Belum Mengajukan Klaim."));
+            grid.add(UserDashboardComponents.emptyState(EMPTY_MESSAGE));
         }
-
-        gbc.gridy = 1;
-        gbc.insets = new Insets(14, 0, 0, 0);
-        content.add(grid, gbc);
-
-        gbc.gridy = 2;
-        gbc.weighty = 1;
-        content.add(new JPanel(), gbc);
-
-        add(UserDashboardComponents.scroll(content), BorderLayout.CENTER);
+        return grid;
     }
 
     private boolean isMine(User user, Claim claim) {

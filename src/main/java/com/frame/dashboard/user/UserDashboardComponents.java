@@ -37,6 +37,16 @@ import com.model.Report;
 
 public final class UserDashboardComponents {
 
+    private static final String FONT_FAMILY = "Poppins";
+    private static final String EMPTY_TEXT = "-";
+    private static final String TEXT_SEPARATOR = " - ";
+    private static final DateTimeFormatter DISPLAY_DATE_FORMAT = DateTimeFormatter.ofPattern("dd MMM yyyy");
+    private static final Dimension REPORT_CARD_SIZE = new Dimension(320, 360);
+    private static final Dimension CLAIM_CARD_SIZE = new Dimension(370, 190);
+    private static final Dimension PHOTO_SIZE = new Dimension(320, 220);
+    private static final Dimension CARD_PHOTO_SIZE = new Dimension(320, 160);
+    private static final Dimension PHOTO_MINIMUM_SIZE = new Dimension(280, 160);
+
     public static final Color PRIMARY_DARK = new Color(44, 94, 173);
     public static final Color PRIMARY = new Color(21, 145, 220);
     public static final Color PRIMARY_LIGHT = new Color(75, 184, 250);
@@ -49,16 +59,20 @@ public final class UserDashboardComponents {
     private UserDashboardComponents() {
     }
 
+    // =========================
+    // Basic Factories
+    // =========================
+
     public static JLabel label(String text, int size, int style, Color color) {
         JLabel label = new JLabel(text);
-        label.setFont(new Font("Poppins", style, size));
+        label.setFont(new Font(FONT_FAMILY, style, size));
         label.setForeground(color);
         return label;
     }
 
     public static JTextArea paragraph(String text, int size) {
-        JTextArea area = new JTextArea(text == null || text.isBlank() ? "-" : text);
-        area.setFont(new Font("Poppins", Font.PLAIN, size));
+        JTextArea area = new JTextArea(text == null || text.isBlank() ? EMPTY_TEXT : text);
+        area.setFont(new Font(FONT_FAMILY, Font.PLAIN, size));
         area.setForeground(TEXT_MUTED);
         area.setOpaque(false);
         area.setEditable(false);
@@ -71,8 +85,14 @@ public final class UserDashboardComponents {
     public static JScrollPane scroll(Component content) {
         JScrollPane scrollPane = new JScrollPane(content);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setViewportBorder(BorderFactory.createEmptyBorder(0, 0, 0, 18));
         scrollPane.getViewport().setBackground(SURFACE);
         scrollPane.setBackground(SURFACE);
+        applyScrollBarStyle(scrollPane);
+        return scrollPane;
+    }
+
+    private static void applyScrollBarStyle(JScrollPane scrollPane) {
         JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
         verticalScrollBar.setUnitIncrement(16);
         verticalScrollBar.setPreferredSize(new Dimension(8, 0));
@@ -126,7 +146,6 @@ public final class UserDashboardComponents {
                 g2.dispose();
             }
         });
-        return scrollPane;
     }
 
     public static JPanel section(String title, String subtitle) {
@@ -154,6 +173,15 @@ public final class UserDashboardComponents {
         return panel;
     }
 
+    public static GridBagConstraints contentConstraints() {
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        return gbc;
+    }
+
     public static JPanel emptyState(String text) {
         RoundedPanel panel = new RoundedPanel(Color.WHITE, 20);
         panel.setLayout(new GridBagLayout());
@@ -165,18 +193,22 @@ public final class UserDashboardComponents {
         return panel;
     }
 
+    // =========================
+    // Text Helpers
+    // =========================
+
     public static String date(Report report) {
         if (report == null || report.getDate() == null) {
-            return "-";
+            return EMPTY_TEXT;
         }
-        return report.getDate().format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
+        return report.getDate().format(DISPLAY_DATE_FORMAT);
     }
 
     public static String date(Claim claim) {
         if (claim == null || claim.getDateClaim() == null) {
-            return "-";
+            return EMPTY_TEXT;
         }
-        return claim.getDateClaim().format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
+        return claim.getDateClaim().format(DISPLAY_DATE_FORMAT);
     }
 
     public static String category(Report report) {
@@ -193,8 +225,12 @@ public final class UserDashboardComponents {
         if (report instanceof FoundReport) {
             return ((FoundReport) report).getFoundLocation();
         }
-        return report != null && report.getItem() != null ? report.getItem().getLocation() : "-";
+        return report != null && report.getItem() != null ? report.getItem().getLocation() : EMPTY_TEXT;
     }
+
+    // =========================
+    // Base Components
+    // =========================
 
     public static JButton plainButton(String text) {
         JButton button = new JButton(text);
@@ -287,6 +323,10 @@ public final class UserDashboardComponents {
         }
     }
 
+    // =========================
+    // Dashboard Cards
+    // =========================
+
     public static class StatCard extends GradientPanel {
 
         public StatCard(String title, String value, String subtitle, Color start, Color end) {
@@ -295,11 +335,7 @@ public final class UserDashboardComponents {
             setLayout(new GridBagLayout());
             setBorder(BorderFactory.createEmptyBorder(18, 22, 16, 22));
 
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.gridx = 0;
-            gbc.weightx = 1;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            gbc.anchor = GridBagConstraints.WEST;
+            GridBagConstraints gbc = createHorizontalConstraints();
 
             gbc.gridy = 0;
             add(label(title, 15, Font.BOLD, Color.WHITE), gbc);
@@ -316,21 +352,17 @@ public final class UserDashboardComponents {
 
         public ReportCard(Report report, String statusText, Color statusColor) {
             super(Color.WHITE, 20);
-            setPreferredSize(new Dimension(320, 360));
+            setPreferredSize(REPORT_CARD_SIZE);
             setLayout(new GridBagLayout());
             setBorder(BorderFactory.createCompoundBorder(
                     new RoundedLineBorder(BORDER, 22, 1),
                     BorderFactory.createEmptyBorder(12, 12, 12, 12)
             ));
 
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.gridx = 0;
-            gbc.weightx = 1;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            gbc.anchor = GridBagConstraints.WEST;
+            GridBagConstraints gbc = createHorizontalConstraints();
 
             gbc.gridy = 0;
-            add(new PhotoPanel(report), gbc);
+            add(new PhotoPanel(report, CARD_PHOTO_SIZE), gbc);
 
             gbc.gridy = 1;
             gbc.insets = new Insets(8, 0, 0, 0);
@@ -338,7 +370,7 @@ public final class UserDashboardComponents {
 
             gbc.gridy = 2;
             gbc.insets = new Insets(2, 0, 0, 0);
-            add(label(report.getReportId() + " • " + category(report) + " • " + date(report), 13, Font.PLAIN, TEXT_MUTED), gbc);
+            add(label(report.getReportId() + TEXT_SEPARATOR + category(report) + TEXT_SEPARATOR + date(report), 13, Font.PLAIN, TEXT_MUTED), gbc);
 
             gbc.gridy = 3;
             gbc.insets = new Insets(10, 0, 0, 0);
@@ -348,16 +380,11 @@ public final class UserDashboardComponents {
             gbc.insets = new Insets(12, 0, 0, 0);
             add(label("Lokasi: " + location(report), 13, Font.PLAIN, TEXT_MUTED), gbc);
 
-            RoundedPanel badge = new RoundedPanel(new Color(statusColor.getRed(), statusColor.getGreen(), statusColor.getBlue(), 24), 18);
-            badge.setLayout(new GridBagLayout());
-            badge.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
-            badge.add(label(statusText, 12, Font.BOLD, statusColor));
-
             gbc.gridy = 5;
             gbc.fill = GridBagConstraints.NONE;
             gbc.anchor = GridBagConstraints.EAST;
             gbc.insets = new Insets(10, 0, 0, 0);
-            add(badge, gbc);
+            add(createStatusBadge(statusText, statusColor), gbc);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             addMouseListener(new MouseAdapter() {
                 @Override
@@ -380,24 +407,20 @@ public final class UserDashboardComponents {
 
         public ClaimCard(Claim claim) {
             super(Color.WHITE, 22);
-            setPreferredSize(new Dimension(370, 190));
+            setPreferredSize(CLAIM_CARD_SIZE);
             setLayout(new GridBagLayout());
             setBorder(BorderFactory.createCompoundBorder(
                     new RoundedLineBorder(BORDER, 22, 1),
                     BorderFactory.createEmptyBorder(18, 18, 18, 18)
             ));
 
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.gridx = 0;
-            gbc.weightx = 1;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            gbc.anchor = GridBagConstraints.WEST;
+            GridBagConstraints gbc = createHorizontalConstraints();
 
             gbc.gridy = 0;
             add(label(claim.getItem().getName(), 19, Font.BOLD, TEXT_DARK), gbc);
             gbc.gridy = 1;
             gbc.insets = new Insets(5, 0, 0, 0);
-            add(label(claim.getClaimId() + " • " + date(claim), 13, Font.PLAIN, TEXT_MUTED), gbc);
+            add(label(claim.getClaimId() + TEXT_SEPARATOR + date(claim), 13, Font.PLAIN, TEXT_MUTED), gbc);
             gbc.gridy = 2;
             gbc.insets = new Insets(14, 0, 0, 0);
             add(label("Status klaim: " + claim.getStatus(), 14, Font.BOLD, PRIMARY_DARK), gbc);
@@ -407,20 +430,45 @@ public final class UserDashboardComponents {
         }
     }
 
+    private static GridBagConstraints createHorizontalConstraints() {
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+        return gbc;
+    }
+
+    private static RoundedPanel createStatusBadge(String statusText, Color statusColor) {
+        RoundedPanel badge = new RoundedPanel(new Color(statusColor.getRed(), statusColor.getGreen(), statusColor.getBlue(), 24), 18);
+        badge.setLayout(new GridBagLayout());
+        badge.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        badge.add(label(statusText, 12, Font.BOLD, statusColor));
+        return badge;
+    }
+
+    // =========================
+    // Image Components
+    // =========================
+
     public static class PhotoPanel extends JPanel {
 
         private final Report report;
         private final boolean showTitleOverlay;
 
         PhotoPanel(Report report) {
-            this(report, false);
+            this(report, false, PHOTO_SIZE);
         }
 
-        public PhotoPanel(Report report, boolean showTitleOverlay) {
+        public PhotoPanel(Report report, Dimension size) {
+            this(report, false, size);
+        }
+
+        public PhotoPanel(Report report, boolean showTitleOverlay, Dimension size) {
             this.report = report;
             this.showTitleOverlay = showTitleOverlay;
-            setPreferredSize(new Dimension(320, 220));
-            setMinimumSize(new Dimension(280, 180));
+            setPreferredSize(size);
+            setMinimumSize(new Dimension(Math.min(size.width, PHOTO_MINIMUM_SIZE.width), Math.min(size.height, PHOTO_MINIMUM_SIZE.height)));
             setOpaque(true);
         }
 
@@ -429,11 +477,12 @@ public final class UserDashboardComponents {
             super.paintComponent(g);
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 
             java.awt.geom.RoundRectangle2D round = new java.awt.geom.RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 16, 16);
             g2.setClip(round);
 
-            String path = report.getPhotoPath();
+            String path = report != null ? report.getPhotoPath() : null;
             if (path != null && !path.isBlank() && new File(path).exists()) {
                 Image image = new ImageIcon(path).getImage();
                 int imgW = image.getWidth(this);
@@ -442,7 +491,7 @@ public final class UserDashboardComponents {
                     g2.setColor(new Color(239, 246, 252));
                     g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
 
-                    double scale = Math.max((double) getWidth() / imgW, (double) getHeight() / imgH);
+                    double scale = Math.min(1.0, Math.min((double) getWidth() / imgW, (double) getHeight() / imgH));
                     int drawW = (int) Math.round(imgW * scale);
                     int drawH = (int) Math.round(imgH * scale);
                     int x = (getWidth() - drawW) / 2;
