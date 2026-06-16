@@ -1,5 +1,6 @@
 package com.frame.dashboard.user;
 
+import com.frame.AppDialog;
 import com.frame.panel.LostReportPanel;
 import com.managers.ReportManager;
 import com.model.LostReport;
@@ -24,6 +25,10 @@ public class UserReportsPanel extends JPanel {
     private static final String TITLE = "Laporan Saya";
     private static final String SUBTITLE = "Daftar Laporan Barang Hilang Yang Dibuat Oleh Akun Ini.";
     private static final String EMPTY_MESSAGE = "Kamu Belum Memiliki Laporan.";
+    private static final Color DELETE = new Color(220, 38, 38);
+    private static final Color DELETE_HOVER = new Color(185, 28, 28);
+    private static final Dimension ADD_BUTTON_SIZE = new Dimension(168, 40);
+    private static final Dimension DELETE_BUTTON_SIZE = new Dimension(76, 32);
 
     private final User user;
     private final ReportManager reportManager;
@@ -86,8 +91,8 @@ public class UserReportsPanel extends JPanel {
     }
 
     private JButton createAddReportButton() {
-        JButton button = new RoundedActionButton("+ Tambah Laporan");
-        button.setPreferredSize(new Dimension(168, 40));
+        JButton button = new RoundedActionButton("+ Tambah Laporan", UserDashboardComponents.PRIMARY, 18);
+        button.setPreferredSize(ADD_BUTTON_SIZE);
         button.setFont(new Font("Poppins", Font.BOLD, 13));
         button.setForeground(Color.WHITE);
         button.setBackground(UserDashboardComponents.PRIMARY_DARK);
@@ -105,13 +110,63 @@ public class UserReportsPanel extends JPanel {
         JPanel grid = UserDashboardComponents.cardGrid();
         for (LostReport report : reportManager.getLostReports()) {
             if (isMine(user, report)) {
-                grid.add(new UserDashboardComponents.ReportCard(report, report.getStatus().name(), UserDashboardComponents.PRIMARY_DARK));
+                grid.add(createReportCard(report));
             }
         }
         if (grid.getComponentCount() == 0) {
             grid.add(UserDashboardComponents.emptyState(EMPTY_MESSAGE));
         }
         return grid;
+    }
+
+    private UserDashboardComponents.ReportCard createReportCard(LostReport report) {
+        return new UserDashboardComponents.ReportCard(
+                report,
+                report.getStatus().name(),
+                UserDashboardComponents.PRIMARY_DARK,
+                createDeleteReportButton(report)
+        );
+    }
+
+    private JButton createDeleteReportButton(LostReport report) {
+        JButton button = new RoundedActionButton("Hapus", DELETE_HOVER, 16);
+        button.setPreferredSize(DELETE_BUTTON_SIZE);
+        button.setFont(new Font("Poppins", Font.BOLD, 12));
+        button.setForeground(Color.WHITE);
+        button.setBackground(DELETE);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        button.setBorder(BorderFactory.createEmptyBorder(7, 12, 7, 12));
+        button.addActionListener(event -> deleteReport(report));
+        return button;
+    }
+
+    private void deleteReport(LostReport report) {
+        if (report == null) {
+            return;
+        }
+
+        boolean confirmed = AppDialog.confirm(
+                this,
+                "Hapus Laporan",
+                "Laporan " + report.getReportId() + " akan dihapus dari sistem.",
+                "Hapus",
+                "Batal"
+        );
+        if (!confirmed) {
+            return;
+        }
+
+        reportManager.deleteReport(report.getReportId());
+        if (reportManager.findById(report.getReportId()) == null) {
+            refreshContent();
+            AppDialog.success(this, "Laporan Dihapus", "Laporan berhasil dihapus.");
+        } else {
+            AppDialog.error(this, "Gagal Menghapus", "Laporan tidak dapat dihapus.");
+        }
     }
 
     private void openLostReportPanel() {
@@ -128,8 +183,13 @@ public class UserReportsPanel extends JPanel {
 
     private static class RoundedActionButton extends JButton {
 
-        RoundedActionButton(String text) {
+        private final Color rolloverColor;
+        private final int radius;
+
+        RoundedActionButton(String text, Color rolloverColor, int radius) {
             super(text);
+            this.rolloverColor = rolloverColor;
+            this.radius = radius;
         }
 
         @Override
@@ -138,10 +198,10 @@ public class UserReportsPanel extends JPanel {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             Color background = getModel().isPressed() ? getBackground().darker() : getBackground();
             if (getModel().isRollover() && !getModel().isPressed()) {
-                background = UserDashboardComponents.PRIMARY;
+                background = rolloverColor;
             }
             g2.setColor(background);
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
             g2.dispose();
             super.paintComponent(graphics);
         }

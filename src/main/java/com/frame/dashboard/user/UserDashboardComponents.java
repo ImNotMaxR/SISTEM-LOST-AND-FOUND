@@ -46,6 +46,8 @@ public final class UserDashboardComponents {
     private static final Dimension PHOTO_SIZE = new Dimension(320, 220);
     private static final Dimension CARD_PHOTO_SIZE = new Dimension(320, 160);
     private static final Dimension PHOTO_MINIMUM_SIZE = new Dimension(280, 160);
+    private static final int CARD_ACTION_HEIGHT = 32;
+    private static final int STATUS_BADGE_MIN_WIDTH = 78;
 
     public static final Color PRIMARY_DARK = new Color(44, 94, 173);
     public static final Color PRIMARY = new Color(21, 145, 220);
@@ -351,6 +353,10 @@ public final class UserDashboardComponents {
     public static class ReportCard extends RoundedPanel {
 
         public ReportCard(Report report, String statusText, Color statusColor) {
+            this(report, statusText, statusColor, null);
+        }
+
+        public ReportCard(Report report, String statusText, Color statusColor, JButton actionButton) {
             super(Color.WHITE, 20);
             setPreferredSize(REPORT_CARD_SIZE);
             setLayout(new GridBagLayout());
@@ -381,10 +387,10 @@ public final class UserDashboardComponents {
             add(label("Lokasi: " + location(report), 13, Font.PLAIN, TEXT_MUTED), gbc);
 
             gbc.gridy = 5;
-            gbc.fill = GridBagConstraints.NONE;
-            gbc.anchor = GridBagConstraints.EAST;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.anchor = GridBagConstraints.WEST;
             gbc.insets = new Insets(10, 0, 0, 0);
-            add(createStatusBadge(statusText, statusColor), gbc);
+            add(createCardActions(statusText, statusColor, actionButton), gbc);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             addMouseListener(new MouseAdapter() {
                 @Override
@@ -400,6 +406,26 @@ public final class UserDashboardComponents {
 
         private String location(Report report) {
             return UserDashboardComponents.location(report);
+        }
+
+        private JPanel createCardActions(String statusText, Color statusColor, JButton actionButton) {
+            JPanel actions = new JPanel(new GridBagLayout());
+            actions.setOpaque(false);
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            gbc.weightx = 1;
+            gbc.anchor = GridBagConstraints.WEST;
+            actions.add(createStatusBadge(statusText, statusColor), gbc);
+
+            if (actionButton != null) {
+                gbc.gridx = 1;
+                gbc.weightx = 0;
+                gbc.anchor = GridBagConstraints.EAST;
+                gbc.insets = new Insets(0, 8, 0, 0);
+                actions.add(actionButton);
+            }
+            return actions;
         }
     }
 
@@ -442,9 +468,16 @@ public final class UserDashboardComponents {
     private static RoundedPanel createStatusBadge(String statusText, Color statusColor) {
         RoundedPanel badge = new RoundedPanel(new Color(statusColor.getRed(), statusColor.getGreen(), statusColor.getBlue(), 24), 18);
         badge.setLayout(new GridBagLayout());
-        badge.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        badge.setPreferredSize(new Dimension(calculateStatusBadgeWidth(statusText), CARD_ACTION_HEIGHT));
+        badge.setMinimumSize(badge.getPreferredSize());
+        badge.setBorder(BorderFactory.createEmptyBorder(7, 12, 7, 12));
         badge.add(label(statusText, 12, Font.BOLD, statusColor));
         return badge;
+    }
+
+    private static int calculateStatusBadgeWidth(String statusText) {
+        String safeText = statusText == null ? EMPTY_TEXT : statusText;
+        return Math.max(STATUS_BADGE_MIN_WIDTH, safeText.length() * 10 + 24);
     }
 
     // =========================
