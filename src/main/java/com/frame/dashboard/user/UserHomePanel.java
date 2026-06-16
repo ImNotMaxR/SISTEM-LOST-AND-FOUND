@@ -130,17 +130,19 @@ public class UserHomePanel extends JPanel {
 
     private JPanel createRecentLostReportsGrid(ReportManager reportManager) {
         JPanel grid = UserDashboardComponents.cardGrid();
-        ArrayList<LostReport> reports = reportManager.getLostReports();
+        ArrayList<Report> reports = reportManager.getValidReports();
 
         if (reports.isEmpty()) {
             grid.add(UserDashboardComponents.emptyState(EMPTY_LOST_REPORT_MESSAGE));
             return grid;
         }
 
+        reports.sort((r1, r2) -> r2.getDate().compareTo(r1.getDate()));
+
         int limit = Math.min(RECENT_REPORT_LIMIT, reports.size());
         for (int i = 0; i < limit; i++) {
-            LostReport report = reports.get(i);
-            grid.add(new UserDashboardComponents.ReportCard(report, report.getStatus().name(), UserDashboardComponents.ORANGE));
+            Report report = reports.get(i);
+            grid.add(new UserDashboardComponents.ReportCard(report, report.getItem().getStatus().name(), UserDashboardComponents.ORANGE));
         }
 
         return grid;

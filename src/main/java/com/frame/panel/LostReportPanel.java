@@ -9,20 +9,29 @@ import com.model.Category;
 import com.model.Item;
 import com.model.LostReport;
 import com.model.User;
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FileDialog;
+import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Stroke;
 import java.awt.Toolkit;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -35,20 +44,28 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.JDialog;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.plaf.basic.BasicScrollBarUI;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 
-public class LostReportPanel extends JFrame {
+public class LostReportPanel extends JDialog {
 
     private static final String TITLE = "Buat Laporan Barang Hilang";
-    private static final Dimension MINIMUM_FRAME_SIZE = new Dimension(720, 620);
-    private static final Dimension FIELD_SIZE = new Dimension(520, 42);
-    private static final Dimension TEXT_AREA_SIZE = new Dimension(520, 92);
-    private static final Dimension PHOTO_PREVIEW_SIZE = new Dimension(520, 220);
+    private static final String SUBTITLE = "Isi data laporan barang hilang yang ingin anda laporkan kepada kami.";
+    private static final Dimension MINIMUM_FRAME_SIZE = new Dimension(900, 650);
 
     private final User user;
     private final ReportManager reportManager;
@@ -60,12 +77,12 @@ public class LostReportPanel extends JFrame {
     private JTextArea itemDescriptionArea;
     private JTextArea reportDescriptionArea;
     private JComboBox<Category> categoryComboBox;
-    private JLabel selectedPhotoLabel;
+    
     private PhotoPreviewPanel photoPreviewPanel;
-    private JButton removePhotoButton;
     private File selectedPhotoFile;
 
     public LostReportPanel(User user, ReportManager reportManager, Runnable onReportSaved) {
+        super((java.awt.Frame) null, TITLE, true);
         this.user = user;
         this.reportManager = reportManager;
         this.itemManager = new ItemManager();
@@ -77,164 +94,361 @@ public class LostReportPanel extends JFrame {
         this(null, new ReportManager(), null);
     }
 
-    // =========================
-    // UI Initialization
-    // =========================
-
     private void initComponents() {
-        configureFrame();
+        setTitle(TITLE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setMinimumSize(MINIMUM_FRAME_SIZE);
+        setPreferredSize(new Dimension(960, 700));
+        
         setContentPane(createMainPanel());
         pack();
         setLocationRelativeTo(null);
     }
 
-    private void configureFrame() {
-        setTitle(TITLE);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setMinimumSize(MINIMUM_FRAME_SIZE);
-        setPreferredSize(calculatePreferredFrameSize());
-        setResizable(true);
-    }
-
-    private Dimension calculatePreferredFrameSize() {
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        int width = Math.min(920, screenSize.width - 160);
-        int height = Math.min(820, screenSize.height - 120);
-        return new Dimension(Math.max(MINIMUM_FRAME_SIZE.width, width), Math.max(MINIMUM_FRAME_SIZE.height, height));
-    }
-
     private JPanel createMainPanel() {
         JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(UserDashboardComponents.SURFACE);
-        root.setBorder(BorderFactory.createEmptyBorder(24, 28, 24, 28));
+        root.setBackground(new Color(248, 250, 252));
+        root.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
-        JPanel content = new JPanel(new GridBagLayout());
-        content.setOpaque(false);
+        // Header Panel
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+        headerPanel.add(UserDashboardComponents.section(TITLE, SUBTITLE), BorderLayout.WEST);
+        
+        root.add(headerPanel, BorderLayout.NORTH);
 
-        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
-        gbc.gridy = 0;
-        content.add(UserDashboardComponents.section(TITLE, "Isi data barang hilang yang ingin kamu laporkan."), gbc);
+        // Content Panel (2 Columns)
+        JPanel contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setOpaque(false);
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
 
-        gbc.gridy = 1;
-        gbc.insets = new Insets(22, 0, 0, 0);
-        content.add(createFormCard(), gbc);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weighty = 1.0;
+        
+        // Left Column: Form
+        gbc.gridx = 0;
+        gbc.weightx = 0.45;
+        gbc.insets = new Insets(0, 0, 0, 15);
+        
+        JScrollPane formScroll = new JScrollPane(createFormPanel());
+        formScroll.setBorder(BorderFactory.createEmptyBorder());
+        formScroll.setOpaque(false);
+        formScroll.getViewport().setOpaque(false);
+        formScroll.getVerticalScrollBar().setUnitIncrement(16);
+        formScroll.getVerticalScrollBar().setPreferredSize(new Dimension(8, 0));
+        formScroll.getVerticalScrollBar().setOpaque(false);
+        formScroll.getVerticalScrollBar().setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
+            @Override
+            protected void paintTrack(Graphics g, javax.swing.JComponent c, Rectangle trackBounds) {}
+            @Override
+            protected void paintThumb(Graphics g, javax.swing.JComponent c, Rectangle thumbBounds) {
+                if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) return;
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(200, 200, 200));
+                g2.fillRoundRect(thumbBounds.x + 2, thumbBounds.y + 2, thumbBounds.width - 4, thumbBounds.height - 4, 4, 4);
+                g2.dispose();
+            }
+            @Override
+            protected JButton createDecreaseButton(int orientation) { return createZeroButton(); }
+            @Override
+            protected JButton createIncreaseButton(int orientation) { return createZeroButton(); }
+            private JButton createZeroButton() {
+                JButton btn = new JButton(); btn.setPreferredSize(new Dimension(0, 0)); return btn;
+            }
+        });
+        
+        contentPanel.add(formScroll, gbc);
 
-        root.add(UserDashboardComponents.scroll(content), BorderLayout.CENTER);
+        // Right Column: Photo
+        gbc.gridx = 1;
+        gbc.weightx = 0.55;
+        gbc.insets = new Insets(0, 15, 0, 0);
+        contentPanel.add(createPhotoPanel(), gbc);
+
+        root.add(contentPanel, BorderLayout.CENTER);
+
+        // Footer Panel
+        JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        footerPanel.setOpaque(false);
+        footerPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        
+        JButton btnBatal = createSecondaryButton("Batal");
+        btnBatal.addActionListener(e -> dispose());
+        JButton btnSubmit = createPrimaryButton("Submit");
+        btnSubmit.addActionListener(e -> submitLostReport());
+        
+        footerPanel.add(btnBatal);
+        footerPanel.add(btnSubmit);
+        
+        root.add(footerPanel, BorderLayout.SOUTH);
+
         return root;
     }
 
-    private JPanel createFormCard() {
-        UserDashboardComponents.RoundedPanel card = new UserDashboardComponents.RoundedPanel(Color.WHITE, 22);
-        card.setLayout(new GridBagLayout());
-        card.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 22, 1),
-                BorderFactory.createEmptyBorder(22, 24, 22, 24)
+    private JPanel createFormPanel() {
+        UserDashboardComponents.RoundedPanel panel = new UserDashboardComponents.RoundedPanel(Color.WHITE, 20);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            new UserDashboardComponents.RoundedLineBorder(new Color(230, 230, 230), 20, 1),
+            BorderFactory.createEmptyBorder(20, 25, 20, 25)
         ));
+        panel.setLayout(new GridBagLayout());
 
-        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
 
-        itemNameField = createTextField();
-        addField(card, gbc, 0, "Nama Barang", itemNameField);
+        itemNameField = createTextField("Contoh: Tumbler Tuku", 50);
+        addField(panel, gbc, 0, "Nama barang*", itemNameField, 0.0);
 
-        itemDescriptionArea = createTextArea();
-        addField(card, gbc, 1, "Deskripsi Barang", createTextAreaScroll(itemDescriptionArea));
+        itemDescriptionArea = createTextArea("Ciri-ciri barang, warna, merek, tanda khusus", 300);
+        addField(panel, gbc, 1, "Deskripsi barang", createTextAreaScroll(itemDescriptionArea), 1.0);
 
-        lostLocationField = createTextField();
-        addField(card, gbc, 2, "Lokasi Hilang", lostLocationField);
+        lostLocationField = createTextField("Contoh: Lab Komputer FIF Lt.2", 100);
+        addField(panel, gbc, 2, "Lokasi hilang", lostLocationField, 0.0);
 
-        reportDescriptionArea = createTextArea();
-        addField(card, gbc, 3, "Deskripsi Laporan", createTextAreaScroll(reportDescriptionArea));
+        reportDescriptionArea = createTextArea("Kronologi singkat kehilangan", 500);
+        addField(panel, gbc, 3, "Deskripsi laporan", createTextAreaScroll(reportDescriptionArea), 1.0);
 
         categoryComboBox = createCategoryComboBox();
-        addField(card, gbc, 4, "Kategori", categoryComboBox);
+        addField(panel, gbc, 4, "Pilih kategori", categoryComboBox, 0.0);
 
-        addField(card, gbc, 5, "Foto Barang", createPhotoPicker());
-
-        gbc.gridy = 6;
-        gbc.insets = new Insets(24, 0, 0, 0);
-        gbc.anchor = GridBagConstraints.EAST;
-        gbc.fill = GridBagConstraints.NONE;
-        card.add(createActionPanel(), gbc);
-
-        return card;
-    }
-
-    private void addField(JPanel panel, GridBagConstraints gbc, int row, String label, java.awt.Component input) {
-        gbc.gridy = row;
-        gbc.insets = new Insets(row == 0 ? 0 : 16, 0, 0, 0);
-        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.gridy = 10;
+        gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(12, 0, 0, 0);
+        JLabel noteLabel = new JLabel("*Mohon tidak membuat laporan palsu.");
+        noteLabel.setFont(new Font("Poppins", Font.PLAIN, 11));
+        noteLabel.setForeground(new Color(150, 150, 150));
+        panel.add(noteLabel, gbc);
 
-        JPanel wrapper = new JPanel(new GridBagLayout());
-        wrapper.setOpaque(false);
+        return panel;
+    }
+    
+    private void addField(JPanel panel, GridBagConstraints gbc, int row, String label, java.awt.Component input, double weighty) {
+        gbc.gridy = row * 2;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(row == 0 ? 0 : 20, 0, 6, 0);
+        JLabel titleLabel = UserDashboardComponents.label(label, 13, Font.BOLD, UserDashboardComponents.TEXT_DARK);
+        panel.add(titleLabel, gbc);
 
-        GridBagConstraints fieldGbc = UserDashboardComponents.contentConstraints();
-        fieldGbc.gridy = 0;
-        wrapper.add(UserDashboardComponents.label(label, 13, Font.BOLD, UserDashboardComponents.TEXT_MUTED), fieldGbc);
-
-        fieldGbc.gridy = 1;
-        fieldGbc.insets = new Insets(7, 0, 0, 0);
-        wrapper.add(input, fieldGbc);
-
-        panel.add(wrapper, gbc);
+        gbc.gridy = row * 2 + 1;
+        gbc.weighty = weighty;
+        gbc.fill = (weighty > 0) ? GridBagConstraints.BOTH : GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        panel.add(input, gbc);
     }
 
-    // =========================
-    // Component Factories
-    // =========================
+    private JPanel createPhotoPanel() {
+        photoPreviewPanel = new PhotoPreviewPanel(this::choosePhoto);
+        return photoPreviewPanel;
+    }
 
-    private JTextField createTextField() {
-        JTextField field = new JTextField();
-        field.setPreferredSize(FIELD_SIZE);
-        field.setFont(new Font("Poppins", Font.PLAIN, 14));
+    private JTextField createTextField(String placeholder, int limit) {
+        JTextField field = new JTextField() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (getText().isEmpty() && !isFocusOwner()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(new Color(170, 170, 170));
+                    g2.setFont(getFont());
+                    int y = (getHeight() - g.getFontMetrics().getHeight()) / 2 + g.getFontMetrics().getAscent();
+                    g2.drawString(placeholder, getInsets().left, y);
+                    g2.dispose();
+                }
+            }
+        };
+        field.setPreferredSize(new Dimension(300, 45));
+        field.setFont(new Font("Poppins", Font.PLAIN, 13));
         field.setForeground(UserDashboardComponents.TEXT_DARK);
-        field.setBackground(new Color(249, 252, 255));
+        field.setBackground(Color.WHITE);
         field.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 16, 1),
-                BorderFactory.createEmptyBorder(8, 12, 8, 12)
+                new UserDashboardComponents.RoundedLineBorder(new Color(230, 230, 230), 16, 1),
+                BorderFactory.createEmptyBorder(4, 12, 4, 12)
         ));
+        
+        field.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent e) { field.repaint(); }
+            public void focusLost(FocusEvent e) { field.repaint(); }
+        });
+        
+        ((AbstractDocument) field.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                int currentLength = fb.getDocument().getLength();
+                int overLimit = (currentLength - length + text.length()) - limit;
+                if (overLimit > 0) {
+                    text = text.substring(0, text.length() - overLimit);
+                }
+                if (text.length() > 0) {
+                    super.replace(fb, offset, length, text, attrs);
+                }
+            }
+        });
+        
         return field;
     }
 
-    private JTextArea createTextArea() {
-        JTextArea area = new JTextArea(3, 20);
+    private JTextArea createTextArea(String placeholder, int limit) {
+        JTextArea area = new JTextArea(5, 20) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (getText().isEmpty() && !isFocusOwner()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(new Color(170, 170, 170));
+                    g2.setFont(getFont());
+                    g2.drawString(placeholder, getInsets().left, g.getFontMetrics().getAscent() + getInsets().top);
+                    g2.dispose();
+                }
+            }
+        };
         area.setLineWrap(true);
         area.setWrapStyleWord(true);
-        area.setFont(new Font("Poppins", Font.PLAIN, 14));
+        area.setFont(new Font("Poppins", Font.PLAIN, 13));
         area.setForeground(UserDashboardComponents.TEXT_DARK);
-        area.setBackground(new Color(249, 252, 255));
+        area.setBackground(Color.WHITE);
         area.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        
+        area.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent e) { area.repaint(); }
+            public void focusLost(FocusEvent e) { area.repaint(); }
+        });
+        
+        ((AbstractDocument) area.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                int currentLength = fb.getDocument().getLength();
+                int overLimit = (currentLength - length + text.length()) - limit;
+                if (overLimit > 0) {
+                    text = text.substring(0, text.length() - overLimit);
+                }
+                if (text.length() > 0) {
+                    super.replace(fb, offset, length, text, attrs);
+                }
+            }
+        });
+        
         return area;
     }
 
-    private JScrollPane createTextAreaScroll(JTextArea area) {
+    private JPanel createTextAreaScroll(JTextArea area) {
         JScrollPane scrollPane = new JScrollPane(area);
-        scrollPane.setPreferredSize(TEXT_AREA_SIZE);
-        scrollPane.setBorder(new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 16, 1));
-        scrollPane.getViewport().setBackground(new Color(249, 252, 255));
-        return scrollPane;
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        
+        JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
+        verticalScrollBar.setUnitIncrement(16);
+        verticalScrollBar.setPreferredSize(new Dimension(8, 0));
+        verticalScrollBar.setOpaque(false);
+        verticalScrollBar.setUI(new BasicScrollBarUI() {
+            @Override
+            protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds) {
+                // Do not paint track to keep it transparent
+            }
+            @Override
+            protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
+                if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) return;
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(200, 200, 200));
+                g2.fillRoundRect(thumbBounds.x + 2, thumbBounds.y + 2, thumbBounds.width - 4, thumbBounds.height - 4, 4, 4);
+                g2.dispose();
+            }
+            @Override
+            protected JButton createDecreaseButton(int orientation) {
+                return createZeroButton();
+            }
+            @Override
+            protected JButton createIncreaseButton(int orientation) {
+                return createZeroButton();
+            }
+            private JButton createZeroButton() {
+                JButton button = new JButton();
+                button.setPreferredSize(new Dimension(0, 0));
+                button.setMinimumSize(new Dimension(0, 0));
+                button.setMaximumSize(new Dimension(0, 0));
+                return button;
+            }
+        });
+        
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+        wrapper.setBackground(Color.WHITE);
+        wrapper.setBorder(BorderFactory.createCompoundBorder(
+                new UserDashboardComponents.RoundedLineBorder(new Color(230, 230, 230), 16, 1),
+                BorderFactory.createEmptyBorder(2, 2, 2, 2)
+        ));
+        wrapper.setPreferredSize(new Dimension(300, 110));
+        wrapper.add(scrollPane, BorderLayout.CENTER);
+        
+        return wrapper;
     }
 
     private JComboBox<Category> createCategoryComboBox() {
         JComboBox<Category> comboBox = new JComboBox<>();
-        comboBox.setPreferredSize(FIELD_SIZE);
-        comboBox.setFont(new Font("Poppins", Font.PLAIN, 14));
+        comboBox.setPreferredSize(new Dimension(300, 45));
+        comboBox.setFont(new Font("Poppins", Font.BOLD, 13));
         comboBox.setForeground(UserDashboardComponents.TEXT_DARK);
-        comboBox.setBackground(new Color(249, 252, 255));
+        comboBox.setBackground(Color.WHITE);
         comboBox.setFocusable(false);
         comboBox.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 16, 1),
-                BorderFactory.createEmptyBorder(4, 10, 4, 10)
+                new UserDashboardComponents.RoundedLineBorder(new Color(230, 230, 230), 16, 1),
+                BorderFactory.createEmptyBorder(2, 10, 2, 0)
         ));
+        
+        comboBox.setUI(new BasicComboBoxUI() {
+            @Override
+            protected JButton createArrowButton() {
+                JButton btn = new JButton() {
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        super.paintComponent(g);
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2.setColor(UserDashboardComponents.TEXT_DARK);
+                        
+                        int w = getWidth();
+                        int h = getHeight();
+                        int[] xPoints = {w / 2 - 5, w / 2, w / 2 + 5};
+                        int[] yPoints = {h / 2 - 2, h / 2 + 3, h / 2 - 2};
+                        g2.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                        g2.drawPolyline(xPoints, yPoints, 3);
+                        g2.dispose();
+                    }
+                };
+                btn.setBorderPainted(false);
+                btn.setContentAreaFilled(false);
+                btn.setFocusPainted(false);
+                btn.setPreferredSize(new Dimension(30, 0));
+                btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                return btn;
+            }
+        });
+        
         comboBox.setRenderer((list, value, index, isSelected, cellHasFocus) -> {
             JLabel label = (JLabel) new DefaultListCellRenderer()
                     .getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             label.setFont(new Font("Poppins", Font.PLAIN, 13));
-            label.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
+            label.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+            if (isSelected) {
+                label.setBackground(new Color(240, 245, 250));
+            } else {
+                label.setBackground(Color.WHITE);
+            }
             if (value instanceof Category) {
                 Category category = (Category) value;
                 label.setText(category.getName()
-                        + (category.isVerificationRequired() ? " - butuh dokumen saat klaim" : ""));
+                        + (category.isVerificationRequired() ? " *butuh dokumen saat klaim" : ""));
             }
             return label;
         });
@@ -245,74 +459,9 @@ public class LostReportPanel extends JFrame {
         return comboBox;
     }
 
-    private JPanel createPhotoPicker() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setOpaque(false);
-
-        photoPreviewPanel = createPhotoPreviewPanel();
-        selectedPhotoLabel = UserDashboardComponents.label("Belum ada foto dipilih", 13, Font.PLAIN, UserDashboardComponents.TEXT_MUTED);
-        JButton chooseButton = createSecondaryButton("Pilih Foto");
-        chooseButton.addActionListener(event -> choosePhoto());
-        removePhotoButton = createSecondaryButton("Hapus Foto");
-        removePhotoButton.addActionListener(event -> clearPhoto());
-        removePhotoButton.setEnabled(false);
-
-        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
-        gbc.gridy = 0;
-        panel.add(photoPreviewPanel, gbc);
-
-        gbc.gridy = 1;
-        gbc.insets = new Insets(10, 0, 0, 0);
-        JPanel pickerRow = new JPanel(new BorderLayout(12, 0));
-        pickerRow.setOpaque(false);
-        JPanel buttonPanel = new JPanel(new GridBagLayout());
-        buttonPanel.setOpaque(false);
-        GridBagConstraints buttonGbc = new GridBagConstraints();
-        buttonGbc.gridx = 0;
-        buttonGbc.insets = new Insets(0, 0, 0, 8);
-        buttonPanel.add(chooseButton, buttonGbc);
-        buttonGbc.gridx = 1;
-        buttonGbc.insets = new Insets(0, 0, 0, 0);
-        buttonPanel.add(removePhotoButton, buttonGbc);
-
-        pickerRow.add(selectedPhotoLabel, BorderLayout.CENTER);
-        pickerRow.add(buttonPanel, BorderLayout.EAST);
-        panel.add(pickerRow, gbc);
-
-        return panel;
-    }
-
-    private PhotoPreviewPanel createPhotoPreviewPanel() {
-        PhotoPreviewPanel preview = new PhotoPreviewPanel();
-        preview.setPreferredSize(PHOTO_PREVIEW_SIZE);
-        preview.setMinimumSize(new Dimension(360, 180));
-        preview.setBorder(new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 18, 1));
-        return preview;
-    }
-
-    private JPanel createActionPanel() {
-        JPanel actions = new JPanel(new GridBagLayout());
-        actions.setOpaque(false);
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.insets = new Insets(0, 0, 0, 10);
-        JButton cancelButton = createSecondaryButton("Batal");
-        cancelButton.addActionListener(event -> dispose());
-        actions.add(cancelButton, gbc);
-
-        gbc.gridx = 1;
-        gbc.insets = new Insets(0, 0, 0, 0);
-        JButton submitButton = createPrimaryButton("Simpan Laporan");
-        submitButton.addActionListener(event -> submitLostReport());
-        actions.add(submitButton, gbc);
-
-        return actions;
-    }
-
     private JButton createPrimaryButton(String text) {
         JButton button = createBaseButton(text);
-        button.setBackground(UserDashboardComponents.PRIMARY_DARK);
+        button.setBackground(UserDashboardComponents.PRIMARY);
         button.setForeground(Color.WHITE);
         return button;
     }
@@ -320,10 +469,10 @@ public class LostReportPanel extends JFrame {
     private JButton createSecondaryButton(String text) {
         JButton button = createBaseButton(text);
         button.setBackground(Color.WHITE);
-        button.setForeground(UserDashboardComponents.PRIMARY_DARK);
+        button.setForeground(UserDashboardComponents.TEXT_DARK);
         button.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 16, 1),
-                BorderFactory.createEmptyBorder(8, 14, 8, 14)
+                new UserDashboardComponents.RoundedLineBorder(new Color(220, 220, 220), 20, 1),
+                BorderFactory.createEmptyBorder(8, 20, 8, 20)
         ));
         return button;
     }
@@ -333,16 +482,12 @@ public class LostReportPanel extends JFrame {
         button.setFont(new Font("Poppins", Font.BOLD, 13));
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         button.setFocusPainted(false);
-        button.setBorderPainted(true);
+        button.setBorderPainted(false);
         button.setContentAreaFilled(false);
         button.setOpaque(false);
-        button.setBorder(BorderFactory.createEmptyBorder(9, 16, 9, 16));
+        button.setBorder(BorderFactory.createEmptyBorder(8, 24, 8, 24));
         return button;
     }
-
-    // =========================
-    // Form Actions
-    // =========================
 
     private void choosePhoto() {
         FileDialog fileDialog = new FileDialog(this, "Pilih Foto Barang", FileDialog.LOAD);
@@ -361,28 +506,15 @@ public class LostReportPanel extends JFrame {
             AppDialog.warning(this, "Format Tidak Didukung", "Foto harus berformat JPG atau PNG.");
             return;
         }
+        
+        long fileSizeInMB = file.length() / (1024 * 1024);
+        if (fileSizeInMB > 2) {
+            AppDialog.warning(this, "Ukuran File Terlalu Besar", "Ukuran foto maksimal 2 MB.");
+            return;
+        }
 
         selectedPhotoFile = file;
-        selectedPhotoLabel.setText(file.getName());
-        updatePhotoPreview(file);
-        updatePhotoButtonState();
-    }
-
-    private void updatePhotoPreview(File file) {
         photoPreviewPanel.setImageFile(file);
-    }
-
-    private void clearPhoto() {
-        selectedPhotoFile = null;
-        selectedPhotoLabel.setText("Belum ada foto dipilih");
-        photoPreviewPanel.clearImage();
-        updatePhotoButtonState();
-    }
-
-    private void updatePhotoButtonState() {
-        if (removePhotoButton != null) {
-            removePhotoButton.setEnabled(selectedPhotoFile != null);
-        }
     }
 
     private void submitLostReport() {
@@ -406,26 +538,26 @@ public class LostReportPanel extends JFrame {
         String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-        Item item = new Item(itemId, itemName, itemDescription, category, lostLocation);
-        itemManager.addItem(item);
+        try {
+            Item item = new Item(itemId, itemName, itemDescription, category, lostLocation);
+            itemManager.addItem(item);
 
-        LostReport report = new LostReport(reportId, user, item, reportDescription, lostLocation);
-        if (selectedPhotoFile != null) {
-            report.addEvidence(selectedPhotoFile.getAbsolutePath());
+            LostReport report = new LostReport(reportId, user, item, reportDescription, lostLocation);
+            if (selectedPhotoFile != null) {
+                report.addEvidence(selectedPhotoFile.getAbsolutePath());
+            }
+            reportManager.addReport(report);
+
+            if (onReportSaved != null) {
+                onReportSaved.run();
+            }
+
+            AppDialog.success(this, "Laporan Disimpan", "Laporan barang hilang berhasil dibuat.");
+            dispose();
+        } catch (Exception e) {
+            AppDialog.error(this, "Terjadi Kesalahan", "Gagal menyimpan laporan: " + e.getMessage());
         }
-        reportManager.addReport(report);
-
-        if (onReportSaved != null) {
-            onReportSaved.run();
-        }
-
-        AppDialog.success(this, "Laporan Disimpan", "Laporan barang hilang berhasil dibuat.");
-        dispose();
     }
-
-    // =========================
-    // Data Helpers
-    // =========================
 
     private ArrayList<Category> loadCategories() {
         ArrayList<Category> categories = new ArrayList<>();
@@ -480,21 +612,37 @@ public class LostReportPanel extends JFrame {
                 );
             }
             g2.setColor(background);
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
             g2.dispose();
             super.paintComponent(graphics);
         }
     }
 
-    private static class PhotoPreviewPanel extends JPanel {
-
+    private class PhotoPreviewPanel extends JPanel {
         private Image image;
+        private boolean isHovered = false;
 
-        PhotoPreviewPanel() {
+        public PhotoPreviewPanel(Runnable onClick) {
             setOpaque(false);
-            setBackground(new Color(239, 246, 252));
-            setFont(new Font("Poppins", Font.BOLD, 14));
-            setForeground(UserDashboardComponents.TEXT_MUTED);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseEntered(java.awt.event.MouseEvent e) {
+                    if (image != null) {
+                        isHovered = true;
+                        repaint();
+                    }
+                }
+                @Override
+                public void mouseExited(java.awt.event.MouseEvent e) {
+                    isHovered = false;
+                    repaint();
+                }
+                @Override
+                public void mouseClicked(java.awt.event.MouseEvent e) {
+                    onClick.run();
+                }
+            });
         }
 
         void setImageFile(File file) {
@@ -502,50 +650,86 @@ public class LostReportPanel extends JFrame {
             repaint();
         }
 
-        void clearImage() {
-            this.image = null;
-            repaint();
-        }
-
         @Override
         protected void paintComponent(Graphics graphics) {
+            super.paintComponent(graphics);
             Graphics2D g2 = (Graphics2D) graphics.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            java.awt.Shape round = new java.awt.geom.RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 18, 18);
-            g2.setClip(round);
-            g2.setColor(getBackground());
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+            int width = getWidth();
+            int height = getHeight();
 
-            if (image == null || image.getWidth(this) <= 0 || image.getHeight(this) <= 0) {
-                paintPlaceholder(g2);
+            g2.setColor(Color.WHITE);
+            g2.fillRoundRect(0, 0, width, height, 20, 20);
+
+            Stroke dashed = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
+            g2.setStroke(dashed);
+            g2.setColor(new Color(200, 220, 240));
+            g2.drawRoundRect(1, 1, width - 3, height - 3, 20, 20);
+
+            if (image == null) {
+                String text1 = "Unggah foto barang di sini";
+                String text2 = "Pilih dari komputer";
+                
+                int blockY = (height - 140) / 2;
+                
+                int cx = width / 2;
+                int cy = blockY + 30;
+                
+                g2.setColor(UserDashboardComponents.PRIMARY_DARK);
+                g2.setStroke(new BasicStroke(4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                
+                g2.drawLine(cx - 20, cy + 8, cx - 20, cy + 20);
+                g2.drawLine(cx - 20, cy + 20, cx + 20, cy + 20);
+                g2.drawLine(cx + 20, cy + 20, cx + 20, cy + 8);
+                
+                g2.drawLine(cx, cy + 8, cx, cy - 18);
+                g2.drawLine(cx - 10, cy - 8, cx, cy - 18);
+                g2.drawLine(cx + 10, cy - 8, cx, cy - 18);
+
+                g2.setFont(new Font("Poppins", Font.BOLD, 14));
+                g2.setColor(UserDashboardComponents.TEXT_DARK);
+                int text1W = g2.getFontMetrics().stringWidth(text1);
+                g2.drawString(text1, (width - text1W) / 2, blockY + 80);
+                
+                g2.setColor(UserDashboardComponents.PRIMARY);
+                int btnW = 160;
+                int btnH = 36;
+                int btnX = (width - btnW) / 2;
+                int btnY = blockY + 100;
+                g2.fillRoundRect(btnX, btnY, btnW, btnH, 18, 18);
+                
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Poppins", Font.BOLD, 13));
+                int text2W = g2.getFontMetrics().stringWidth(text2);
+                g2.drawString(text2, (width - text2W) / 2, btnY + 23);
+
             } else {
-                paintCoverImage(g2);
+                g2.setClip(new java.awt.geom.RoundRectangle2D.Double(2, 2, width - 4, height - 4, 18, 18));
+                int imageWidth = image.getWidth(this);
+                int imageHeight = image.getHeight(this);
+                double scale = Math.min((double) width / imageWidth, (double) height / imageHeight);
+                int drawWidth = (int) Math.round(imageWidth * scale);
+                int drawHeight = (int) Math.round(imageHeight * scale);
+                int x = (width - drawWidth) / 2;
+                int y = (height - drawHeight) / 2;
+                g2.drawImage(image, x, y, drawWidth, drawHeight, this);
+                
+                if (isHovered) {
+                    g2.setColor(new Color(0, 0, 0, 100));
+                    g2.fillRoundRect(2, 2, width - 4, height - 4, 18, 18);
+                    
+                    g2.setColor(Color.WHITE);
+                    g2.setFont(new Font("Poppins", Font.BOLD, 15));
+                    String hoverText = "Ganti foto";
+                    FontMetrics fm = g2.getFontMetrics();
+                    int textW = fm.stringWidth(hoverText);
+                    int textH = fm.getAscent();
+                    g2.drawString(hoverText, (width - textW) / 2, (height + textH) / 2);
+                }
             }
 
-            g2.setClip(null);
             g2.dispose();
-            super.paintComponent(graphics);
-        }
-
-        private void paintPlaceholder(Graphics2D g2) {
-            g2.setColor(UserDashboardComponents.TEXT_MUTED);
-            g2.setFont(getFont());
-            String text = "Preview Foto";
-            int textWidth = g2.getFontMetrics().stringWidth(text);
-            int y = (getHeight() - g2.getFontMetrics().getHeight()) / 2 + g2.getFontMetrics().getAscent();
-            g2.drawString(text, (getWidth() - textWidth) / 2, y);
-        }
-
-        private void paintCoverImage(Graphics2D g2) {
-            int imageWidth = image.getWidth(this);
-            int imageHeight = image.getHeight(this);
-            double scale = Math.min((double) getWidth() / imageWidth, (double) getHeight() / imageHeight);
-            int drawWidth = (int) Math.round(imageWidth * scale);
-            int drawHeight = (int) Math.round(imageHeight * scale);
-            int x = (getWidth() - drawWidth) / 2;
-            int y = (getHeight() - drawHeight) / 2;
-            g2.drawImage(image, x, y, drawWidth, drawHeight, this);
         }
     }
 }

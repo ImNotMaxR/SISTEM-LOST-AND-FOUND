@@ -47,6 +47,14 @@ public class StorageRecord {
         return dateReleased;
     }
 
+    public void setDateReleased(LocalDateTime dateReleased) {
+        this.dateReleased = dateReleased;
+    }
+
+    public void setIsReleased(boolean isReleased) {
+        this.isReleased = isReleased;
+    }
+
     public void setStorageLocation(String storageLocation) {
         this.storageLocation = storageLocation;
     }

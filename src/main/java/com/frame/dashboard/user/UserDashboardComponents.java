@@ -27,6 +27,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.border.AbstractBorder;
 
@@ -193,6 +194,106 @@ public final class UserDashboardComponents {
         ));
         panel.add(label(text, 15, Font.PLAIN, TEXT_MUTED));
         return panel;
+    }
+
+    public static class SearchField extends JTextField {
+        private String placeholder;
+        public SearchField(String placeholder) {
+            super(20);
+            this.placeholder = placeholder;
+            setFont(new Font("Poppins", Font.PLAIN, 14));
+            setPreferredSize(new Dimension(250, 40));
+            setBorder(BorderFactory.createCompoundBorder(
+                new RoundedLineBorder(BORDER, 20, 1),
+                BorderFactory.createEmptyBorder(5, 35, 5, 15)
+            ));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(TEXT_MUTED);
+            g2.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+            g2.drawString("\uD83D\uDD0D", 12, getHeight() / 2 + 5); 
+
+            if (getText().isEmpty() && !isFocusOwner()) {
+                g2.setFont(getFont());
+                g2.drawString(placeholder, 35, getHeight() / 2 + 5);
+            }
+            g2.dispose();
+        }
+    }
+
+    public static class FilterPill extends JButton {
+        private boolean active;
+        public FilterPill(String text, boolean active) {
+            super(text);
+            this.active = active;
+            setFont(new Font("Poppins", Font.PLAIN, 13));
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setFocusPainted(false);
+            setContentAreaFilled(false);
+            setOpaque(false);
+            updateStyle();
+            
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    if (!FilterPill.this.active) {
+                        setForeground(PRIMARY_DARK);
+                        setBorder(BorderFactory.createCompoundBorder(
+                            new RoundedLineBorder(PRIMARY, 16, 1),
+                            BorderFactory.createEmptyBorder(6, 14, 6, 14)
+                        ));
+                    }
+                }
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    if (!FilterPill.this.active) {
+                        updateStyle();
+                    }
+                }
+            });
+        }
+        
+        public void setActive(boolean active) {
+            this.active = active;
+            updateStyle();
+        }
+        
+        public boolean isActivePill() {
+            return active;
+        }
+        
+        private void updateStyle() {
+            if (active) {
+                setForeground(Color.WHITE);
+                setBorder(BorderFactory.createCompoundBorder(
+                    new RoundedLineBorder(TEXT_DARK, 16, 1),
+                    BorderFactory.createEmptyBorder(6, 14, 6, 14)
+                ));
+            } else {
+                setForeground(TEXT_MUTED);
+                setBorder(BorderFactory.createCompoundBorder(
+                    new RoundedLineBorder(BORDER, 16, 1),
+                    BorderFactory.createEmptyBorder(6, 14, 6, 14)
+                ));
+            }
+        }
+        
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (active) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(TEXT_DARK);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+                g2.dispose();
+            }
+            super.paintComponent(g);
+        }
     }
 
     // =========================
@@ -393,6 +494,24 @@ public final class UserDashboardComponents {
             add(createCardActions(statusText, statusColor, actionButton), gbc);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    setBorder(BorderFactory.createCompoundBorder(
+                            new RoundedLineBorder(new Color(150, 180, 225), 22, 2),
+                            BorderFactory.createEmptyBorder(10, 11, 14, 11)
+                    ));
+                    repaint();
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    setBorder(BorderFactory.createCompoundBorder(
+                            new RoundedLineBorder(BORDER, 22, 1),
+                            BorderFactory.createEmptyBorder(12, 12, 12, 12)
+                    ));
+                    repaint();
+                }
+                
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     try {

@@ -218,7 +218,26 @@ public class ClaimManager implements Managerable{
  
         claim.updateStatus(newStatus);
         updateClaimStatusInDB(claimId, newStatus);
+        
+        if (newStatus == ClaimStatus.VALID) {
+            updateItemStatusInDB(claim.getItem().getItemID(), ItemStatus.DIKLAIM);
+        }
+        
         admin.verifyClaim(claimId);
+    }
+    
+    private void updateItemStatusInDB(String itemId, ItemStatus status) {
+        String sql = "UPDATE items SET status = ?, date = ? WHERE item_id = ?";
+        try {
+            Connection conn = dbConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, status.name());
+            ps.setTimestamp(2, java.sql.Timestamp.valueOf(java.time.LocalDateTime.now()));
+            ps.setString(3, itemId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Gagal update status item di DB: " + e.getMessage());
+        }
     }
     
     private void updateClaimStatusInDB(String claimId, ClaimStatus newStatus) {
@@ -245,7 +264,15 @@ public class ClaimManager implements Managerable{
         return false;
     }
 
+    public ArrayList<Claim> getClaims() {
+        return claims;
+    }
+
     public ArrayList<Claim> getAllClaims() {
+        return claims;
+    }
+
+    public ArrayList<?> getAll() {
         return claims;
     }
 

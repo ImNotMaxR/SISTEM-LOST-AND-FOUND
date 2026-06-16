@@ -200,6 +200,37 @@ public class ReportManager implements Managerable{
             System.out.println("Gagal menyimpan laporan: " + e.getMessage());
         }
     }
+
+    public boolean updateReport(Report report) {
+        String sql = "UPDATE reports SET description = ?, photo_path = ?, lost_location = ?, found_location = ? WHERE report_id = ?";
+        try {
+            Connection conn = dbConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, report.getDescription());
+            ps.setString(2, report.getPhotoPath());
+            if (report instanceof LostReport) {
+                ps.setString(3, ((LostReport) report).getLostLocation());
+                ps.setNull(4, java.sql.Types.VARCHAR);
+            } else if (report instanceof FoundReport) {
+                ps.setNull(3, java.sql.Types.VARCHAR);
+                ps.setString(4, ((FoundReport) report).getFoundLocation());
+            } else {
+                ps.setNull(3, java.sql.Types.VARCHAR);
+                ps.setNull(4, java.sql.Types.VARCHAR);
+            }
+            ps.setString(5, report.getReportId());
+            int rows = ps.executeUpdate();
+            
+            if (rows > 0) {
+                reportMap.put(report.getReportId(), report);
+                return true;
+            }
+            return false;
+        } catch (SQLException e) {
+            System.out.println("Gagal update laporan: " + e.getMessage());
+            return false;
+        }
+    }
     
     public void deleteReport(String reportId){
         String sql = "DELETE FROM reports WHERE report_id = ?";
@@ -228,12 +259,17 @@ public class ReportManager implements Managerable{
  
         report.setStatus(newStatus);
  
-        // Jika FoundReport VALID, langsung cocokkan item
+        // Jika FoundReport VALID, cocokkan item jika belum dicocokkan
         if (report instanceof FoundReport && newStatus == ReportStatus.VALID) {
             FoundReport fr = (FoundReport) report;
-            LostReport matched = findMatchingLostReport(fr);
-            fr.setMatchedLostReport(matched);
-            updateMatchedReportInDB(fr.getReportId(), matched != null ? matched.getReportId() : null);
+            if (!fr.hasMatch()) {
+                LostReport matched = findMatchingLostReport(fr);
+                fr.setMatchedLostReport(matched);
+                updateMatchedReportInDB(fr.getReportId(), matched != null ? matched.getReportId() : null);
+            }
+            if (fr.hasMatch()) {
+                updateItemStatusInDB(fr.getItem().getItemID(), ItemStatus.DITEMUKAN);
+            }
         }
  
         updateReportStatusInDB(reportId, newStatus);
@@ -253,6 +289,20 @@ public class ReportManager implements Managerable{
             }
         }
         return null;
+    }
+    
+    private void updateItemStatusInDB(String itemId, ItemStatus status) {
+        String sql = "UPDATE items SET status = ?, date = ? WHERE item_id = ?";
+        try {
+            Connection conn = dbConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, status.name());
+            ps.setTimestamp(2, java.sql.Timestamp.valueOf(java.time.LocalDateTime.now()));
+            ps.setString(3, itemId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Gagal update status item di DB: " + e.getMessage());
+        }
     }
     
     private void updateReportStatusInDB(String reportId, ReportStatus status) {

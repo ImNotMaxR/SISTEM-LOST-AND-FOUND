@@ -347,9 +347,6 @@ public class LoginFrame extends JFrame {
             ReportManager rm = new ReportManager();
             DashboardAdmin dAdmin = new DashboardAdmin(rm);
             dAdmin.setVisible(true);
-        } else if (user instanceof Security) {
-            DashboardSecurity dSecurity = new DashboardSecurity();
-            dSecurity.setVisible(true);
         } else {
             DashboardUser dUser = new DashboardUser(user);
             dUser.setVisible(true);

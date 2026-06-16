@@ -115,7 +115,6 @@ public class ItemManager implements Managerable{
             ps.setString(4, itemId);
             ps.executeUpdate();
  
-            // Update juga object di memori supaya sinkron
             Item item = itemMap.get(itemId);
             if (item != null) {
                 item.setName(newName);
@@ -125,6 +124,43 @@ public class ItemManager implements Managerable{
             System.out.println("Item Dengan ID: " + itemId + " berhasil diperbarui.");
         } catch (SQLException e) {
             System.out.println("Gagal edit item" + e.getMessage());
+        }
+    }
+
+    public boolean updateItem(Item item) {
+        String sql = "UPDATE items SET name = ?, description = ?, category_id = ?, location = ? WHERE item_id = ?";
+        try {
+            Connection conn = dbConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, item.getName());
+            ps.setString(2, item.getDescription());
+            ps.setString(3, item.getCategory() != null ? item.getCategory().getCategoryID() : null);
+            ps.setString(4, item.getLocation());
+            ps.setString(5, item.getItemID());
+            int rows = ps.executeUpdate();
+            
+            if (rows > 0) {
+                itemMap.put(item.getItemID(), item);
+                return true;
+            }
+            return false;
+        } catch (SQLException e) {
+            System.out.println("Gagal update item: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public void updateItemStatusInDB(String itemId, ItemStatus status) {
+        String sql = "UPDATE items SET status = ?, date = ? WHERE item_id = ?";
+        try {
+            Connection conn = dbConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, status.name());
+            ps.setTimestamp(2, java.sql.Timestamp.valueOf(LocalDateTime.now()));
+            ps.setString(3, itemId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Gagal update status item di DB: " + e.getMessage());
         }
     }
 

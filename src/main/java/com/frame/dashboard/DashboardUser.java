@@ -1,5 +1,8 @@
 package com.frame.dashboard;
 
+import com.frame.dashboard.security.SecurityStoragePanel;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
+
 import com.frame.LoginFrame;
 import com.frame.AppDialog;
 import com.frame.dashboard.user.FoundItemsPanel;
@@ -20,6 +23,8 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -48,6 +53,8 @@ public class DashboardUser extends JFrame {
     private static final String PAGE_LOST_ITEMS = "lost";
     private static final String PAGE_CLAIMS = "claims";
     private static final String PAGE_PROFILE = "profile";
+    private static final String PAGE_STORAGE = "storage";
+    private static final String PAGE_CREATE_FOUND = "create_found";
 
     private final User currentUser;
     private final ReportManager reportManager;
@@ -149,7 +156,7 @@ public class DashboardUser extends JFrame {
 
         gbc.gridy = 3;
         gbc.insets = new Insets(0, 8, 12, 16);
-        sidebar.add(createNavigationButton(PAGE_DASHBOARD, "Dashboard"), gbc);
+        sidebar.add(createNavigationButton(PAGE_DASHBOARD, "Dashboard", "icon_house.png"), gbc);
 
         gbc.gridy = 4;
         gbc.insets = new Insets(0, 16, 8, 16);
@@ -157,7 +164,7 @@ public class DashboardUser extends JFrame {
 
         gbc.gridy = 5;
         gbc.insets = new Insets(0, 8, 8, 16);
-        sidebar.add(createNavigationButton(PAGE_REPORTS, "Laporan Saya"), gbc);
+        sidebar.add(createNavigationButton(PAGE_REPORTS, "Laporan Saya", "icon_file.png"), gbc);
 
         gbc.gridy = 6;
         gbc.insets = new Insets(14, 16, 8, 16);
@@ -165,18 +172,28 @@ public class DashboardUser extends JFrame {
 
         gbc.gridy = 7;
         gbc.insets = new Insets(0, 8, 8, 16);
-        sidebar.add(createNavigationButton(PAGE_FOUND_ITEMS, "Lihat Barang Ditemukan"), gbc);
+        sidebar.add(createNavigationButton(PAGE_FOUND_ITEMS, "Lihat Barang Ditemukan", "icon_zoom.png"), gbc);
 
         gbc.gridy = 8;
-        sidebar.add(createNavigationButton(PAGE_LOST_ITEMS, "Lihat Barang Dicari"), gbc);
+        sidebar.add(createNavigationButton(PAGE_LOST_ITEMS, "Lihat Barang Dicari", "icon_location.png"), gbc);
 
-        gbc.gridy = 9;
-        gbc.insets = new Insets(14, 16, 8, 16);
-        sidebar.add(createSectionLabel("KLAIM"), gbc);
+        if (currentUser.getRole() != com.enumeration.Role.SECURITY) {
+            gbc.gridy = 9;
+            gbc.insets = new Insets(14, 16, 8, 16);
+            sidebar.add(createSectionLabel("KLAIM"), gbc);
 
-        gbc.gridy = 10;
-        gbc.insets = new Insets(0, 8, 8, 16);
-        sidebar.add(createNavigationButton(PAGE_CLAIMS, "Klaim Saya"), gbc);
+            gbc.gridy = 10;
+            gbc.insets = new Insets(0, 8, 8, 16);
+            sidebar.add(createNavigationButton(PAGE_CLAIMS, "Klaim Saya", "icon_handbag.png"), gbc);
+        } else {
+            gbc.gridy = 9;
+            gbc.insets = new Insets(14, 16, 8, 16);
+            sidebar.add(createSectionLabel("STORAGE"), gbc);
+
+            gbc.gridy = 10;
+            gbc.insets = new Insets(0, 8, 8, 16);
+            sidebar.add(createNavigationButton(PAGE_STORAGE, "Storage Record", "icon_briefcase.png"), gbc);
+        }
 
         gbc.gridy = 11;
         gbc.insets = new Insets(14, 16, 8, 16);
@@ -184,7 +201,7 @@ public class DashboardUser extends JFrame {
 
         gbc.gridy = 12;
         gbc.insets = new Insets(0, 8, 8, 16);
-        sidebar.add(createNavigationButton(PAGE_PROFILE, "Profil Saya"), gbc);
+        sidebar.add(createNavigationButton(PAGE_PROFILE, "Profil Saya", "icon_person.png"), gbc);
 
         gbc.gridy = 13;
         gbc.weighty = 1;
@@ -272,6 +289,9 @@ public class DashboardUser extends JFrame {
         pageContainer.add(new LostItemsPanel(reportManager), PAGE_LOST_ITEMS);
         pageContainer.add(new UserClaimsPanel(currentUser, claimManager), PAGE_CLAIMS);
         pageContainer.add(new UserProfilePanel(currentUser), PAGE_PROFILE);
+        if (currentUser.getRole() == com.enumeration.Role.SECURITY) {
+            pageContainer.add(new SecurityStoragePanel(currentUser.getUserId()), PAGE_STORAGE);
+        }
     }
 
     // =========================
@@ -331,8 +351,8 @@ public class DashboardUser extends JFrame {
         return label;
     }
 
-    private SidebarButton createNavigationButton(String pageKey, String text) {
-        SidebarButton button = new SidebarButton(text);
+    private SidebarButton createNavigationButton(String pageKey, String text, String iconName) {
+        SidebarButton button = new SidebarButton(text, iconName);
         button.addActionListener(event -> showPage(pageKey));
         navigationButtons.put(pageKey, button);
         return button;
@@ -340,16 +360,38 @@ public class DashboardUser extends JFrame {
 
     private JButton createLogoutButton() {
         JButton button = new JButton("Logout");
+        try {
+            java.net.URL url = getClass().getResource("/assets/PNG/64x64/icon_sign.png");
+            if (url != null) {
+                Image img = new ImageIcon(url).getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+                button.setIcon(new ImageIcon(img));
+                button.setIconTextGap(12);
+            }
+        } catch (Exception e) {}
         button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setHorizontalAlignment(JButton.LEFT);
         button.setFont(new Font("Poppins", Font.BOLD, 14));
-        button.setForeground(UserDashboardComponents.TEXT_DARK);
+        button.setForeground(new Color(220, 38, 38));
         button.setBackground(Color.WHITE);
         button.setBorder(BorderFactory.createCompoundBorder(
                 new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 18, 1),
                 BorderFactory.createEmptyBorder(10, 16, 10, 16)
         ));
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                button.setBackground(new Color(254, 226, 226)); // Light red
+                button.setForeground(new Color(220, 38, 38));   // Dark red text
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                button.setBackground(Color.WHITE);
+                button.setForeground(UserDashboardComponents.TEXT_DARK);
+            }
+        });
+        
         button.addActionListener(event -> {
             boolean confirmed = AppDialog.confirm(
                     this,
@@ -394,10 +436,14 @@ public class DashboardUser extends JFrame {
 
     private String getUserDetail() {
         if (currentUser instanceof Mahasiswa) {
-            Mahasiswa mahasiswa = (Mahasiswa) currentUser;
-            if (mahasiswa.getNim() != null && !mahasiswa.getNim().isBlank()) {
-                return "NIM " + mahasiswa.getNim();
-            }
+            Mahasiswa m = (Mahasiswa) currentUser;
+            return m.getNim() != null && !m.getNim().isBlank() ? "NIM " + m.getNim() : "MAHASISWA";
+        } else if (currentUser instanceof com.model.Dosen) {
+            com.model.Dosen d = (com.model.Dosen) currentUser;
+            return d.getNip() != null && !d.getNip().isBlank() ? "NIP " + d.getNip() : "DOSEN";
+        } else if (currentUser instanceof com.model.Staff) {
+            com.model.Staff s = (com.model.Staff) currentUser;
+            return s.getStaffID() != null && !s.getStaffID().isBlank() ? "ID: " + s.getStaffID() : "STAFF";
         }
 
         return currentUser != null ? currentUser.getRole().name() : "Belum Login";
@@ -429,23 +475,64 @@ public class DashboardUser extends JFrame {
     private static class SidebarButton extends JButton {
 
         private boolean active;
+        private ImageIcon iconImage;
 
-        SidebarButton(String text) {
+        SidebarButton(String text, String iconName) {
             super(text);
+            try {
+                java.net.URL url = getClass().getResource("/assets/PNG/64x64/" + iconName);
+                if (url != null) {
+                    Image img = new ImageIcon(url).getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+                    this.iconImage = new ImageIcon(img);
+                }
+            } catch (Exception e) {
+                this.iconImage = null;
+            }
+            if (this.iconImage != null) {
+                setIcon(this.iconImage);
+            }
+            setIconTextGap(12);
+            
             setPreferredSize(new Dimension(224, 38));
             setFocusPainted(false);
             setBorderPainted(false);
             setContentAreaFilled(false);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
             setHorizontalAlignment(JButton.LEFT);
-            setFont(new Font("Poppins", Font.BOLD, 14));
+            setFont(new Font("Poppins", Font.PLAIN, 14));
             setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
             setActive(false);
+            
+            addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseEntered(java.awt.event.MouseEvent e) {
+                    if (!active) {
+                        setBackground(new Color(248, 250, 252));
+                        setForeground(UserDashboardComponents.PRIMARY);
+                    }
+                }
+
+                @Override
+                public void mouseExited(java.awt.event.MouseEvent e) {
+                    if (!active) {
+                        setBackground(Color.WHITE);
+                        setForeground(UserDashboardComponents.TEXT_MUTED);
+                    }
+                }
+            });
         }
 
-        void setActive(boolean active) {
+        public void setActive(boolean active) {
             this.active = active;
-            setForeground(active ? Color.WHITE : UserDashboardComponents.TEXT_DARK);
+            if (active) {
+                setBackground(UserDashboardComponents.PRIMARY);
+                setForeground(Color.WHITE);
+                setFont(new Font("Poppins", Font.BOLD, 14));
+            } else {
+                setBackground(Color.WHITE);
+                setForeground(UserDashboardComponents.TEXT_MUTED);
+                setFont(new Font("Poppins", Font.PLAIN, 14));
+            }
             repaint();
         }
 

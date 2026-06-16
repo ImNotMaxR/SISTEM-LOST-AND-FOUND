@@ -3,11 +3,17 @@ package com.frame.dashboard.user;
 import com.managers.ReportManager;
 import com.model.FoundReport;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.ArrayList;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 public class FoundItemsPanel extends JPanel {
 
@@ -15,9 +21,15 @@ public class FoundItemsPanel extends JPanel {
     private static final String SUBTITLE = "Barang Yang Sudah Dilaporkan Ditemukan Oleh Petugas.";
     private static final String EMPTY_MESSAGE = "Belum Ada Barang Ditemukan.";
 
+    private ReportManager reportManager;
+    private JPanel grid;
+    private JTextField searchField;
+
     public FoundItemsPanel(ReportManager reportManager) {
+        this.reportManager = reportManager;
         configurePanel();
-        add(UserDashboardComponents.scroll(createContent(reportManager)), BorderLayout.CENTER);
+        add(UserDashboardComponents.scroll(createContent()), BorderLayout.CENTER);
+        updateGrid(""); // initial load
     }
 
     private void configurePanel() {
@@ -26,17 +38,30 @@ public class FoundItemsPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
     }
 
-    private JPanel createContent(ReportManager reportManager) {
+    private JPanel createContent() {
         JPanel content = new JPanel(new GridBagLayout());
         content.setOpaque(false);
 
         GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
         gbc.gridy = 0;
-        content.add(UserDashboardComponents.section(TITLE, SUBTITLE), gbc);
+        
+        // Header with Section and Search Bar
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+        headerPanel.add(UserDashboardComponents.section(TITLE, SUBTITLE), BorderLayout.WEST);
+        
+        searchField = createSearchBar();
+        JPanel searchContainer = new JPanel(new GridBagLayout());
+        searchContainer.setOpaque(false);
+        searchContainer.add(searchField);
+        headerPanel.add(searchContainer, BorderLayout.EAST);
+        
+        content.add(headerPanel, gbc);
 
         gbc.gridy = 1;
         gbc.insets = new Insets(14, 0, 0, 0);
-        content.add(createFoundItemsGrid(reportManager), gbc);
+        grid = UserDashboardComponents.cardGrid();
+        content.add(grid, gbc);
 
         gbc.gridy = 2;
         gbc.weighty = 1;
@@ -45,14 +70,54 @@ public class FoundItemsPanel extends JPanel {
         return content;
     }
 
-    private JPanel createFoundItemsGrid(ReportManager reportManager) {
-        JPanel grid = UserDashboardComponents.cardGrid();
-        for (FoundReport report : reportManager.getFoundReports()) {
-            grid.add(new UserDashboardComponents.ReportCard(report, report.getStatus().name(), UserDashboardComponents.PRIMARY));
+    private JTextField createSearchBar() {
+        JTextField textField = new UserDashboardComponents.SearchField("Cari barang...");
+        
+        textField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                updateGrid(textField.getText());
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                updateGrid(textField.getText());
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                updateGrid(textField.getText());
+            }
+        });
+        
+        return textField;
+    }
+
+    private void updateGrid(String keyword) {
+        grid.removeAll();
+        
+        ArrayList<FoundReport> allFoundReports = reportManager.getFoundReports();
+        ArrayList<FoundReport> filteredReports = new ArrayList<>();
+        
+        for (FoundReport report : allFoundReports) {
+            if (report.isValid()) {
+                if (keyword.isEmpty() || report.getItem().getName().toLowerCase().contains(keyword.toLowerCase())) {
+                    filteredReports.add(report);
+                }
+            }
         }
-        if (grid.getComponentCount() == 0) {
+        
+        filteredReports.sort((r1, r2) -> r2.getDate().compareTo(r1.getDate()));
+        
+        for (FoundReport report : filteredReports) {
+            grid.add(new UserDashboardComponents.ReportCard(report, report.getItem().getStatus().name(), UserDashboardComponents.PRIMARY));
+        }
+        
+        if (filteredReports.isEmpty()) {
             grid.add(UserDashboardComponents.emptyState(EMPTY_MESSAGE));
         }
-        return grid;
+        
+        grid.revalidate();
+        grid.repaint();
     }
 }
