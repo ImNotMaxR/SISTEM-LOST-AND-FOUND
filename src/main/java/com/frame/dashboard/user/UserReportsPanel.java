@@ -2,14 +2,12 @@ package com.frame.dashboard.user;
 
 import com.enumeration.ReportStatus;
 import com.frame.AppDialog;
-import com.frame.panel.LostReportPanel;
 import com.managers.ReportManager;
 import com.model.LostReport;
 import com.model.User;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -26,12 +24,13 @@ import javax.swing.JTextField;
 
 public class UserReportsPanel extends JPanel {
 
-    private static final String TITLE = "Laporan saya";
-    private static final String SUBTITLE = "Daftar Laporan Barang Hilang Yang Dibuat Oleh Akun Ini.";    private static final String EMPTY_MESSAGE = "Kamu Belum Memiliki Laporan.";
+    private static final String TITLE = "Laporan Saya";
+    private static final String SUBTITLE = "Daftar Laporan Barang Hilang Yang Dibuat Oleh Akun Ini.";
+    private static final String EMPTY_MESSAGE = "Kamu Belum Memiliki Laporan.";
     private static final Color DELETE = new Color(220, 38, 38);
     private static final Color DELETE_HOVER = new Color(185, 28, 28);
-    private static final Dimension ADD_BUTTON_SIZE = new Dimension(260, 40);
-    private static final Dimension DELETE_BUTTON_SIZE = new Dimension(76, 32);
+    private static final Color EDIT = UserDashboardComponents.PRIMARY_DARK;
+    private static final Color EDIT_HOVER = UserDashboardComponents.PRIMARY;
 
     private final User user;
     private final ReportManager reportManager;
@@ -54,12 +53,14 @@ public class UserReportsPanel extends JPanel {
 
     private void refreshContent() {
         removeAll();
-        add(UserDashboardComponents.scroll(createContent()), BorderLayout.CENTER);
+        JPanel content = createContentPanel();
+        UserDashboardComponents.clearTextFocusOnBackgroundClick(content);
+        add(UserDashboardComponents.scroll(content), BorderLayout.CENTER);
         revalidate();
         repaint();
     }
 
-    private JPanel createContent() {
+    private JPanel createContentPanel() {
         JPanel content = new JPanel(new GridBagLayout());
         content.setOpaque(false);
 
@@ -69,14 +70,14 @@ public class UserReportsPanel extends JPanel {
 
         gbc.gridy = 1;
         gbc.insets = new Insets(16, 0, 0, 0);
-        content.add(createFilterPanel(), gbc);
+        content.add(createFilterSearchPanel(), gbc);
 
         gbc.gridy = 2;
         gbc.insets = new Insets(14, 0, 0, 0);
         grid = UserDashboardComponents.cardGrid();
         content.add(grid, gbc);
 
-        updateGrid();
+        refreshReportGrid();
 
         gbc.gridy = 3;
         gbc.weighty = 1;
@@ -86,23 +87,23 @@ public class UserReportsPanel extends JPanel {
     }
 
     private JPanel createHeader() {
-        JPanel header = new JPanel(new BorderLayout());
-        header.setOpaque(false);
-        header.add(UserDashboardComponents.section(TITLE, SUBTITLE), BorderLayout.WEST);
-        
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        JPanel actionPanel = new JPanel(new GridBagLayout());
         actionPanel.setOpaque(false);
-        actionPanel.add(createAddReportButton());
-        header.add(actionPanel, BorderLayout.EAST);
-        
-        return header;
+        GridBagConstraints actionGbc = new GridBagConstraints();
+        actionGbc.gridx = 0;
+        actionGbc.gridy = 0;
+        actionGbc.weightx = 1;
+        actionGbc.fill = GridBagConstraints.HORIZONTAL;
+        actionPanel.add(createAddReportButton(), actionGbc);
+
+        return UserDashboardComponents.responsiveActionRow(
+                UserDashboardComponents.section(TITLE, SUBTITLE),
+                actionPanel
+        );
     }
     
-    private JPanel createFilterPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        
-        JPanel pillsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+    private JPanel createFilterSearchPanel() {
+        JPanel pillsPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 10, 8));
         pillsPanel.setOpaque(false);
         
         String[] filters = {"Semua", "Pending", "Valid", "Ditolak"};
@@ -118,29 +119,31 @@ public class UserReportsPanel extends JPanel {
                 }
                 pill.setActive(true);
                 currentFilter = filter;
-                updateGrid();
+                refreshReportGrid();
             });
             pillsPanel.add(pill);
         }
-        
-        panel.add(pillsPanel, BorderLayout.WEST);
-        
-        searchField = new UserDashboardComponents.SearchField("Cari laporan...");
+
+        searchField = new UserDashboardComponents.SearchField("Cari Laporan...");
         searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { updateGrid(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { updateGrid(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { updateGrid(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { refreshReportGrid(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { refreshReportGrid(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { refreshReportGrid(); }
         });
         
-        JPanel searchWrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        JPanel searchWrapper = new JPanel(new GridBagLayout());
         searchWrapper.setOpaque(false);
-        searchWrapper.add(searchField);
-        panel.add(searchWrapper, BorderLayout.EAST);
-        
-        return panel;
+        GridBagConstraints searchGbc = new GridBagConstraints();
+        searchGbc.gridx = 0;
+        searchGbc.gridy = 0;
+        searchGbc.weightx = 1;
+        searchGbc.fill = GridBagConstraints.HORIZONTAL;
+        searchWrapper.add(searchField, searchGbc);
+
+        return UserDashboardComponents.responsiveActionRow(pillsPanel, searchWrapper);
     }
 
-    private void updateGrid() {
+    private void refreshReportGrid() {
         grid.removeAll();
         
         ArrayList<LostReport> myReports = new ArrayList<>();
@@ -170,7 +173,7 @@ public class UserReportsPanel extends JPanel {
             }
             
             if (matchSearch && matchFilter) {
-                grid.add(createReportCard(report));
+                grid.add(createUserReportCard(report));
                 count++;
             }
         }
@@ -186,9 +189,9 @@ public class UserReportsPanel extends JPanel {
     private JButton createAddReportButton() {
         JButton button;
         if (user.getRole() == com.enumeration.Role.SECURITY) {
-            button = new RoundedActionButton("+ Buat laporan barang ditemukan", UserDashboardComponents.PRIMARY, 25);
+            button = new RoundedActionButton("+ Buat Laporan Barang Ditemukan", "+ Buat Laporan", UserDashboardComponents.PRIMARY, 25);
         } else {
-            button = new RoundedActionButton("+ Buat laporan barang hilang", UserDashboardComponents.PRIMARY, 20);
+            button = new RoundedActionButton("+ Buat Laporan Barang Hilang", "+ Buat Laporan", UserDashboardComponents.PRIMARY, 20);
         }
         
         button.addActionListener(e -> {
@@ -204,7 +207,7 @@ public class UserReportsPanel extends JPanel {
                 dialog.setVisible(true);
             }
         });
-        // Removed fixed button width so text can dictate length
+
         button.setFont(new Font("Poppins", Font.BOLD, 13));
         button.setForeground(Color.WHITE);
         button.setBackground(UserDashboardComponents.PRIMARY_DARK);
@@ -217,7 +220,7 @@ public class UserReportsPanel extends JPanel {
         return button;
     }
 
-    private UserDashboardComponents.ReportCard createReportCard(LostReport report) {
+    private UserDashboardComponents.ReportCard createUserReportCard(LostReport report) {
         String statusText;
         Color statusColor;
         
@@ -236,24 +239,61 @@ public class UserReportsPanel extends JPanel {
                 report,
                 statusText,
                 statusColor,
-                createDeleteReportButton(report)
+                createReportActionButtons(report)
         );
     }
 
+    private JPanel createReportActionButtons(LostReport report) {
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        actions.setOpaque(false);
+
+        if (canEditReport(report)) {
+            actions.add(createEditReportButton(report));
+        }
+
+        actions.add(createDeleteReportButton(report));
+        return actions;
+    }
+
+    private JButton createEditReportButton(LostReport report) {
+        JButton button = UserDashboardComponents.iconButton(
+                UserDashboardComponents.ActionIconType.EDIT,
+                "Edit laporan",
+                Color.WHITE,
+                EDIT,
+                EDIT_HOVER
+        );
+        button.addActionListener(event -> openEditReportDialog(report));
+        return button;
+    }
+
     private JButton createDeleteReportButton(LostReport report) {
-        JButton button = new RoundedActionButton("Hapus", DELETE_HOVER, 16);
-        button.setPreferredSize(DELETE_BUTTON_SIZE);
-        button.setFont(new Font("Poppins", Font.BOLD, 12));
-        button.setForeground(Color.WHITE);
-        button.setBackground(DELETE);
-        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setOpaque(false);
-        button.setBorder(BorderFactory.createEmptyBorder(7, 12, 7, 12));
+        JButton button = UserDashboardComponents.iconButton(
+                UserDashboardComponents.ActionIconType.DELETE,
+                "Hapus laporan",
+                Color.WHITE,
+                DELETE,
+                DELETE_HOVER
+        );
         button.addActionListener(event -> deleteReport(report));
         return button;
+    }
+
+    private boolean canEditReport(LostReport report) {
+        return report != null
+                && report.getStatus() == ReportStatus.PENDING
+                && report.isEditable();
+    }
+
+    private void openEditReportDialog(LostReport report) {
+        if (!canEditReport(report)) {
+            AppDialog.warning(this, "Tidak Dapat Diedit", "Laporan hanya dapat diedit saat status pending dan masih dalam batas waktu edit.");
+            return;
+        }
+
+        com.frame.panel.EditLostReportPanel dialog = new com.frame.panel.EditLostReportPanel(report, reportManager, this::refreshContent);
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
     private void deleteReport(LostReport report) {
@@ -265,7 +305,7 @@ public class UserReportsPanel extends JPanel {
         // Supaya log historis ditemukan sama klaim tetep ada karena penting plus tidak perlu nambah method lagi juga buat validasi jadi yang bisa hapus hanya admin nya saja.
         if (report.getItem().getStatus() == com.enumeration.ItemStatus.DITEMUKAN || 
             report.getItem().getStatus() == com.enumeration.ItemStatus.DIKLAIM) {
-            AppDialog.error(this, "Tidak Dapat Dihapus", "Laporan tidak dapat dihapus karena barang sudah ditemukan atau dikembalikan.\nData ini disimpan sebagai bukti historis.");
+            AppDialog.error(this, "Tidak Dapat Dihapus", "Laporan Tidak Dapat Dihapus Karena Barang Sudah Ditemukan Atau Dikembalikan.\nData Ini Disimpan Sebagai Bukti Historis.");
             return;
         }
 
@@ -291,17 +331,11 @@ public class UserReportsPanel extends JPanel {
         itemManager.deleteItem(itemId);
 
         if (reportManager.findById(report.getReportId()) == null) {
-            updateGrid();
+            refreshReportGrid();
             AppDialog.success(this, "Laporan Dihapus", "Laporan beserta data barang berhasil dihapus dari sistem.");
         } else {
             AppDialog.error(this, "Gagal Menghapus", "Laporan tidak dapat dihapus. Silakan coba lagi.");
         }
-    }
-
-    private void openLostReportPanel() {
-        LostReportPanel panel = new LostReportPanel(user, reportManager, this::refreshContent);
-        panel.setLocationRelativeTo(this);
-        panel.setVisible(true);
     }
 
     private boolean isMine(User user, LostReport report) {
@@ -314,15 +348,20 @@ public class UserReportsPanel extends JPanel {
 
         private final Color rolloverColor;
         private final int radius;
+        private final String fullText;
+        private final String compactText;
 
-        RoundedActionButton(String text, Color rolloverColor, int radius) {
-            super(text);
+        RoundedActionButton(String fullText, String compactText, Color rolloverColor, int radius) {
+            super(fullText);
+            this.fullText = fullText;
+            this.compactText = compactText;
             this.rolloverColor = rolloverColor;
             this.radius = radius;
         }
 
         @Override
         protected void paintComponent(Graphics graphics) {
+            updateDisplayedText();
             Graphics2D g2 = (Graphics2D) graphics.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             Color background = getModel().isPressed() ? getBackground().darker() : getBackground();
@@ -333,6 +372,14 @@ public class UserReportsPanel extends JPanel {
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
             g2.dispose();
             super.paintComponent(graphics);
+        }
+
+        private void updateDisplayedText() {
+            int fullWidth = getFontMetrics(getFont()).stringWidth(fullText) + getInsets().left + getInsets().right + 8;
+            String nextText = getWidth() > 0 && getWidth() < fullWidth ? compactText : fullText;
+            if (!nextText.equals(getText())) {
+                setText(nextText);
+            }
         }
     }
 }

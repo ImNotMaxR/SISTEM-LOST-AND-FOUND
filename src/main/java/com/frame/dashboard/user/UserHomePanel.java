@@ -50,7 +50,7 @@ public class UserHomePanel extends JPanel {
         gbc.insets = new Insets(16, 0, 0, 0);
         content.add(UserDashboardComponents.section(
                 LOST_SECTION_TITLE,
-                reportManager.getLostReports().size() + " Laporan Barang Hilang Tercatat di Sistem."
+                reportManager.getLostReports().size() + " Laporan Barang Hilang Tercatat Di Sistem."
         ), gbc);
 
         gbc.gridy = 3;
@@ -84,46 +84,36 @@ public class UserHomePanel extends JPanel {
     }
 
     private JPanel createStatsPanel(User user, ReportManager reportManager) {
-        JPanel panel = new JPanel(new GridBagLayout());
+        JPanel panel = UserDashboardComponents.statGrid();
         panel.setOpaque(false);
 
         int totalLostReports = reportManager.getLostReports().size();
         int userReportCount = countUserReports(user, reportManager);
         int foundItemCount = countFoundItems(reportManager);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridy = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(0, 0, 0, 16);
-
-        gbc.gridx = 0;
         panel.add(new UserDashboardComponents.StatCard(
                 "Total Barang Hilang",
                 formatCount(totalLostReports),
                 "Seluruh Laporan Kampus",
                 UserDashboardComponents.PRIMARY_DARK,
                 UserDashboardComponents.PRIMARY
-        ), gbc);
+        ));
 
-        gbc.gridx = 1;
         panel.add(new UserDashboardComponents.StatCard(
                 "Laporan Saya",
                 formatCount(userReportCount),
                 "Pantau Laporan Akun Ini",
                 UserDashboardComponents.PRIMARY_LIGHT,
                 new Color(126, 203, 236)
-        ), gbc);
+        ));
 
-        gbc.gridx = 2;
-        gbc.insets = new Insets(0, 0, 0, 0);
         panel.add(new UserDashboardComponents.StatCard(
                 "Barang Ditemukan",
                 formatCount(foundItemCount),
                 "Menunggu Proses Klaim",
                 UserDashboardComponents.ORANGE,
                 new Color(255, 159, 93)
-        ), gbc);
+        ));
 
         return panel;
     }

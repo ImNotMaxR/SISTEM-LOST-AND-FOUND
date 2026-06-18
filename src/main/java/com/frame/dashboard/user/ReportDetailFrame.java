@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -14,24 +15,22 @@ import java.awt.RenderingHints;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JComponent;
-import java.awt.Image;
-import java.awt.FlowLayout;
 
 import com.model.Report;
 
 public class ReportDetailFrame extends JDialog {
 
     private static final String TITLE = "Detail Laporan";
-    private static final Color DELETE = new Color(220, 38, 38);
-    private static final int CONTENT_PADDING_X = 34;
     private static final Dimension FRAME_SIZE = new Dimension(920, 650);
     private static final Dimension PHOTO_SIZE = new Dimension(852, 240);
+
+    // =========================
+    // Setup
+    // =========================
 
     public ReportDetailFrame(Report report) {
         super((java.awt.Frame) null, "Detail Laporan - " + (report != null ? report.getReportId() : ""), true);
@@ -47,6 +46,10 @@ public class ReportDetailFrame extends JDialog {
         setResizable(false);
     }
 
+    // =========================
+    // Layout
+    // =========================
+
     private JPanel createMainPanel(Report report) {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(Color.WHITE);
@@ -55,69 +58,23 @@ public class ReportDetailFrame extends JDialog {
         root.add(createPhotoHeader(report), BorderLayout.NORTH);
         
         // Bottom Content
-        root.add(createDetailsContent(report), BorderLayout.CENTER);
+        root.add(createDetailsContentPanel(report), BorderLayout.CENTER);
         
         return root;
     }
 
     private JPanel createPhotoHeader(Report report) {
         JPanel header = new JPanel(new BorderLayout());
-        header.setPreferredSize(new Dimension(720, 240));
+        header.setPreferredSize(new Dimension(PHOTO_SIZE.width, PHOTO_SIZE.height + 25));
         header.setOpaque(false);
-        
-        String imagePath = report != null ? report.getPhotoPath() : null;
-        
-        JPanel imagePanel = new JPanel() {
-            private Image img = imagePath != null ? new javax.swing.ImageIcon(imagePath).getImage() : null;
-            
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                int w = getWidth();
-                int h = getHeight();
-                
-                // Draw rounded image clip
-                java.awt.geom.RoundRectangle2D.Double clip = new java.awt.geom.RoundRectangle2D.Double(0, 0, w, h, 20, 20);
-                g2.setClip(clip);
-                
-                if (img != null) {
-                    int imgW = img.getWidth(this);
-                    int imgH = img.getHeight(this);
-                    double scale = Math.max((double) w / imgW, (double) h / imgH);
-                    int drawW = (int) (imgW * scale);
-                    int drawH = (int) (imgH * scale);
-                    int x = (w - drawW) / 2;
-                    int y = (h - drawH) / 2;
-                    g2.drawImage(img, x, y, drawW, drawH, this);
-                } else {
-                    g2.setColor(new Color(230, 240, 250));
-                    g2.fillRect(0, 0, w, h);
-                }
-                
-                // Draw bottom gradient overlay
-                java.awt.GradientPaint gp = new java.awt.GradientPaint(0, h - 100, new Color(0, 0, 0, 0), 0, h, new Color(0, 50, 150, 200));
-                g2.setPaint(gp);
-                g2.fillRect(0, h - 100, w, 100);
-                
-                // Draw item name text
-                g2.setClip(null);
-                g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Poppins", Font.BOLD, 26));
-                String name = report != null && report.getItem() != null ? report.getItem().getName() : "Unknown Item";
-                g2.drawString(name, 30, h - 30);
-                
-                g2.dispose();
-            }
-        };
+
+        JPanel imagePanel = new UserDashboardComponents.PhotoPanel(report, PHOTO_SIZE);
         header.setBorder(BorderFactory.createEmptyBorder(25, 25, 0, 25));
         header.add(imagePanel, BorderLayout.CENTER);
         return header;
     }
 
-    private JPanel createDetailsContent(Report report) {
+    private JPanel createDetailsContentPanel(Report report) {
         JPanel content = new JPanel(new GridBagLayout());
         content.setBackground(Color.WHITE);
         content.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
@@ -132,7 +89,7 @@ public class ReportDetailFrame extends JDialog {
         gbc.weightx = 0.6;
         gbc.weighty = 1.0;
         gbc.insets = new Insets(0, 0, 0, 20);
-        content.add(createLeftColumn(report), gbc);
+        content.add(createReportInfoColumn(report), gbc);
         
         // Right Column (Actions)
         gbc.gridx = 1;
@@ -140,12 +97,12 @@ public class ReportDetailFrame extends JDialog {
         gbc.weightx = 0.4;
         gbc.weighty = 1.0;
         gbc.insets = new Insets(0, 20, 0, 0);
-        content.add(createRightColumn(report), gbc);
+        content.add(createStatusActionColumn(report), gbc);
         
         return content;
     }
 
-    private JPanel createLeftColumn(Report report) {
+    private JPanel createReportInfoColumn(Report report) {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setOpaque(false);
         
@@ -157,9 +114,9 @@ public class ReportDetailFrame extends JDialog {
         gbc.insets = new Insets(0, 0, 12, 0);
         
         int row = 0;
-        panel.add(createDetailRow("Kategori:", getCategoryName(report)), gbc); gbc.gridy = ++row;
-        panel.add(createDetailRow("Deskripsi:", getDescription(report)), gbc); gbc.gridy = ++row;
-        panel.add(createDetailRow("Lokasi:", getLocation(report)), gbc); gbc.gridy = ++row;
+        panel.add(createDetailRow("Kategori:", getReportCategoryName(report)), gbc); gbc.gridy = ++row;
+        panel.add(createDetailRow("Deskripsi:", getReportDescription(report)), gbc); gbc.gridy = ++row;
+        panel.add(createDetailRow("Lokasi:", getReportLocation(report)), gbc); gbc.gridy = ++row;
         panel.add(createDetailRow("Tanggal:", getReportDate(report)), gbc); gbc.gridy = ++row;
         
         gbc.weighty = 1.0;
@@ -167,6 +124,10 @@ public class ReportDetailFrame extends JDialog {
         
         return panel;
     }
+
+    // =========================
+    // Components
+    // =========================
 
     private JPanel createDetailRow(String label, String value) {
         JPanel row = new JPanel(new BorderLayout(8, 0));
@@ -181,6 +142,7 @@ public class ReportDetailFrame extends JDialog {
             area.setWrapStyleWord(true);
             area.setOpaque(false);
             area.setEditable(false);
+            area.setFocusable(false);
             area.setBorder(null);
             
             JPanel p = new JPanel(new BorderLayout(8, 0));
@@ -196,7 +158,7 @@ public class ReportDetailFrame extends JDialog {
         }
     }
 
-    private JPanel createRightColumn(Report report) {
+    private JPanel createStatusActionColumn(Report report) {
         UserDashboardComponents.RoundedPanel panel = new UserDashboardComponents.RoundedPanel(Color.WHITE, 20);
         panel.setBorder(BorderFactory.createCompoundBorder(
                 new UserDashboardComponents.RoundedLineBorder(new Color(230, 230, 230), 20, 1),
@@ -211,7 +173,7 @@ public class ReportDetailFrame extends JDialog {
         gbc.anchor = GridBagConstraints.NORTHWEST;
         
         // Status Pill
-        String status = getItemStatus(report);
+        String status = getReportItemStatus(report);
         JPanel statusPill = createStatusPill(status);
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 15, 0);
@@ -225,6 +187,7 @@ public class ReportDetailFrame extends JDialog {
         infoText.setWrapStyleWord(true);
         infoText.setOpaque(false);
         infoText.setEditable(false);
+        infoText.setFocusable(false);
         infoText.setBorder(null);
         gbc.gridy = 1;
         gbc.insets = new Insets(0, 0, 20, 0);
@@ -237,21 +200,28 @@ public class ReportDetailFrame extends JDialog {
         
         // Buttons
         gbc.weighty = 0.0;
-        gbc.gridy = 3;
         gbc.insets = new Insets(0, 0, 10, 0);
+        int actionRow = 3;
         
         com.model.User currentUser = com.service.AuthService.getCurrentUser();
         boolean isOwner = currentUser != null && report != null && report.getUser().getUserId().equals(currentUser.getUserId());
         boolean isPending = report != null && report.getStatus() == com.enumeration.ReportStatus.PENDING;
         boolean isEditableTime = report != null && report.isEditable();
+        com.managers.ClaimManager claimManager = new com.managers.ClaimManager();
+        boolean hasSubmittedClaim = hasCurrentUserSubmittedActiveClaim(claimManager, currentUser, report);
+
+        if (hasSubmittedClaim) {
+            infoText.setText("Pengajuan sudah dilakukan. Mohon tunggu konfirmasi admin.");
+        }
 
         if (isOwner && isPending && isEditableTime) {
-            JButton btnEdit = createButton("Edit laporan saya", true);
+            JButton btnEdit = createDetailActionButton("Edit Laporan Saya", true);
             btnEdit.addActionListener(e -> {
                 dispose();
                 com.managers.ReportManager reportManager = new com.managers.ReportManager();
                 new com.frame.panel.EditLostReportPanel(report, reportManager, () -> {}).setVisible(true);
             });
+            gbc.gridy = actionRow++;
             panel.add(btnEdit, gbc);
         }
         
@@ -261,29 +231,40 @@ public class ReportDetailFrame extends JDialog {
         boolean canClaim = currentUser != null && !(currentUser instanceof com.model.Security) && !(currentUser instanceof com.model.Admin);
         
         if (isFoundReport && isValid && !hasMatch && canClaim) {
-            gbc.gridy = 5;
+            gbc.gridy = actionRow++;
             gbc.insets = new Insets(0, 0, 10, 0);
-            JButton btnClaim = createButton("Klaim Barang", true);
+            JButton btnClaim = createDetailActionButton(hasSubmittedClaim ? "Pengajuan Sudah Dilakukan" : "Klaim Barang", true);
+            btnClaim.setEnabled(!hasSubmittedClaim);
             btnClaim.addActionListener(e -> {
                 boolean confirm = com.frame.AppDialog.confirm(this, "Konfirmasi Klaim", "Apakah Anda yakin ingin mengklaim barang ini?", "Ya, Klaim", "Batal");
                 if (confirm) {
-                    com.model.Claim claim = new com.model.Claim("CLM-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase(), currentUser, report.getItem(), "Tidak ada bukti");
-                    com.managers.ClaimManager claimManager = new com.managers.ClaimManager();
-                    claimManager.add(claim);
+                    com.model.Claim claim = new com.model.Claim("CLM-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase(), currentUser, report.getItem(), report.getReportId());
+                    boolean saved = claimManager.saveClaim(claim);
+                    if (!saved) {
+                        com.frame.AppDialog.error(this, "Klaim Gagal", claimManager.getLastErrorMessage());
+                        return;
+                    }
+                    btnClaim.setText("Pengajuan Sudah Dilakukan");
+                    btnClaim.setEnabled(false);
+                    infoText.setText("Pengajuan sudah dilakukan. Mohon tunggu konfirmasi admin.");
                     com.frame.AppDialog.success(this, "Klaim Berhasil", "Permintaan klaim Anda telah diajukan dan menunggu persetujuan.");
                 }
             });
             panel.add(btnClaim, gbc);
         }
         
-        gbc.gridy = 4;
+        gbc.gridy = actionRow;
         gbc.insets = new Insets(0, 0, 0, 0);
-        JButton btnBack = createButton("Kembali", false);
+        JButton btnBack = createDetailActionButton("Kembali", false);
         btnBack.addActionListener(e -> dispose());
         panel.add(btnBack, gbc);
         
         return panel;
     }
+
+    // =========================
+    // Actions
+    // =========================
 
     private JPanel createStatusPill(String status) {
         JPanel pill = new JPanel() {
@@ -304,7 +285,7 @@ public class ReportDetailFrame extends JDialog {
         return pill;
     }
 
-    private JButton createButton(String text, boolean isPrimary) {
+    private JButton createDetailActionButton(String text, boolean isPrimary) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Poppins", Font.BOLD, 13));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -334,7 +315,13 @@ public class ReportDetailFrame extends JDialog {
                 
                 boolean hovered = btn.getModel().isRollover();
                 
-                if (isPrimary) {
+                if (!btn.isEnabled()) {
+                    g2.setColor(new Color(245, 245, 245));
+                    g2.fillRoundRect(0, 0, c.getWidth(), c.getHeight(), 18, 18);
+                    g2.setColor(new Color(220, 220, 220));
+                    g2.drawRoundRect(0, 0, c.getWidth() - 1, c.getHeight() - 1, 18, 18);
+                    btn.setForeground(new Color(130, 140, 150));
+                } else if (isPrimary) {
                     g2.setColor(hovered ? new Color(245, 248, 255) : Color.WHITE);
                     g2.fillRoundRect(0, 0, c.getWidth(), c.getHeight(), 18, 18);
                     g2.setColor(UserDashboardComponents.PRIMARY);
@@ -354,26 +341,58 @@ public class ReportDetailFrame extends JDialog {
         return btn;
     }
 
-    private String getCategoryName(Report report) {
+    // =========================
+    // Data Helpers
+    // =========================
+
+    private String getReportCategoryName(Report report) {
         if (report == null || report.getItem() == null || report.getItem().getCategory() == null) {
             return "-";
         }
         return report.getItem().getCategory().getName();
     }
 
-    private String getDescription(Report report) {
+    private String getReportDescription(Report report) {
         return report != null ? report.getDescription() : "-";
     }
 
-    private String getLocation(Report report) {
+    private String getReportLocation(Report report) {
         return report != null ? UserDashboardComponents.location(report) : "-";
     }
 
-    private String getItemStatus(Report report) {
+    private String getReportItemStatus(Report report) {
         return report != null && report.getItem() != null ? report.getItem().getStatus().name() : "-";
     }
 
     private String getReportDate(Report report) {
         return report != null ? UserDashboardComponents.date(report) : "-";
+    }
+
+    private boolean hasCurrentUserSubmittedActiveClaim(com.managers.ClaimManager claimManager, com.model.User currentUser, Report report) {
+        if (claimManager == null || currentUser == null || report == null || report.getItem() == null) {
+            return false;
+        }
+
+        if (claimManager.hasActiveClaimByUserForReportOrItem(currentUser.getUserId(), report.getReportId(), report.getItem().getItemID())) {
+            return true;
+        }
+
+        for (com.model.Claim claim : claimManager.getClaims()) {
+            if (claim.getUser() == null || claim.getItem() == null) {
+                continue;
+            }
+
+            boolean sameUser = currentUser.getUserId().equals(claim.getUser().getUserId());
+            boolean sameItem = report.getItem().getItemID().equals(claim.getItem().getItemID());
+            boolean sameReport = report.getReportId() != null && report.getReportId().equals(claim.getRelatedReportId());
+            boolean activeClaim = claim.getStatus() == com.enumeration.ClaimStatus.PENDING
+                    || claim.getStatus() == com.enumeration.ClaimStatus.VALID;
+
+            if (sameUser && activeClaim && (sameItem || sameReport)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

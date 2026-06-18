@@ -21,6 +21,7 @@ public class Claim implements Verifiable{
         this.claimId = claimId;
         this.user = user;
         this.item = item;
+        this.relatedReportId = relatedReportId;
         this.documents = new ArrayList<>();
         this.status = ClaimStatus.PENDING;
         this.dateClaim = LocalDateTime.now();

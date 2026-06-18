@@ -3,6 +3,7 @@ package com.frame.dashboard.user;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -13,23 +14,33 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.LayoutManager;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.event.ContainerAdapter;
+import java.awt.event.ContainerEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.time.format.DateTimeFormatter;
 
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.Scrollable;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.border.AbstractBorder;
+import javax.swing.text.JTextComponent;
 
 import com.model.Claim;
 import com.model.FoundReport;
@@ -43,7 +54,7 @@ public final class UserDashboardComponents {
     private static final String TEXT_SEPARATOR = " - ";
     private static final DateTimeFormatter DISPLAY_DATE_FORMAT = DateTimeFormatter.ofPattern("dd MMM yyyy");
     private static final Dimension REPORT_CARD_SIZE = new Dimension(320, 360);
-    private static final Dimension CLAIM_CARD_SIZE = new Dimension(370, 190);
+    private static final Dimension CLAIM_CARD_SIZE = new Dimension(320, 360);
     private static final Dimension PHOTO_SIZE = new Dimension(320, 220);
     private static final Dimension CARD_PHOTO_SIZE = new Dimension(320, 160);
     private static final Dimension PHOTO_MINIMUM_SIZE = new Dimension(280, 160);
@@ -86,13 +97,46 @@ public final class UserDashboardComponents {
     }
 
     public static JScrollPane scroll(Component content) {
-        JScrollPane scrollPane = new JScrollPane(content);
+        JScrollPane scrollPane = new JScrollPane(new ViewportWidthPanel(content));
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.setViewportBorder(BorderFactory.createEmptyBorder(0, 0, 0, 18));
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.getViewport().setBackground(SURFACE);
         scrollPane.setBackground(SURFACE);
         applyScrollBarStyle(scrollPane);
         return scrollPane;
+    }
+
+    public static void clearTextFocusOnBackgroundClick(JComponent root) {
+        root.setFocusable(true);
+        installTextFocusClearer(root, root);
+    }
+
+    private static void installTextFocusClearer(Component component, JComponent focusTarget) {
+        if (!(component instanceof JTextComponent)) {
+            component.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent event) {
+                    Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+                    if (focusOwner instanceof JTextComponent) {
+                        focusTarget.requestFocusInWindow();
+                    }
+                }
+            });
+        }
+
+        if (component instanceof Container) {
+            Container container = (Container) component;
+            for (Component child : container.getComponents()) {
+                installTextFocusClearer(child, focusTarget);
+            }
+            container.addContainerListener(new ContainerAdapter() {
+                @Override
+                public void componentAdded(ContainerEvent event) {
+                    installTextFocusClearer(event.getChild(), focusTarget);
+                }
+            });
+        }
     }
 
     private static void applyScrollBarStyle(JScrollPane scrollPane) {
@@ -176,6 +220,26 @@ public final class UserDashboardComponents {
         return panel;
     }
 
+    public static JPanel statGrid() {
+        JPanel panel = new JPanel(new ResponsiveCardLayout(18, 18, 260));
+        panel.setOpaque(false);
+        return panel;
+    }
+
+    public static JPanel responsiveGrid(int minimumCardWidth) {
+        JPanel panel = new JPanel(new ResponsiveCardLayout(18, 18, minimumCardWidth));
+        panel.setOpaque(false);
+        return panel;
+    }
+
+    public static JPanel responsiveActionRow(Component leftContent, Component rightContent) {
+        JPanel panel = new JPanel(new ResponsiveActionLayout(14));
+        panel.setOpaque(false);
+        panel.add(leftContent);
+        panel.add(rightContent);
+        return panel;
+    }
+
     public static GridBagConstraints contentConstraints() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -197,16 +261,45 @@ public final class UserDashboardComponents {
     }
 
     public static class SearchField extends JTextField {
-        private String placeholder;
+        private final String placeholder;
         public SearchField(String placeholder) {
             super(20);
             this.placeholder = placeholder;
             setFont(new Font("Poppins", Font.PLAIN, 14));
+            setForeground(TEXT_DARK);
+            setCaretColor(TEXT_DARK);
             setPreferredSize(new Dimension(250, 40));
             setBorder(BorderFactory.createCompoundBorder(
                 new RoundedLineBorder(BORDER, 20, 1),
                 BorderFactory.createEmptyBorder(5, 35, 5, 15)
             ));
+            addFocusListener(new java.awt.event.FocusAdapter() {
+                @Override
+                public void focusGained(java.awt.event.FocusEvent event) {
+                    repaint();
+                }
+
+                @Override
+                public void focusLost(java.awt.event.FocusEvent event) {
+                    repaint();
+                }
+            });
+            getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+                @Override
+                public void insertUpdate(javax.swing.event.DocumentEvent event) {
+                    repaint();
+                }
+
+                @Override
+                public void removeUpdate(javax.swing.event.DocumentEvent event) {
+                    repaint();
+                }
+
+                @Override
+                public void changedUpdate(javax.swing.event.DocumentEvent event) {
+                    repaint();
+                }
+            });
         }
 
         @Override
@@ -426,6 +519,253 @@ public final class UserDashboardComponents {
         }
     }
 
+    private static class ViewportWidthPanel extends JPanel implements Scrollable {
+
+        ViewportWidthPanel(Component content) {
+            super(new GridBagLayout());
+            setOpaque(false);
+
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            gbc.weightx = 1;
+            gbc.weighty = 1;
+            gbc.fill = GridBagConstraints.BOTH;
+            gbc.anchor = GridBagConstraints.NORTHWEST;
+            add(content, gbc);
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 16;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return Math.max(16, visibleRect.height - 24);
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return true;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return false;
+        }
+    }
+
+    private static class ResponsiveCardLayout implements LayoutManager {
+
+        private final int horizontalGap;
+        private final int verticalGap;
+        private final int minimumCardWidth;
+
+        ResponsiveCardLayout(int horizontalGap, int verticalGap, int minimumCardWidth) {
+            this.horizontalGap = horizontalGap;
+            this.verticalGap = verticalGap;
+            this.minimumCardWidth = minimumCardWidth;
+        }
+
+        @Override
+        public void addLayoutComponent(String name, Component component) {
+        }
+
+        @Override
+        public void removeLayoutComponent(Component component) {
+        }
+
+        @Override
+        public Dimension preferredLayoutSize(Container parent) {
+            synchronized (parent.getTreeLock()) {
+                return calculateLayoutSize(parent, parent.getWidth() > 0 ? parent.getWidth() : 900);
+            }
+        }
+
+        @Override
+        public Dimension minimumLayoutSize(Container parent) {
+            synchronized (parent.getTreeLock()) {
+                return calculateLayoutSize(parent, minimumCardWidth);
+            }
+        }
+
+        @Override
+        public void layoutContainer(Container parent) {
+            synchronized (parent.getTreeLock()) {
+                Insets insets = parent.getInsets();
+                int componentCount = getVisibleComponentCount(parent);
+                if (componentCount == 0) {
+                    return;
+                }
+
+                int availableWidth = Math.max(1, parent.getWidth() - insets.left - insets.right);
+                int columns = calculateColumnCount(availableWidth, componentCount);
+                int cardWidth = Math.max(1, (availableWidth - (horizontalGap * (columns - 1))) / columns);
+                int x = insets.left;
+                int y = insets.top;
+                int column = 0;
+                int rowHeight = 0;
+
+                for (Component component : parent.getComponents()) {
+                    if (!component.isVisible()) {
+                        continue;
+                    }
+
+                    Dimension preferred = component.getPreferredSize();
+                    int cardHeight = preferred.height;
+                    component.setBounds(x, y, cardWidth, cardHeight);
+                    rowHeight = Math.max(rowHeight, cardHeight);
+
+                    column++;
+                    if (column >= columns) {
+                        column = 0;
+                        x = insets.left;
+                        y += rowHeight + verticalGap;
+                        rowHeight = 0;
+                    } else {
+                        x += cardWidth + horizontalGap;
+                    }
+                }
+            }
+        }
+
+        private Dimension calculateLayoutSize(Container parent, int width) {
+            Insets insets = parent.getInsets();
+            int componentCount = getVisibleComponentCount(parent);
+            if (componentCount == 0) {
+                return new Dimension(insets.left + insets.right, insets.top + insets.bottom);
+            }
+
+            int availableWidth = Math.max(1, width - insets.left - insets.right);
+            int columns = calculateColumnCount(availableWidth, componentCount);
+            int rows = (int) Math.ceil(componentCount / (double) columns);
+            int maxHeight = 0;
+            for (Component component : parent.getComponents()) {
+                if (component.isVisible()) {
+                    maxHeight = Math.max(maxHeight, component.getPreferredSize().height);
+                }
+            }
+
+            int cardWidth = Math.max(1, (availableWidth - (horizontalGap * (columns - 1))) / columns);
+            int preferredWidth = insets.left + insets.right + (columns * cardWidth) + ((columns - 1) * horizontalGap);
+            int preferredHeight = insets.top + insets.bottom + (rows * maxHeight) + ((rows - 1) * verticalGap);
+            return new Dimension(preferredWidth, preferredHeight);
+        }
+
+        private int calculateColumnCount(int availableWidth, int componentCount) {
+            if (availableWidth < minimumCardWidth) {
+                return 1;
+            }
+            int columns = Math.max(1, (availableWidth + horizontalGap) / (minimumCardWidth + horizontalGap));
+            return Math.min(componentCount, columns);
+        }
+
+        private int getVisibleComponentCount(Container parent) {
+            int count = 0;
+            for (Component component : parent.getComponents()) {
+                if (component.isVisible()) {
+                    count++;
+                }
+            }
+            return count;
+        }
+    }
+
+    private static class ResponsiveActionLayout implements LayoutManager {
+
+        private final int gap;
+
+        ResponsiveActionLayout(int gap) {
+            this.gap = gap;
+        }
+
+        @Override
+        public void addLayoutComponent(String name, Component component) {
+        }
+
+        @Override
+        public void removeLayoutComponent(Component component) {
+        }
+
+        @Override
+        public Dimension preferredLayoutSize(Container parent) {
+            synchronized (parent.getTreeLock()) {
+                Component left = getComponent(parent, 0);
+                Component right = getComponent(parent, 1);
+                if (left == null) {
+                    return new Dimension(0, 0);
+                }
+
+                Dimension leftSize = left.getPreferredSize();
+                Dimension rightSize = right == null ? new Dimension(0, 0) : right.getPreferredSize();
+                Insets insets = parent.getInsets();
+                int width = leftSize.width + (right == null ? 0 : gap + rightSize.width) + insets.left + insets.right;
+                int height = Math.max(leftSize.height, rightSize.height) + insets.top + insets.bottom;
+                return new Dimension(width, height);
+            }
+        }
+
+        @Override
+        public Dimension minimumLayoutSize(Container parent) {
+            synchronized (parent.getTreeLock()) {
+                Component left = getComponent(parent, 0);
+                Component right = getComponent(parent, 1);
+                Dimension leftSize = left == null ? new Dimension(0, 0) : left.getMinimumSize();
+                Dimension rightSize = right == null ? new Dimension(0, 0) : right.getMinimumSize();
+                Insets insets = parent.getInsets();
+                int width = Math.max(leftSize.width, rightSize.width) + insets.left + insets.right;
+                int height = leftSize.height + (right == null ? 0 : gap + rightSize.height) + insets.top + insets.bottom;
+                return new Dimension(width, height);
+            }
+        }
+
+        @Override
+        public void layoutContainer(Container parent) {
+            synchronized (parent.getTreeLock()) {
+                Component left = getComponent(parent, 0);
+                Component right = getComponent(parent, 1);
+                if (left == null) {
+                    return;
+                }
+
+                Insets insets = parent.getInsets();
+                int availableWidth = Math.max(0, parent.getWidth() - insets.left - insets.right);
+                Dimension leftSize = left.getPreferredSize();
+                Dimension rightSize = right == null ? new Dimension(0, 0) : right.getPreferredSize();
+                boolean fitsInOneRow = right == null || leftSize.width + gap + rightSize.width <= availableWidth;
+
+                if (fitsInOneRow) {
+                    int rowHeight = Math.max(leftSize.height, rightSize.height);
+                    left.setBounds(insets.left, insets.top, Math.max(0, availableWidth - rightSize.width - gap), rowHeight);
+                    if (right != null) {
+                        right.setBounds(
+                                insets.left + availableWidth - rightSize.width,
+                                insets.top + (rowHeight - rightSize.height) / 2,
+                                rightSize.width,
+                                rightSize.height
+                        );
+                    }
+                    return;
+                }
+
+                left.setBounds(insets.left, insets.top, availableWidth, leftSize.height);
+                if (right != null) {
+                    right.setBounds(insets.left, insets.top + leftSize.height + gap, availableWidth, rightSize.height);
+                }
+            }
+        }
+
+        private Component getComponent(Container parent, int index) {
+            return parent.getComponentCount() > index ? parent.getComponent(index) : null;
+        }
+    }
+
     // =========================
     // Dashboard Cards
     // =========================
@@ -457,7 +797,7 @@ public final class UserDashboardComponents {
             this(report, statusText, statusColor, null);
         }
 
-        public ReportCard(Report report, String statusText, Color statusColor, JButton actionButton) {
+        public ReportCard(Report report, String statusText, Color statusColor, JComponent actionContent) {
             super(Color.WHITE, 20);
             setPreferredSize(REPORT_CARD_SIZE);
             setLayout(new GridBagLayout());
@@ -491,43 +831,15 @@ public final class UserDashboardComponents {
             gbc.fill = GridBagConstraints.HORIZONTAL;
             gbc.anchor = GridBagConstraints.WEST;
             gbc.insets = new Insets(10, 0, 0, 0);
-            add(createCardActions(statusText, statusColor, actionButton), gbc);
-            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    setBorder(BorderFactory.createCompoundBorder(
-                            new RoundedLineBorder(new Color(150, 180, 225), 22, 2),
-                            BorderFactory.createEmptyBorder(10, 11, 14, 11)
-                    ));
-                    repaint();
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    setBorder(BorderFactory.createCompoundBorder(
-                            new RoundedLineBorder(BORDER, 22, 1),
-                            BorderFactory.createEmptyBorder(12, 12, 12, 12)
-                    ));
-                    repaint();
-                }
-                
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    try {
-                        new ReportDetailFrame(report).setVisible(true);
-                    } catch (Throwable ex) {
-                        // fallback: ignore
-                    }
-                }
-            });
+            add(createCardActions(statusText, statusColor, actionContent), gbc);
+            installCardMouseHandlers(this, report);
         }
 
         private String location(Report report) {
             return UserDashboardComponents.location(report);
         }
 
-        private JPanel createCardActions(String statusText, Color statusColor, JButton actionButton) {
+        private JPanel createCardActions(String statusText, Color statusColor, JComponent actionContent) {
             JPanel actions = new JPanel(new GridBagLayout());
             actions.setOpaque(false);
             GridBagConstraints gbc = new GridBagConstraints();
@@ -537,41 +849,134 @@ public final class UserDashboardComponents {
             gbc.anchor = GridBagConstraints.WEST;
             actions.add(createStatusBadge(statusText, statusColor), gbc);
 
-            if (actionButton != null) {
+            if (actionContent != null) {
                 gbc.gridx = 1;
                 gbc.weightx = 0;
                 gbc.anchor = GridBagConstraints.EAST;
                 gbc.insets = new Insets(0, 8, 0, 0);
-                actions.add(actionButton);
+                actions.add(actionContent);
             }
             return actions;
+        }
+
+        private void installCardMouseHandlers(Component component, Report report) {
+            if (component instanceof JButton) {
+                return;
+            }
+
+            component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            component.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent event) {
+                    applyHoverBorder();
+                }
+
+                @Override
+                public void mouseExited(MouseEvent event) {
+                    java.awt.Point point = SwingUtilities.convertPoint(
+                            event.getComponent(),
+                            event.getPoint(),
+                            ReportCard.this
+                    );
+                    if (!ReportCard.this.contains(point)) {
+                        applyNormalBorder();
+                    }
+                }
+
+                @Override
+                public void mouseClicked(MouseEvent event) {
+                    openReportDetail(report);
+                }
+            });
+
+            if (component instanceof Container) {
+                for (Component child : ((Container) component).getComponents()) {
+                    installCardMouseHandlers(child, report);
+                }
+            }
+        }
+
+        private void applyHoverBorder() {
+            setBorder(BorderFactory.createCompoundBorder(
+                    new RoundedLineBorder(new Color(150, 180, 225), 22, 2),
+                    BorderFactory.createEmptyBorder(10, 11, 14, 11)
+            ));
+            repaint();
+        }
+
+        private void applyNormalBorder() {
+            setBorder(BorderFactory.createCompoundBorder(
+                    new RoundedLineBorder(BORDER, 22, 1),
+                    BorderFactory.createEmptyBorder(12, 12, 12, 12)
+            ));
+            repaint();
+        }
+
+        private void openReportDetail(Report report) {
+            try {
+                new ReportDetailFrame(report).setVisible(true);
+            } catch (Throwable ex) {
+                // fallback: ignore
+            }
         }
     }
 
     public static class ClaimCard extends RoundedPanel {
 
         public ClaimCard(Claim claim) {
-            super(Color.WHITE, 22);
+            super(Color.WHITE, 20);
             setPreferredSize(CLAIM_CARD_SIZE);
             setLayout(new GridBagLayout());
             setBorder(BorderFactory.createCompoundBorder(
                     new RoundedLineBorder(BORDER, 22, 1),
-                    BorderFactory.createEmptyBorder(18, 18, 18, 18)
+                    BorderFactory.createEmptyBorder(12, 12, 12, 12)
             ));
 
             GridBagConstraints gbc = createHorizontalConstraints();
 
             gbc.gridy = 0;
-            add(label(claim.getItem().getName(), 19, Font.BOLD, TEXT_DARK), gbc);
+            add(new ClaimPhotoPanel(), gbc);
+
             gbc.gridy = 1;
-            gbc.insets = new Insets(5, 0, 0, 0);
-            add(label(claim.getClaimId() + TEXT_SEPARATOR + date(claim), 13, Font.PLAIN, TEXT_MUTED), gbc);
-            gbc.gridy = 2;
-            gbc.insets = new Insets(14, 0, 0, 0);
-            add(label("Status klaim: " + claim.getStatus(), 14, Font.BOLD, PRIMARY_DARK), gbc);
-            gbc.gridy = 3;
             gbc.insets = new Insets(8, 0, 0, 0);
-            add(label("Report asal: " + (claim.getRelatedReportId() == null ? "-" : claim.getRelatedReportId()), 13, Font.PLAIN, TEXT_MUTED), gbc);
+            add(label(claim.getItem().getName(), 20, Font.BOLD, TEXT_DARK), gbc);
+
+            gbc.gridy = 2;
+            gbc.insets = new Insets(2, 0, 0, 0);
+            add(label(getClaimMetaText(claim), 13, Font.PLAIN, TEXT_MUTED), gbc);
+
+            gbc.gridy = 3;
+            gbc.insets = new Insets(10, 0, 0, 0);
+            add(paragraph(claim.getItem().getDescription(), 13), gbc);
+
+            gbc.gridy = 4;
+            gbc.insets = new Insets(12, 0, 0, 0);
+            add(label("Lokasi: " + getClaimItemLocation(claim), 13, Font.PLAIN, TEXT_MUTED), gbc);
+
+            gbc.gridy = 5;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.anchor = GridBagConstraints.WEST;
+            gbc.insets = new Insets(10, 0, 0, 0);
+            add(createClaimStatusBadge(claim.getStatus().name()), gbc);
+        }
+
+        private String getClaimMetaText(Claim claim) {
+            String reportId = claim.getRelatedReportId() == null ? EMPTY_TEXT : claim.getRelatedReportId();
+            return reportId + TEXT_SEPARATOR + getClaimCategoryName(claim) + TEXT_SEPARATOR + date(claim);
+        }
+
+        private String getClaimCategoryName(Claim claim) {
+            if (claim.getItem() == null || claim.getItem().getCategory() == null) {
+                return "Tanpa Kategori";
+            }
+            return claim.getItem().getCategory().getName();
+        }
+
+        private String getClaimItemLocation(Claim claim) {
+            if (claim.getItem() == null || claim.getItem().getLocation() == null || claim.getItem().getLocation().isBlank()) {
+                return EMPTY_TEXT;
+            }
+            return claim.getItem().getLocation();
         }
     }
 
@@ -584,6 +989,106 @@ public final class UserDashboardComponents {
         return gbc;
     }
 
+    public enum ActionIconType {
+        EDIT,
+        DELETE
+    }
+
+    public static JButton iconButton(ActionIconType type, String tooltip, Color foreground, Color background, Color hoverBackground) {
+        return iconButton(type, tooltip, foreground, background, hoverBackground, new Dimension(42, 36), 16);
+    }
+
+    public static JButton iconButton(ActionIconType type, String tooltip, Color foreground, Color background, Color hoverBackground, Dimension size, int radius) {
+        JButton button = new IconActionButton(new ActionIcon(type, foreground), background, hoverBackground, radius);
+        button.setToolTipText(tooltip);
+        button.setPreferredSize(size);
+        button.setMinimumSize(size);
+        button.setMaximumSize(size);
+        return button;
+    }
+
+    private static class IconActionButton extends JButton {
+
+        private final Color backgroundColor;
+        private final Color hoverBackgroundColor;
+        private final int radius;
+
+        IconActionButton(Icon icon, Color backgroundColor, Color hoverBackgroundColor, int radius) {
+            super(icon);
+            this.backgroundColor = backgroundColor;
+            this.hoverBackgroundColor = hoverBackgroundColor;
+            this.radius = radius;
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setContentAreaFilled(false);
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics graphics) {
+            Graphics2D g2 = (Graphics2D) graphics.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            Color fill = getModel().isPressed() ? backgroundColor.darker() : backgroundColor;
+            if (getModel().isRollover() && !getModel().isPressed()) {
+                fill = hoverBackgroundColor;
+            }
+            g2.setColor(fill);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+            g2.dispose();
+            super.paintComponent(graphics);
+        }
+    }
+
+    private static class ActionIcon implements Icon {
+
+        private static final int SIZE = 18;
+
+        private final ActionIconType type;
+        private final Color color;
+
+        ActionIcon(ActionIconType type, Color color) {
+            this.type = type;
+            this.color = color;
+        }
+
+        @Override
+        public int getIconWidth() {
+            return SIZE;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return SIZE;
+        }
+
+        @Override
+        public void paintIcon(Component c, Graphics graphics, int x, int y) {
+            Graphics2D g2 = (Graphics2D) graphics.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.translate(x, y);
+            g2.setColor(color);
+            g2.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            if (type == ActionIconType.EDIT) {
+                g2.drawLine(4, 13, 13, 4);
+                g2.drawLine(11, 3, 15, 7);
+                g2.drawLine(3, 14, 7, 15);
+                g2.drawLine(3, 14, 4, 10);
+            } else {
+                g2.drawLine(5, 6, 13, 6);
+                g2.drawLine(7, 4, 11, 4);
+                g2.drawLine(6, 8, 7, 15);
+                g2.drawLine(12, 8, 11, 15);
+                g2.drawLine(7, 15, 11, 15);
+                g2.drawLine(8, 9, 8, 13);
+                g2.drawLine(10, 9, 10, 13);
+            }
+
+            g2.dispose();
+        }
+    }
+
     private static RoundedPanel createStatusBadge(String statusText, Color statusColor) {
         RoundedPanel badge = new RoundedPanel(new Color(statusColor.getRed(), statusColor.getGreen(), statusColor.getBlue(), 24), 18);
         badge.setLayout(new GridBagLayout());
@@ -592,6 +1097,21 @@ public final class UserDashboardComponents {
         badge.setBorder(BorderFactory.createEmptyBorder(7, 12, 7, 12));
         badge.add(label(statusText, 12, Font.BOLD, statusColor));
         return badge;
+    }
+
+    private static RoundedPanel createClaimStatusBadge(String statusText) {
+        Color statusColor = claimStatusColor(statusText);
+        return createStatusBadge("Status: " + statusText, statusColor);
+    }
+
+    private static Color claimStatusColor(String statusText) {
+        if ("VALID".equals(statusText)) {
+            return new Color(22, 163, 74);
+        }
+        if ("DITOLAK".equals(statusText)) {
+            return new Color(220, 38, 38);
+        }
+        return PRIMARY_DARK;
     }
 
     private static int calculateStatusBadgeWidth(String statusText) {
@@ -667,6 +1187,28 @@ public final class UserDashboardComponents {
             }
 
             g2.setClip(null);
+            g2.dispose();
+        }
+    }
+
+    private static class ClaimPhotoPanel extends JPanel {
+
+        ClaimPhotoPanel() {
+            setPreferredSize(CARD_PHOTO_SIZE);
+            setMinimumSize(PHOTO_MINIMUM_SIZE);
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2.setPaint(new java.awt.GradientPaint(0, 0, PRIMARY_LIGHT, getWidth(), getHeight(), PRIMARY_DARK));
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+            g2.setColor(new Color(255, 255, 255, 44));
+            g2.fillOval(getWidth() - 95, -35, 130, 130);
             g2.dispose();
         }
     }

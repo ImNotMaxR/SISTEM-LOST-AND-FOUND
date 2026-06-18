@@ -19,11 +19,16 @@ public class ClaimManager implements Managerable{
     private ArrayList<Claim> claims;
     private HashMap<String, Claim> claimMap;
     private DBConnection dbConnection;
+    private String lastErrorMessage;
 
     public ClaimManager() {
         this.claims = new ArrayList<>();
         this.claimMap = new HashMap<>();
         this.dbConnection = DBConnection.getInstance();
+        loadAllClaimsFromDB();
+    }
+
+    public void refreshClaimsFromDatabase() {
         loadAllClaimsFromDB();
     }
     
@@ -126,23 +131,49 @@ public class ClaimManager implements Managerable{
         return claimMap.getOrDefault(id, null);
     }
 
+    public String getLastErrorMessage() {
+        return lastErrorMessage == null || lastErrorMessage.isBlank()
+                ? "Pengajuan klaim belum tersimpan."
+                : lastErrorMessage;
+    }
+
     public void addClaim(Claim claim) {
+        saveClaim(claim);
+    }
+
+    public boolean saveClaim(Claim claim) {
+        lastErrorMessage = "";
+
+        if (claim == null || claim.getItem() == null || claim.getUser() == null) {
+            lastErrorMessage = "Data klaim tidak lengkap. Silakan login ulang dan coba lagi.";
+            System.out.println("Error: " + lastErrorMessage);
+            return false;
+        }
+
         // Validasi item harus DITEMUKAN
         if (claim.getItem().getStatus() != ItemStatus.DITEMUKAN) {
-            System.out.println("Error: Item " + claim.getItem().getName() + " tidak berstatus DITEMUKAN. Tidak bisa diklaim.");
-            return;
+            lastErrorMessage = "Barang \"" + claim.getItem().getName() + "\" tidak berstatus DITEMUKAN, sehingga belum bisa diklaim.";
+            System.out.println("Error: " + lastErrorMessage);
+            return false;
         }
  
         // Validasi tidak ada klaim aktif untuk item yang sama
         if (hasActiveClaim(claim.getItem().getItemID())) {
-            System.out.println("Error: Item '" + claim.getItem().getName() + "' sudah memiliki klaim yang sedang diproses.");
-            return;
+            lastErrorMessage = "Barang \"" + claim.getItem().getName() + "\" sudah memiliki klaim yang sedang diproses.";
+            System.out.println("Error: " + lastErrorMessage);
+            return false;
         }
  
         // Validasi dokumen jika kategori butuh verifikasi
         if (!claim.validate()) {
-            System.out.println("Error: Klaim tidak lolos valid");
-            return;
+            if (claim.getItem().getCategory() != null && claim.getItem().getCategory().isVerificationRequired()
+                    && claim.getDocuments().isEmpty()) {
+                lastErrorMessage = "Kategori \"" + claim.getItem().getCategory().getName() + "\" membutuhkan dokumen verifikasi sebelum klaim diajukan.";
+            } else {
+                lastErrorMessage = "Data klaim tidak lolos validasi. Silakan periksa status barang dan dokumen pendukung.";
+            }
+            System.out.println("Error: " + lastErrorMessage);
+            return false;
         }
  
         String sql = "INSERT INTO claims (claim_id, user_id, item_id, status, date_claim, related_report_id) " + "VALUES (?, ?, ?, ?, ?, ?)";
@@ -165,8 +196,11 @@ public class ClaimManager implements Managerable{
             claims.add(claim);
             claimMap.put(claim.getClaimId(), claim);
             System.out.println("Klaim dengan ID: " + claim.getClaimId() + " berhasil diajukan.");
+            return true;
         } catch (SQLException e) {
-            System.out.println("Gagal simpan klaim: " + e.getMessage());
+            lastErrorMessage = "Gagal menyimpan klaim ke database: " + e.getMessage();
+            System.out.println(lastErrorMessage);
+            return false;
         }
     }
     
@@ -261,6 +295,39 @@ public class ClaimManager implements Managerable{
                 return true;
             }
         }
+        return false;
+    }
+
+    public boolean hasActiveClaimByUserForItem(String userId, String itemId) {
+        return hasActiveClaimByUserForReportOrItem(userId, null, itemId);
+    }
+
+    public boolean hasActiveClaimByUserForReportOrItem(String userId, String reportId, String itemId) {
+        if (userId == null || itemId == null) {
+            return false;
+        }
+
+        String sql = "SELECT COUNT(*) AS total FROM claims "
+                + "WHERE user_id = ? "
+                + "AND (item_id = ? OR related_report_id = ?) "
+                + "AND UPPER(status) IN (?, ?)";
+
+        try {
+            Connection conn = dbConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, userId);
+            ps.setString(2, itemId);
+            ps.setString(3, reportId);
+            ps.setString(4, ClaimStatus.PENDING.name());
+            ps.setString(5, ClaimStatus.VALID.name());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("total") > 0;
+            }
+        } catch (SQLException e) {
+            System.out.println("Gagal cek klaim aktif user: " + e.getMessage());
+        }
+
         return false;
     }
 

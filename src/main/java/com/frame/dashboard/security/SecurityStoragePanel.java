@@ -40,7 +40,7 @@ public class SecurityStoragePanel extends JPanel {
         headerPanel.setBorder(BorderFactory.createEmptyBorder(24, 32, 24, 32));
 
         JLabel titleLabel = UserDashboardComponents.label("Storage Record", 28, Font.BOLD, UserDashboardComponents.TEXT_DARK);
-        JLabel subtitleLabel = UserDashboardComponents.label("Kelola barang-barang yang ada di gudang penyimpanan.", 14, Font.PLAIN, UserDashboardComponents.TEXT_MUTED);
+        JLabel subtitleLabel = UserDashboardComponents.label("Kelola Barang-Barang Yang Ada Di Gudang Penyimpanan.", 14, Font.PLAIN, UserDashboardComponents.TEXT_MUTED);
 
         JPanel titleWrapper = new JPanel(new GridLayout(2, 1, 0, 4));
         titleWrapper.setBackground(UserDashboardComponents.SURFACE);

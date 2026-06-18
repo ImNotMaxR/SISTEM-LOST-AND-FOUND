@@ -64,7 +64,7 @@ import javax.swing.text.DocumentFilter;
 public class LostReportPanel extends JDialog {
 
     private static final String TITLE = "Buat Laporan Barang Hilang";
-    private static final String SUBTITLE = "Isi data laporan barang hilang yang ingin anda laporkan kepada kami.";
+    private static final String SUBTITLE = "Isi Data Laporan Barang Hilang Yang Ingin Anda Laporkan Kepada Kami.";
     private static final Dimension MINIMUM_FRAME_SIZE = new Dimension(900, 650);
 
     private final User user;
@@ -204,7 +204,7 @@ public class LostReportPanel extends JDialog {
         itemNameField = createTextField("Contoh: Tumbler Tuku", 50);
         addField(panel, gbc, 0, "Nama barang*", itemNameField, 0.0);
 
-        itemDescriptionArea = createTextArea("Ciri-ciri barang, warna, merek, tanda khusus", 300);
+        itemDescriptionArea = createTextArea("Ciri-Ciri Barang, Warna, Merek, Tanda Khusus", 300);
         addField(panel, gbc, 1, "Deskripsi barang", createTextAreaScroll(itemDescriptionArea), 1.0);
 
         lostLocationField = createTextField("Contoh: Lab Komputer FIF Lt.2", 100);
@@ -531,7 +531,7 @@ public class LostReportPanel extends JDialog {
 
         if (itemName.isEmpty() || itemDescription.isEmpty() || lostLocation.isEmpty()
                 || reportDescription.isEmpty() || category == null) {
-            AppDialog.warning(this, "Data Belum Lengkap", "Semua input wajib diisi sebelum menyimpan laporan.");
+            AppDialog.warning(this, "Data Belum Lengkap", "Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
             return;
         }
 
@@ -552,7 +552,7 @@ public class LostReportPanel extends JDialog {
                 onReportSaved.run();
             }
 
-            AppDialog.success(this, "Laporan Disimpan", "Laporan barang hilang berhasil dibuat.");
+            AppDialog.success(this, "Laporan Disimpan", "Laporan Barang Hilang Berhasil Dibuat.");
             dispose();
         } catch (Exception e) {
             AppDialog.error(this, "Terjadi Kesalahan", "Gagal menyimpan laporan: " + e.getMessage());
