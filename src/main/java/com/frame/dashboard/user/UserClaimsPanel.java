@@ -18,6 +18,7 @@ public class UserClaimsPanel extends JPanel {
 
     public UserClaimsPanel(User user, ClaimManager claimManager) {
         configurePanel();
+        claimManager.refreshClaimsFromDatabase();
         add(UserDashboardComponents.scroll(createContent(user, claimManager)), BorderLayout.CENTER);
     }
 

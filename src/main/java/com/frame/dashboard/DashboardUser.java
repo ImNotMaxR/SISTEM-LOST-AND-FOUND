@@ -125,7 +125,7 @@ public class DashboardUser extends JFrame {
         scrollPane.setBorder(null);
         scrollPane.setBackground(Color.WHITE);
         scrollPane.getViewport().setBackground(Color.WHITE);
-        scrollPane.setPreferredSize(new Dimension(248, 760));
+        scrollPane.setPreferredSize(new Dimension(320, 760));
         applySidebarScrollStyle(scrollPane);
         return scrollPane;
     }
@@ -133,6 +133,7 @@ public class DashboardUser extends JFrame {
     private JPanel createSidebarPanel() {
         JPanel sidebar = new JPanel(new GridBagLayout());
         sidebar.setBackground(Color.WHITE);
+        sidebar.setPreferredSize(new Dimension(320, 760));
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UserDashboardComponents.BORDER));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -493,7 +494,7 @@ public class DashboardUser extends JFrame {
             }
             setIconTextGap(12);
             
-            setPreferredSize(new Dimension(224, 38));
+            setPreferredSize(new Dimension(270, 46));
             setFocusPainted(false);
             setBorderPainted(false);
             setContentAreaFilled(false);
