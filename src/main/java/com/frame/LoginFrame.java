@@ -15,10 +15,12 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import javax.swing.BorderFactory;
@@ -41,6 +43,8 @@ public class LoginFrame extends JFrame {
     private static final Color PRIMARY_LIGHT = new Color(75, 184, 250);
     private static final Color TEXT_DARK = new Color(31, 41, 55);
     private static final Color TEXT_MUTED = new Color(100, 116, 139);
+    private static final Dimension MIN_WINDOW_SIZE = new Dimension(880, 560);
+    private static final Dimension MAX_START_SIZE = new Dimension(1160, 720);
 
     private JTextField usernameField;
     private JPasswordField passwordField;
@@ -65,8 +69,9 @@ public class LoginFrame extends JFrame {
     private void configureFrame() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setTitle("Login - Sistem Lost & Found");
-        setMinimumSize(new Dimension(920, 560));
-        setResizable(false);
+        setMinimumSize(MIN_WINDOW_SIZE);
+        setPreferredSize(calculateStartSize());
+        setResizable(true);
     }
 
     private JPanel createMainPanel() {
@@ -78,11 +83,20 @@ public class LoginFrame extends JFrame {
         return root;
     }
 
+    private Dimension calculateStartSize() {
+        Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getMaximumWindowBounds();
+        int width = Math.min(MAX_START_SIZE.width, Math.max(MIN_WINDOW_SIZE.width, screen.width - 180));
+        int height = Math.min(MAX_START_SIZE.height, Math.max(MIN_WINDOW_SIZE.height, screen.height - 140));
+        return new Dimension(width, height);
+    }
+
     private JPanel createBrandSection() {
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setBackground(Color.WHITE);
         wrapper.setBorder(BorderFactory.createEmptyBorder(22, 24, 22, 24));
         wrapper.setPreferredSize(new Dimension(470, 560));
+        wrapper.setMinimumSize(new Dimension(380, 0));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -131,7 +145,7 @@ public class LoginFrame extends JFrame {
     private JPanel createLoginSection() {
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setBackground(Color.WHITE);
-        wrapper.setBorder(BorderFactory.createEmptyBorder(68, 52, 54, 64));
+        wrapper.setBorder(BorderFactory.createEmptyBorder(52, 52, 48, 64));
 
         JPanel formPanel = createLoginForm();
 
@@ -139,6 +153,7 @@ public class LoginFrame extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.BOTH;
+        gbc.anchor = GridBagConstraints.WEST;
         gbc.weightx = 1;
         gbc.weighty = 1;
         wrapper.add(formPanel, gbc);
@@ -150,6 +165,7 @@ public class LoginFrame extends JFrame {
         JPanel form = new JPanel(new GridBagLayout());
         form.setBackground(Color.WHITE);
         form.setBorder(BorderFactory.createEmptyBorder(22, 34, 22, 34));
+        form.setMinimumSize(new Dimension(340, 420));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -173,7 +189,7 @@ public class LoginFrame extends JFrame {
 
         JLabel subtitle = new JLabel("Silakan masuk menggunakan akun yang sudah terdaftar.");
         subtitle.setForeground(TEXT_MUTED);
-        subtitle.setFont(new Font("Poppins", Font.PLAIN, 17));
+        subtitle.setFont(new Font("Poppins", Font.PLAIN, 16));
         gbc.gridy = 2;
         gbc.insets = new Insets(0, 0, 38, 0);
         form.add(subtitle, gbc);
@@ -213,6 +229,13 @@ public class LoginFrame extends JFrame {
         gbc.insets = new Insets(0, 0, 0, 0);
         form.add(createLoginHint(), gbc);
 
+        gbc.gridy = 10;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        gbc.weighty = 1;
+        JPanel spacer = new JPanel();
+        spacer.setBackground(Color.WHITE);
+        form.add(spacer, gbc);
+
         return form;
     }
 
@@ -241,6 +264,7 @@ public class LoginFrame extends JFrame {
 
     private void applyInputStyle(JTextField field) {
         field.setPreferredSize(new Dimension(360, 44));
+        field.setMinimumSize(new Dimension(280, 44));
         field.setFont(new Font("Poppins", Font.PLAIN, 14));
         field.setForeground(TEXT_DARK);
         field.setBackground(new Color(248, 252, 255));
@@ -286,6 +310,7 @@ public class LoginFrame extends JFrame {
     private JButton createLoginButton() {
         JButton button = new RoundedButton("Login", 22);
         button.setPreferredSize(new Dimension(360, 46));
+        button.setMinimumSize(new Dimension(280, 46));
         button.setFocusPainted(false);
         button.setBorderPainted(false);
         button.setContentAreaFilled(false);
@@ -300,6 +325,7 @@ public class LoginFrame extends JFrame {
         JPanel divider = new JPanel();
         divider.setBackground(new Color(203, 213, 225));
         divider.setPreferredSize(new Dimension(360, 1));
+        divider.setMinimumSize(new Dimension(280, 1));
         return divider;
     }
 
