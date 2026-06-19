@@ -34,6 +34,7 @@ public final class AdminDashboardComponents {
     private static final Color STATUS_REJECT_TEXT = new Color(184, 34, 44);
     private static final Color STATUS_REJECT_BACKGROUND = new Color(255, 238, 240);
     private static final Color STATUS_DEFAULT_BACKGROUND = new Color(235, 240, 247);
+    private static final Color TABLE_HOVER_BACKGROUND = new Color(246, 251, 255);
 
     private AdminDashboardComponents() {
     }
@@ -184,9 +185,10 @@ public final class AdminDashboardComponents {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean selected, boolean focus,
                 int row, int column) {
             super.getTableCellRendererComponent(table, value, selected, focus, row, column);
+            boolean hovered = isHoverRow(table, row);
             setFont(new Font("Poppins", strong ? Font.BOLD : Font.PLAIN, 12));
             setForeground(strong ? UserDashboardComponents.TEXT_DARK : UserDashboardComponents.TEXT_MUTED);
-            setBackground(selected ? table.getSelectionBackground() : Color.WHITE);
+            setBackground(selected ? table.getSelectionBackground() : hovered ? TABLE_HOVER_BACKGROUND : Color.WHITE);
             setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 12));
             return this;
         }
@@ -203,31 +205,43 @@ public final class AdminDashboardComponents {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean selected, boolean focus,
                 int row, int column) {
             String text = value == null ? "-" : value.toString();
-            return new StatusBadge(text, statusForeground(text), statusBackground(text));
+            boolean hovered = isHoverRow(table, row);
+            Color cellBackground = selected ? table.getSelectionBackground() : hovered ? TABLE_HOVER_BACKGROUND : Color.WHITE;
+            return new StatusBadge(text, statusForeground(text), statusBackground(text), cellBackground);
         }
+    }
+
+    private static boolean isHoverRow(JTable table, int row) {
+        Object hoverRow = table.getClientProperty("hoverRow");
+        return hoverRow instanceof Integer && ((Integer) hoverRow) == row;
     }
 
     private static class StatusBadge extends JPanel {
 
         private final String text;
         private final Color foreground;
-        private final Color background;
+        private final Color badgeBackground;
+        private final Color cellBackground;
 
-        StatusBadge(String text, Color foreground, Color background) {
+        StatusBadge(String text, Color foreground, Color badgeBackground, Color cellBackground) {
             setLayout(new GridBagLayout());
             this.text = text;
             this.foreground = foreground;
-            this.background = background;
-            setOpaque(false);
+            this.badgeBackground = badgeBackground;
+            this.cellBackground = cellBackground;
+            setOpaque(true);
+            setBackground(cellBackground);
             setPreferredSize(new Dimension(96, 30));
         }
 
         @Override
         protected void paintComponent(Graphics g) {
+            g.setColor(cellBackground);
+            g.fillRect(0, 0, getWidth(), getHeight());
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setFont(new Font("Poppins", Font.BOLD, 11));
-            g2.setColor(background);
+            g2.setColor(badgeBackground);
             int horizontalPadding = 12;
             int maxWidth = Math.max(34, getWidth() - 24);
             String displayText = fitText(g2, text, Math.max(12, maxWidth - (horizontalPadding * 2)));

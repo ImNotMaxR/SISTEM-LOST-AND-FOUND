@@ -118,6 +118,10 @@ public class ReportDetailFrame extends JDialog {
         panel.add(createDetailRow("Deskripsi:", getReportDescription(report)), gbc); gbc.gridy = ++row;
         panel.add(createDetailRow("Lokasi:", getReportLocation(report)), gbc); gbc.gridy = ++row;
         panel.add(createDetailRow("Tanggal:", getReportDate(report)), gbc); gbc.gridy = ++row;
+        panel.add(createDetailRow("Status Laporan:", getReportStatus(report)), gbc); gbc.gridy = ++row;
+        if (report != null && report.getStatus() == com.enumeration.ReportStatus.DITOLAK) {
+            panel.add(createDetailRow("Alasan Ditolak:", getRejectionReason(report)), gbc); gbc.gridy = ++row;
+        }
         
         gbc.weighty = 1.0;
         panel.add(new JPanel(){{setOpaque(false);}}, gbc);
@@ -134,7 +138,7 @@ public class ReportDetailFrame extends JDialog {
         row.setOpaque(false);
         JLabel lbl = UserDashboardComponents.label(label, 13, Font.PLAIN, UserDashboardComponents.TEXT_MUTED);
         
-        if (label.equals("Deskripsi:")) {
+        if (label.equals("Deskripsi:") || label.equals("Alasan Ditolak:")) {
             javax.swing.JTextArea area = new javax.swing.JTextArea(value);
             area.setFont(new Font("Poppins", Font.BOLD, 13));
             area.setForeground(UserDashboardComponents.TEXT_DARK);
@@ -366,6 +370,35 @@ public class ReportDetailFrame extends JDialog {
 
     private String getReportDate(Report report) {
         return report != null ? UserDashboardComponents.date(report) : "-";
+    }
+
+    private String getReportStatus(Report report) {
+        if (report == null || report.getStatus() == null) {
+            return "-";
+        }
+        String status = report.getStatus().name().replace('_', ' ').toLowerCase();
+        StringBuilder result = new StringBuilder(status.length());
+        boolean capitalizeNext = true;
+        for (int i = 0; i < status.length(); i++) {
+            char character = status.charAt(i);
+            if (Character.isWhitespace(character) || character == '-') {
+                result.append(character);
+                capitalizeNext = true;
+            } else if (capitalizeNext) {
+                result.append(Character.toUpperCase(character));
+                capitalizeNext = false;
+            } else {
+                result.append(character);
+            }
+        }
+        return result.toString();
+    }
+
+    private String getRejectionReason(Report report) {
+        if (report == null || report.getRejectionReason() == null || report.getRejectionReason().isBlank()) {
+            return "-";
+        }
+        return report.getRejectionReason();
     }
 
     private boolean hasCurrentUserSubmittedActiveClaim(com.managers.ClaimManager claimManager, com.model.User currentUser, Report report) {

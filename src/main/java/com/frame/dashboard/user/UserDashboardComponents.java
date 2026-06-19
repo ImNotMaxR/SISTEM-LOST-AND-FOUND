@@ -104,7 +104,60 @@ public final class UserDashboardComponents {
         scrollPane.getViewport().setBackground(SURFACE);
         scrollPane.setBackground(SURFACE);
         applyScrollBarStyle(scrollPane);
+        scrollPane.addHierarchyListener(event -> {
+            if ((event.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && scrollPane.isShowing()) {
+                resetScrollPosition(scrollPane);
+            }
+        });
         return scrollPane;
+    }
+
+    public static void resetScrollPosition(Component component) {
+        java.util.ArrayList<JScrollPane> scrollPanes = new java.util.ArrayList<>();
+        collectScrollPanes(component, scrollPanes);
+        if (scrollPanes.isEmpty()) {
+            return;
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            resetScrollPanes(scrollPanes);
+
+            javax.swing.Timer timer = new javax.swing.Timer(40, null);
+            final int[] runCount = {0};
+            timer.addActionListener(event -> {
+                resetScrollPanes(scrollPanes);
+                runCount[0]++;
+                if (runCount[0] >= 5) {
+                    timer.stop();
+                }
+            });
+            timer.setRepeats(true);
+            timer.start();
+        });
+    }
+
+    private static void collectScrollPanes(Component component, java.util.ArrayList<JScrollPane> scrollPanes) {
+        if (component instanceof JScrollPane) {
+            scrollPanes.add((JScrollPane) component);
+        }
+
+        if (component instanceof Container) {
+            for (Component child : ((Container) component).getComponents()) {
+                collectScrollPanes(child, scrollPanes);
+            }
+        }
+    }
+
+    private static void resetScrollPanes(java.util.ArrayList<JScrollPane> scrollPanes) {
+        for (JScrollPane scrollPane : scrollPanes) {
+            scrollToTop(scrollPane);
+        }
+    }
+
+    private static void scrollToTop(JScrollPane scrollPane) {
+        scrollPane.getViewport().setViewPosition(new java.awt.Point(0, 0));
+        scrollPane.getVerticalScrollBar().setValue(0);
+        scrollPane.getHorizontalScrollBar().setValue(0);
     }
 
     public static void clearTextFocusOnBackgroundClick(JComponent root) {
