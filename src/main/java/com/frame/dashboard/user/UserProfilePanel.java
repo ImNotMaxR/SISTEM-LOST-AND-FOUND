@@ -26,6 +26,8 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 import javax.swing.JTextField;
 import javax.swing.ImageIcon;
 import java.awt.Image;
@@ -63,9 +65,16 @@ public class UserProfilePanel extends JPanel {
 
     private void refreshContent() {
         removeAll();
-        add(UserDashboardComponents.scroll(createContent()), BorderLayout.CENTER);
+        JScrollPane scrollPane = UserDashboardComponents.scroll(createContent());
+        add(scrollPane, BorderLayout.CENTER);
         revalidate();
         repaint();
+
+        SwingUtilities.invokeLater(() -> {
+            scrollPane.revalidate();
+            scrollPane.doLayout();
+            UserDashboardComponents.resetScrollPosition(scrollPane);
+        });
     }
 
     private JPanel createContent() {
@@ -91,7 +100,11 @@ public class UserProfilePanel extends JPanel {
 
         gbc.gridy = 3;
         gbc.weighty = 1;
-        content.add(new JPanel(), gbc);
+        gbc.insets = new Insets(0, 0, 0, 0);
+        gbc.fill = GridBagConstraints.BOTH;
+        JPanel spacer = new JPanel();
+        spacer.setOpaque(false);
+        content.add(spacer, gbc);
 
         return content;
     }
@@ -114,7 +127,8 @@ public class UserProfilePanel extends JPanel {
             }
         };
         blueTop.setOpaque(false);
-        blueTop.setPreferredSize(new Dimension(0, 200));
+        blueTop.setPreferredSize(new Dimension(720, 200));
+        blueTop.setMinimumSize(new Dimension(320, 200));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridy = 0;
@@ -609,3 +623,4 @@ public class UserProfilePanel extends JPanel {
         passBaruConfirmField.setText("");
     }
 }
+

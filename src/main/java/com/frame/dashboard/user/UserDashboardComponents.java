@@ -977,6 +977,10 @@ public final class UserDashboardComponents {
     public static class ClaimCard extends RoundedPanel {
 
         public ClaimCard(Claim claim) {
+            this(claim, null);
+        }
+
+        public ClaimCard(Claim claim, Report sourceReport) {
             super(Color.WHITE, 20);
             setPreferredSize(CLAIM_CARD_SIZE);
             setLayout(new GridBagLayout());
@@ -988,7 +992,7 @@ public final class UserDashboardComponents {
             GridBagConstraints gbc = createHorizontalConstraints();
 
             gbc.gridy = 0;
-            add(new ClaimPhotoPanel(), gbc);
+            add(sourceReport == null ? new ClaimPhotoPanel() : new PhotoPanel(sourceReport, CARD_PHOTO_SIZE), gbc);
 
             gbc.gridy = 1;
             gbc.insets = new Insets(8, 0, 0, 0);

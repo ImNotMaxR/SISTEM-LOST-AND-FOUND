@@ -1,9 +1,12 @@
 package com.frame.dashboard;
 
 import com.frame.AppDialog;
+import com.frame.dashboard.admin.AdminClaimsPanel;
 import com.frame.dashboard.admin.AdminDashboardComponents;
+import com.frame.dashboard.admin.AdminFoundReportsPanel;
 import com.frame.dashboard.admin.AdminHomePanel;
 import com.frame.dashboard.admin.AdminLostReportsPanel;
+import com.frame.dashboard.admin.AdminProfilePanel;
 import com.frame.dashboard.user.UserDashboardComponents;
 import com.managers.ClaimManager;
 import com.managers.ReportManager;
@@ -254,9 +257,9 @@ public class DashboardAdmin extends JFrame {
         claimManager.refreshClaimsFromDatabase();
         pageContainer.add(UserDashboardComponents.scroll(new AdminHomePanel(reportManager, claimManager)), PAGE_DASHBOARD);
         pageContainer.add(UserDashboardComponents.scroll(new AdminLostReportsPanel(reportManager)), PAGE_LOST_REPORTS);
-        pageContainer.add(createPlaceholderPage("Kelola Barang Ditemukan Akan Dibuat Pada Tahap Berikutnya."), PAGE_FOUND_REPORTS);
-        pageContainer.add(createPlaceholderPage("Kelola Klaim Akan Dibuat Pada Tahap Berikutnya."), PAGE_CLAIMS);
-        pageContainer.add(createPlaceholderPage("Edit Profil Admin Akan Dibuat Pada Tahap Berikutnya."), PAGE_PROFILE);
+        pageContainer.add(UserDashboardComponents.scroll(new AdminFoundReportsPanel(reportManager)), PAGE_FOUND_REPORTS);
+        pageContainer.add(UserDashboardComponents.scroll(new AdminClaimsPanel(claimManager)), PAGE_CLAIMS);
+        pageContainer.add(new AdminProfilePanel(currentUser), PAGE_PROFILE);
     }
 
     private JLabel createLogoLabel() {
@@ -371,7 +374,7 @@ public class DashboardAdmin extends JFrame {
     }
 
     private void showPage(String pageKey) {
-        if (PAGE_DASHBOARD.equals(pageKey) || PAGE_LOST_REPORTS.equals(pageKey)) {
+        if (PAGE_DASHBOARD.equals(pageKey) || PAGE_LOST_REPORTS.equals(pageKey) || PAGE_FOUND_REPORTS.equals(pageKey) || PAGE_CLAIMS.equals(pageKey)) {
             refreshPageContainer();
         }
 

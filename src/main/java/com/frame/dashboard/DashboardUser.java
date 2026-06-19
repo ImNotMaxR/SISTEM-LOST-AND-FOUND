@@ -298,7 +298,7 @@ public class DashboardUser extends JFrame {
         pageContainer.add(new UserReportsPanel(currentUser, reportManager), PAGE_REPORTS);
         pageContainer.add(new FoundItemsPanel(reportManager), PAGE_FOUND_ITEMS);
         pageContainer.add(new LostItemsPanel(reportManager), PAGE_LOST_ITEMS);
-        pageContainer.add(new UserClaimsPanel(currentUser, claimManager), PAGE_CLAIMS);
+        pageContainer.add(new UserClaimsPanel(currentUser, claimManager, reportManager), PAGE_CLAIMS);
         pageContainer.add(new UserProfilePanel(currentUser), PAGE_PROFILE);
         if (currentUser.getRole() == com.enumeration.Role.SECURITY) {
             pageContainer.add(new SecurityStoragePanel(currentUser.getUserId()), PAGE_STORAGE);
@@ -425,6 +425,11 @@ public class DashboardUser extends JFrame {
     // =========================
 
     private void showPage(String pageKey) {
+        if (PAGE_CLAIMS.equals(pageKey) || PAGE_FOUND_ITEMS.equals(pageKey) || PAGE_LOST_ITEMS.equals(pageKey)) {
+            reportManager.reload();
+            claimManager.refreshClaimsFromDatabase();
+            rebuildPages();
+        }
         contentLayout.show(pageContainer, pageKey);
         for (String menuKey : navigationButtons.keySet()) {
             navigationButtons.get(menuKey).setActive(menuKey.equals(pageKey));
