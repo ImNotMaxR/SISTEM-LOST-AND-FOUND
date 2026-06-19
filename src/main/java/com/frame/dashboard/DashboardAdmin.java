@@ -3,6 +3,7 @@ package com.frame.dashboard;
 import com.frame.AppDialog;
 import com.frame.dashboard.admin.AdminDashboardComponents;
 import com.frame.dashboard.admin.AdminHomePanel;
+import com.frame.dashboard.admin.AdminLostReportsPanel;
 import com.frame.dashboard.user.UserDashboardComponents;
 import com.managers.ClaimManager;
 import com.managers.ReportManager;
@@ -18,6 +19,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.swing.BorderFactory;
@@ -54,13 +57,26 @@ public class DashboardAdmin extends JFrame {
         setupFrame();
         setContentPane(createMainPanel());
         showPage(PAGE_DASHBOARD);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowOpened(WindowEvent event) {
+                stabilizeVisiblePage();
+            }
+        });
     }
 
     private void setupFrame() {
         setTitle("Dashboard Admin - Sistem Lost & Found");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setMinimumSize(new Dimension(1180, 760));
-        setSize(1360, 820);
+        java.awt.Rectangle screenBounds = java.awt.GraphicsEnvironment
+                .getLocalGraphicsEnvironment()
+                .getMaximumWindowBounds();
+        int width = Math.min(1440, Math.max(1120, screenBounds.width - 80));
+        int height = Math.min(860, Math.max(720, screenBounds.height - 60));
+        int minWidth = Math.min(1180, Math.max(1024, screenBounds.width - 160));
+        int minHeight = Math.min(760, Math.max(660, screenBounds.height - 140));
+        setMinimumSize(new Dimension(minWidth, minHeight));
+        setSize(width, height);
         setLocationRelativeTo(null);
     }
 
@@ -237,7 +253,7 @@ public class DashboardAdmin extends JFrame {
         reportManager.reload();
         claimManager.refreshClaimsFromDatabase();
         pageContainer.add(UserDashboardComponents.scroll(new AdminHomePanel(reportManager, claimManager)), PAGE_DASHBOARD);
-        pageContainer.add(createPlaceholderPage("Kelola Laporan Barang Hilang Akan Dibuat Pada Tahap Berikutnya."), PAGE_LOST_REPORTS);
+        pageContainer.add(UserDashboardComponents.scroll(new AdminLostReportsPanel(reportManager)), PAGE_LOST_REPORTS);
         pageContainer.add(createPlaceholderPage("Kelola Barang Ditemukan Akan Dibuat Pada Tahap Berikutnya."), PAGE_FOUND_REPORTS);
         pageContainer.add(createPlaceholderPage("Kelola Klaim Akan Dibuat Pada Tahap Berikutnya."), PAGE_CLAIMS);
         pageContainer.add(createPlaceholderPage("Edit Profil Admin Akan Dibuat Pada Tahap Berikutnya."), PAGE_PROFILE);
@@ -355,7 +371,7 @@ public class DashboardAdmin extends JFrame {
     }
 
     private void showPage(String pageKey) {
-        if (PAGE_DASHBOARD.equals(pageKey)) {
+        if (PAGE_DASHBOARD.equals(pageKey) || PAGE_LOST_REPORTS.equals(pageKey)) {
             refreshPageContainer();
         }
 
@@ -363,8 +379,48 @@ public class DashboardAdmin extends JFrame {
         for (Map.Entry<String, JButton> entry : navigationButtons.entrySet()) {
             AdminDashboardComponents.setSidebarButtonActive(entry.getValue(), entry.getKey().equals(pageKey));
         }
+        pageContainer.setFocusable(true);
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+        stabilizeVisiblePage();
+    }
+
+    private void stabilizeVisiblePage() {
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            stabilizeVisiblePageNow();
+
+            javax.swing.Timer timer = new javax.swing.Timer(60, null);
+            final int[] runCount = {0};
+            timer.addActionListener(event -> {
+                stabilizeVisiblePageNow();
+                runCount[0]++;
+                if (runCount[0] >= 12) {
+                    timer.stop();
+                }
+            });
+            timer.setRepeats(true);
+            timer.start();
+        });
+    }
+
+    private void stabilizeVisiblePageNow() {
+        pageContainer.requestFocusInWindow();
+        pageContainer.invalidate();
         pageContainer.revalidate();
-        pageContainer.repaint();
+        pageContainer.doLayout();
+        getContentPane().invalidate();
+        getContentPane().doLayout();
+        validate();
+        repaint();
+        UserDashboardComponents.resetScrollPosition(getVisiblePage());
+    }
+
+    private java.awt.Component getVisiblePage() {
+        for (java.awt.Component component : pageContainer.getComponents()) {
+            if (component.isVisible()) {
+                return component;
+            }
+        }
+        return pageContainer;
     }
 
     private String getAdminName() {

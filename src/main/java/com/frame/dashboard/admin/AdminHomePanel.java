@@ -12,10 +12,12 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.util.ArrayList;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 
 public class AdminHomePanel extends JPanel {
 
@@ -29,7 +31,8 @@ public class AdminHomePanel extends JPanel {
         this.reportManager = reportManager;
         this.claimManager = claimManager;
         setLayout(new GridBagLayout());
-        setOpaque(false);
+        setOpaque(true);
+        setBackground(UserDashboardComponents.SURFACE);
         setBorder(BorderFactory.createEmptyBorder(44, 42, 48, 42));
         buildContent();
     }

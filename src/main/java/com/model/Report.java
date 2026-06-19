@@ -14,6 +14,7 @@ public abstract class Report {
     protected LocalDateTime editableUntil;
     //Gatau Coba Aja Kalau ada file Poto untuk Khusus semua report
     protected String photoPath;
+    protected String rejectionReason;
     private static final int EDITABLE_DURATION_MINUTES = 30;
 
     public Report(String reportID, User user, Item item, String description) {
@@ -25,6 +26,7 @@ public abstract class Report {
         this.date          = LocalDateTime.now();
         this.editableUntil = LocalDateTime.now().plusMinutes(EDITABLE_DURATION_MINUTES);
         this.photoPath     = null;
+        this.rejectionReason = null;
     }
 
     public String getReportId() {
@@ -62,6 +64,14 @@ public abstract class Report {
     
     public void setPhotoPath(String photoPath) {
         this.photoPath = photoPath;
+    }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
     }
 
     public void setDescription(String description) {

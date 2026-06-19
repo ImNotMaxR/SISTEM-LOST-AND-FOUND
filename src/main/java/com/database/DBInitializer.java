@@ -111,6 +111,7 @@ public class DBInitializer {
                 "date                   DATETIME NOT NULL, " +
                 "editable_until         DATETIME NOT NULL, " +
                 "photo_path             VARCHAR(255) NULL, " +
+                "rejection_reason       TEXT NULL, " +
                 "lost_location          VARCHAR(200) NULL, " +
                 "found_location         VARCHAR(200) NULL, " +
                 "matched_lost_report_id VARCHAR(50)  NULL, " +
@@ -222,7 +223,7 @@ public class DBInitializer {
             st.executeUpdate(
                 "INSERT INTO reports VALUES " +
                 "('RPT001','USR004','ITM001','LOST','Laptop hilang setelah kuliah DPBO'," +
-                "'PENDING',NOW(),DATE_ADD(NOW(), INTERVAL 30 MINUTE),NULL,'Lab Komputer FIF Lt.2',NULL,NULL)"
+                "'PENDING',NOW(),DATE_ADD(NOW(), INTERVAL 30 MINUTE),NULL,NULL,'Lab Komputer FIF Lt.2',NULL,NULL)"
             );
  
             // Item 2: kunci motor ditemukan Budi Security, FoundReport status VALID
@@ -233,7 +234,7 @@ public class DBInitializer {
             st.executeUpdate(
                 "INSERT INTO reports VALUES " +
                 "('RPT002','USR002','ITM002','FOUND','Ditemukan di parkiran Gedung A pagi hari'," +
-                "'VALID',NOW(),DATE_ADD(NOW(), INTERVAL 30 MINUTE),NULL,NULL,'Parkiran Gedung A',NULL)"
+                "'VALID',NOW(),DATE_ADD(NOW(), INTERVAL 30 MINUTE),NULL,NULL,NULL,'Parkiran Gedung A',NULL)"
             );
  
             // StorageRecord untuk kunci motor
