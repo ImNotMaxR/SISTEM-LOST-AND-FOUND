@@ -1,7 +1,9 @@
 package com.frame.dashboard.user;
 
 import com.managers.ClaimManager;
+import com.managers.ReportManager;
 import com.model.Claim;
+import com.model.Report;
 import com.model.User;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
@@ -16,9 +18,13 @@ public class UserClaimsPanel extends JPanel {
     private static final String SUBTITLE = "Pantau Status Pengajuan Klaim Barang Milikmu.";
     private static final String EMPTY_MESSAGE = "Kamu Belum Mengajukan Klaim.";
 
-    public UserClaimsPanel(User user, ClaimManager claimManager) {
+    public UserClaimsPanel(User user, ClaimManager claimManager, ReportManager reportManager) {
         configurePanel();
-        add(UserDashboardComponents.scroll(createContent(user, claimManager)), BorderLayout.CENTER);
+        claimManager.refreshClaimsFromDatabase();
+        if (reportManager != null) {
+            reportManager.reload();
+        }
+        add(UserDashboardComponents.scroll(createContent(user, claimManager, reportManager)), BorderLayout.CENTER);
     }
 
     private void configurePanel() {
@@ -27,7 +33,7 @@ public class UserClaimsPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
     }
 
-    private JPanel createContent(User user, ClaimManager claimManager) {
+    private JPanel createContent(User user, ClaimManager claimManager, ReportManager reportManager) {
         JPanel content = new JPanel(new GridBagLayout());
         content.setOpaque(false);
 
@@ -37,7 +43,7 @@ public class UserClaimsPanel extends JPanel {
 
         gbc.gridy = 1;
         gbc.insets = new Insets(14, 0, 0, 0);
-        content.add(createClaimsGrid(user, claimManager), gbc);
+        content.add(createClaimsGrid(user, claimManager, reportManager), gbc);
 
         gbc.gridy = 2;
         gbc.weighty = 1;
@@ -46,11 +52,11 @@ public class UserClaimsPanel extends JPanel {
         return content;
     }
 
-    private JPanel createClaimsGrid(User user, ClaimManager claimManager) {
+    private JPanel createClaimsGrid(User user, ClaimManager claimManager, ReportManager reportManager) {
         JPanel grid = UserDashboardComponents.cardGrid();
         for (Claim claim : claimManager.getAllClaims()) {
             if (isMine(user, claim)) {
-                grid.add(new UserDashboardComponents.ClaimCard(claim));
+                grid.add(new UserDashboardComponents.ClaimCard(claim, findRelatedReport(reportManager, claim)));
             }
         }
         if (grid.getComponentCount() == 0) {
@@ -63,5 +69,13 @@ public class UserClaimsPanel extends JPanel {
         return user != null
                 && claim.getUser() != null
                 && user.getUserId().equals(claim.getUser().getUserId());
+    }
+
+    private Report findRelatedReport(ReportManager reportManager, Claim claim) {
+        if (reportManager == null || claim == null || claim.getRelatedReportId() == null) {
+            return null;
+        }
+        Object report = reportManager.findById(claim.getRelatedReportId());
+        return report instanceof Report ? (Report) report : null;
     }
 }

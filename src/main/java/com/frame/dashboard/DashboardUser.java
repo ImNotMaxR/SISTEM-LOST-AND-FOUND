@@ -29,7 +29,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.Toolkit;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.LinkedHashMap;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -88,6 +89,12 @@ public class DashboardUser extends JFrame {
         pack();
         setLocationRelativeTo(null);
         showPage(PAGE_DASHBOARD);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowOpened(WindowEvent event) {
+                stabilizeVisiblePage();
+            }
+        });
     }
 
     private void configureFrame() {
@@ -95,12 +102,15 @@ public class DashboardUser extends JFrame {
         setTitle("Dashboard User - Sistem Lost & Found");
         setResizable(true);
 
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        Dimension screenSize = toolkit.getScreenSize();
-        int width = Math.min(1280, screenSize.width - 120);
-        int height = Math.min(780, screenSize.height - 90);
+        java.awt.Rectangle screenBounds = java.awt.GraphicsEnvironment
+                .getLocalGraphicsEnvironment()
+                .getMaximumWindowBounds();
+        int width = Math.min(1360, Math.max(1024, screenBounds.width - 80));
+        int height = Math.min(820, Math.max(680, screenBounds.height - 60));
+        int minWidth = Math.min(1120, Math.max(960, screenBounds.width - 160));
+        int minHeight = Math.min(700, Math.max(620, screenBounds.height - 140));
         setPreferredSize(new Dimension(width, height));
-        setMinimumSize(new Dimension(1120, 700));
+        setMinimumSize(new Dimension(minWidth, minHeight));
     }
 
     private JPanel createMainPanel() {
@@ -125,7 +135,7 @@ public class DashboardUser extends JFrame {
         scrollPane.setBorder(null);
         scrollPane.setBackground(Color.WHITE);
         scrollPane.getViewport().setBackground(Color.WHITE);
-        scrollPane.setPreferredSize(new Dimension(248, 760));
+        scrollPane.setPreferredSize(new Dimension(320, 760));
         applySidebarScrollStyle(scrollPane);
         return scrollPane;
     }
@@ -133,6 +143,7 @@ public class DashboardUser extends JFrame {
     private JPanel createSidebarPanel() {
         JPanel sidebar = new JPanel(new GridBagLayout());
         sidebar.setBackground(Color.WHITE);
+        sidebar.setPreferredSize(new Dimension(320, 760));
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UserDashboardComponents.BORDER));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -276,18 +287,18 @@ public class DashboardUser extends JFrame {
     // =========================
 
     private JPanel createPageContainer() {
-        pageContainer.setBackground(UserDashboardComponents.SURFACE);
+        pageContainer.setOpaque(false);
         rebuildPages();
         return pageContainer;
     }
 
     private void rebuildPages() {
         pageContainer.removeAll();
-        pageContainer.add(new UserHomePanel(currentUser, reportManager), PAGE_DASHBOARD);
+        pageContainer.add(UserDashboardComponents.scroll(new UserHomePanel(currentUser, reportManager)), PAGE_DASHBOARD);
         pageContainer.add(new UserReportsPanel(currentUser, reportManager), PAGE_REPORTS);
         pageContainer.add(new FoundItemsPanel(reportManager), PAGE_FOUND_ITEMS);
         pageContainer.add(new LostItemsPanel(reportManager), PAGE_LOST_ITEMS);
-        pageContainer.add(new UserClaimsPanel(currentUser, claimManager), PAGE_CLAIMS);
+        pageContainer.add(new UserClaimsPanel(currentUser, claimManager, reportManager), PAGE_CLAIMS);
         pageContainer.add(new UserProfilePanel(currentUser), PAGE_PROFILE);
         if (currentUser.getRole() == com.enumeration.Role.SECURITY) {
             pageContainer.add(new SecurityStoragePanel(currentUser.getUserId()), PAGE_STORAGE);
@@ -414,13 +425,57 @@ public class DashboardUser extends JFrame {
     // =========================
 
     private void showPage(String pageKey) {
-        rebuildPages();
+        if (PAGE_CLAIMS.equals(pageKey) || PAGE_FOUND_ITEMS.equals(pageKey) || PAGE_LOST_ITEMS.equals(pageKey)) {
+            reportManager.reload();
+            claimManager.refreshClaimsFromDatabase();
+            rebuildPages();
+        }
         contentLayout.show(pageContainer, pageKey);
         for (String menuKey : navigationButtons.keySet()) {
             navigationButtons.get(menuKey).setActive(menuKey.equals(pageKey));
         }
+        pageContainer.setFocusable(true);
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+        stabilizeVisiblePage();
+    }
+
+    private void stabilizeVisiblePage() {
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            stabilizeVisiblePageNow();
+
+            javax.swing.Timer timer = new javax.swing.Timer(60, null);
+            final int[] runCount = {0};
+            timer.addActionListener(event -> {
+                stabilizeVisiblePageNow();
+                runCount[0]++;
+                if (runCount[0] >= 12) {
+                    timer.stop();
+                }
+            });
+            timer.setRepeats(true);
+            timer.start();
+        });
+    }
+
+    private void stabilizeVisiblePageNow() {
+        pageContainer.requestFocusInWindow();
+        pageContainer.invalidate();
         pageContainer.revalidate();
-        pageContainer.repaint();
+        pageContainer.doLayout();
+        getContentPane().invalidate();
+        getContentPane().doLayout();
+        validate();
+        repaint();
+        UserDashboardComponents.resetScrollPosition(getVisiblePage());
+    }
+
+    private java.awt.Component getVisiblePage() {
+        for (java.awt.Component component : pageContainer.getComponents()) {
+            if (component.isVisible()) {
+                return component;
+            }
+        }
+        return pageContainer;
     }
 
     // =========================
@@ -493,7 +548,7 @@ public class DashboardUser extends JFrame {
             }
             setIconTextGap(12);
             
-            setPreferredSize(new Dimension(224, 38));
+            setPreferredSize(new Dimension(270, 46));
             setFocusPainted(false);
             setBorderPainted(false);
             setContentAreaFilled(false);

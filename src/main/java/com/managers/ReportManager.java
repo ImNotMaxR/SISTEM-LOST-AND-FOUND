@@ -25,13 +25,31 @@ public class ReportManager implements Managerable{
         this.reports = new ArrayList<>();
         this.reportMap = new HashMap<>();
         this.dbConnection = DBConnection.getInstance();
+        ensureRejectionReasonColumn();
         loadAllReportsFromDB();
+    }
+
+    private void ensureRejectionReasonColumn() {
+        try {
+            Connection conn = dbConnection.getConnection();
+            DatabaseMetaData metaData = conn.getMetaData();
+            try (ResultSet columns = metaData.getColumns(null, null, "reports", "rejection_reason")) {
+                if (columns.next()) {
+                    return;
+                }
+            }
+            try (Statement statement = conn.createStatement()) {
+                statement.executeUpdate("ALTER TABLE reports ADD COLUMN rejection_reason TEXT NULL");
+            }
+        } catch (SQLException exception) {
+            System.out.println("Kolom rejection_reason tidak dapat dipastikan: " + exception.getMessage());
+        }
     }
     
     private void loadAllReportsFromDB() {
         reports.clear();
         reportMap.clear();
-        String sql = "SELECT r.report_id, r.type, r.description, r.status, r.date, " + "r.editable_until, r.photo_path, r.lost_location, r.found_location, " + "r.matched_lost_report_id, " + "u.user_id, u.name AS user_name, u.username, u.password, u.role, " + "i.item_id, i.name AS item_name, i.description AS item_desc, " + "i.status AS item_status, i.location AS item_location, i.date AS item_date, " + "c.category_id, c.name AS category_name, c.request_verification " + "FROM reports r " + "JOIN users u ON r.user_id = u.user_id " + "JOIN items i ON r.item_id = i.item_id " + "LEFT JOIN categories c ON i.category_id = c.category_id";
+        String sql = "SELECT r.report_id, r.type, r.description, r.status, r.date, " + "r.editable_until, r.photo_path, r.rejection_reason, r.lost_location, r.found_location, " + "r.matched_lost_report_id, " + "u.user_id, u.name AS user_name, u.username, u.password, u.role, " + "i.item_id, i.name AS item_name, i.description AS item_desc, " + "i.status AS item_status, i.location AS item_location, i.date AS item_date, " + "c.category_id, c.name AS category_name, c.request_verification " + "FROM reports r " + "JOIN users u ON r.user_id = u.user_id " + "JOIN items i ON r.item_id = i.item_id " + "LEFT JOIN categories c ON i.category_id = c.category_id";
         
         try {
             Connection conn = dbConnection.getConnection();
@@ -62,6 +80,7 @@ public class ReportManager implements Managerable{
         String statusStr = rs.getString("status");
         LocalDateTime date = rs.getTimestamp("date") != null? rs.getTimestamp("date").toLocalDateTime() : LocalDateTime.now();
         String photoPath = rs.getString("photo_path");
+        String rejectionReason = rs.getString("rejection_reason");
  
         // Full user object diambil dari UserManager jika dibutuhkan detail lengkap
         String userId = rs.getString("user_id");
@@ -95,12 +114,14 @@ public class ReportManager implements Managerable{
             LostReport lr = new LostReport(reportId, user, item, desc, lostLocation);
             lr.setStatus(ReportStatus.valueOf(statusStr));
             if (photoPath != null) lr.setPhotoPath(photoPath);
+            lr.setRejectionReason(rejectionReason);
             report = lr;
         } else if ("FOUND".equals(type)) {
             String foundLocation = rs.getString("found_location");
             FoundReport fr = new FoundReport(reportId, user, item, desc, foundLocation);
             fr.setStatus(ReportStatus.valueOf(statusStr));
             if (photoPath != null) fr.setPhotoPath(photoPath);
+            fr.setRejectionReason(rejectionReason);
             report = fr;
         }
  
@@ -175,7 +196,7 @@ public class ReportManager implements Managerable{
         String lostLoc  = (report instanceof LostReport) ? ((LostReport) report).getLostLocation() : null;
         String foundLoc = (report instanceof FoundReport) ? ((FoundReport) report).getFoundLocation() : null;
         
-        String sql = "INSERT INTO reports (report_id, user_id, item_id, type, description, status, date, editable_until, photo_path, lost_location, found_location) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO reports (report_id, user_id, item_id, type, description, status, date, editable_until, photo_path, rejection_reason, lost_location, found_location) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try {
             Connection conn = dbConnection.getConnection();
             PreparedStatement ps = conn.prepareStatement(sql);
@@ -188,8 +209,9 @@ public class ReportManager implements Managerable{
             ps.setTimestamp(7, java.sql.Timestamp.valueOf(report.getDate()));
             ps.setTimestamp(8, java.sql.Timestamp.valueOf(report.getEditableUntil()));
             ps.setString(9, report.getPhotoPath());
-            ps.setString(10, lostLoc);
-            ps.setString(11, foundLoc);
+            ps.setString(10, report.getRejectionReason());
+            ps.setString(11, lostLoc);
+            ps.setString(12, foundLoc);
             ps.executeUpdate();
  
             report.submitReport();
@@ -251,6 +273,10 @@ public class ReportManager implements Managerable{
     }
     
     public void validateReport(String reportId, ReportStatus newStatus, com.model.Admin admin) {
+        validateReport(reportId, newStatus, admin, null);
+    }
+
+    public void validateReport(String reportId, ReportStatus newStatus, com.model.Admin admin, String rejectionReason) {
         Report report = reportMap.get(reportId);
         if (report == null) {
             System.out.println("Laporan tidak ditemukan.");
@@ -258,6 +284,7 @@ public class ReportManager implements Managerable{
         }
  
         report.setStatus(newStatus);
+        report.setRejectionReason(newStatus == ReportStatus.DITOLAK ? rejectionReason : null);
  
         // Jika FoundReport VALID, cocokkan item jika belum dicocokkan
         if (report instanceof FoundReport && newStatus == ReportStatus.VALID) {
@@ -272,8 +299,10 @@ public class ReportManager implements Managerable{
             }
         }
  
-        updateReportStatusInDB(reportId, newStatus);
-        admin.validateReport(reportId);
+        updateReportStatusInDB(reportId, newStatus, report.getRejectionReason());
+        if (admin != null) {
+            admin.validateReport(reportId);
+        }
     }
     
     private LostReport findMatchingLostReport(FoundReport foundReport) {
@@ -305,13 +334,14 @@ public class ReportManager implements Managerable{
         }
     }
     
-    private void updateReportStatusInDB(String reportId, ReportStatus status) {
-        String sql = "UPDATE reports SET status = ? WHERE report_id = ?";
+    private void updateReportStatusInDB(String reportId, ReportStatus status, String rejectionReason) {
+        String sql = "UPDATE reports SET status = ?, rejection_reason = ? WHERE report_id = ?";
         try {
             Connection conn = dbConnection.getConnection();
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, status.name());
-            ps.setString(2, reportId);
+            ps.setString(2, rejectionReason);
+            ps.setString(3, reportId);
             ps.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Gagal update status laporan" + e.getMessage());

@@ -16,11 +16,16 @@ import java.awt.RenderingHints;
 import java.awt.Window;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JScrollBar;
+import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.border.AbstractBorder;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 
 public final class AppDialog {
 
@@ -51,6 +56,154 @@ public final class AppDialog {
 
     public static boolean confirm(Component parent, String title, String message, String confirmText, String cancelText) {
         return show(parent, title, message, PRIMARY, new String[]{cancelText, confirmText}, 1) == 1;
+    }
+
+    public static String promptText(Component parent, String title, String message, String confirmText, String cancelText) {
+        Window owner = parent == null ? null : SwingUtilities.getWindowAncestor(parent);
+        JDialog dialog = new JDialog(owner, title, java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setUndecorated(true);
+        dialog.setBackground(new Color(0, 0, 0, 0));
+
+        String[] result = {null};
+
+        RoundedPanel card = new RoundedPanel(Color.WHITE, 24);
+        card.setLayout(new BorderLayout());
+        card.setPreferredSize(new Dimension(620, 410));
+        card.setBorder(BorderFactory.createCompoundBorder(
+                new RoundedLineBorder(BORDER, 24, 1),
+                BorderFactory.createEmptyBorder(28, 30, 26, 30)
+        ));
+
+        JPanel content = new JPanel(new GridBagLayout());
+        content.setOpaque(false);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Poppins", Font.BOLD, 18));
+        titleLabel.setForeground(TEXT_DARK);
+        content.add(titleLabel, gbc);
+
+        JLabel messageLabel = new JLabel("<html><body style='width:540px'>" + escape(message) + "</body></html>");
+        messageLabel.setFont(new Font("Poppins", Font.PLAIN, 14));
+        messageLabel.setForeground(TEXT_MUTED);
+        gbc.gridy = 1;
+        gbc.insets = new Insets(8, 0, 12, 0);
+        content.add(messageLabel, gbc);
+
+        JTextArea input = new JTextArea();
+        input.setRows(6);
+        input.setFont(new Font("Poppins", Font.PLAIN, 13));
+        input.setForeground(TEXT_DARK);
+        input.setLineWrap(true);
+        input.setWrapStyleWord(true);
+        input.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        JScrollPane inputScroll = new JScrollPane(input);
+        inputScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        inputScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        inputScroll.setBorder(new RoundedLineBorder(BORDER, 16, 1));
+        inputScroll.setPreferredSize(new Dimension(540, 150));
+        inputScroll.setMinimumSize(new Dimension(540, 150));
+        applyPromptScrollStyle(inputScroll);
+        gbc.gridy = 2;
+        gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        content.add(inputScroll, gbc);
+        card.add(content, BorderLayout.CENTER);
+
+        JPanel actions = new JPanel(new GridBagLayout());
+        actions.setOpaque(false);
+        actions.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        GridBagConstraints actionGbc = new GridBagConstraints();
+        actionGbc.gridy = 0;
+        actionGbc.insets = new Insets(0, 8, 0, 0);
+        actionGbc.anchor = GridBagConstraints.EAST;
+
+        JButton cancelButton = new DialogButton(cancelText, false, PRIMARY);
+        cancelButton.addActionListener(event -> dialog.dispose());
+        actions.add(cancelButton, actionGbc);
+
+        JButton confirmButton = new DialogButton(confirmText, true, PRIMARY);
+        confirmButton.addActionListener(event -> {
+            result[0] = input.getText();
+            dialog.dispose();
+        });
+        actionGbc.gridx = 1;
+        actions.add(confirmButton, actionGbc);
+        dialog.getRootPane().setDefaultButton(confirmButton);
+        card.add(actions, BorderLayout.SOUTH);
+
+        JPanel shadow = new JPanel(new BorderLayout());
+        shadow.setOpaque(false);
+        shadow.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        shadow.add(card, BorderLayout.CENTER);
+
+        dialog.setContentPane(shadow);
+        dialog.pack();
+        dialog.setLocationRelativeTo(parent);
+        SwingUtilities.invokeLater(input::requestFocusInWindow);
+        dialog.setVisible(true);
+        return result[0];
+    }
+
+    private static void applyPromptScrollStyle(JScrollPane scrollPane) {
+        JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
+        verticalScrollBar.setUnitIncrement(16);
+        verticalScrollBar.setPreferredSize(new Dimension(8, 0));
+        verticalScrollBar.setOpaque(false);
+        verticalScrollBar.setUI(new BasicScrollBarUI() {
+            @Override
+            protected void configureScrollBarColors() {
+                thumbColor = PRIMARY;
+                trackColor = SURFACE;
+                thumbDarkShadowColor = thumbColor.darker();
+                thumbHighlightColor = thumbColor.brighter();
+                thumbLightShadowColor = thumbColor;
+            }
+
+            @Override
+            protected JButton createDecreaseButton(int orientation) {
+                return createZeroButton();
+            }
+
+            @Override
+            protected JButton createIncreaseButton(int orientation) {
+                return createZeroButton();
+            }
+
+            private JButton createZeroButton() {
+                JButton button = new JButton();
+                button.setPreferredSize(new Dimension(0, 0));
+                button.setMinimumSize(new Dimension(0, 0));
+                button.setMaximumSize(new Dimension(0, 0));
+                return button;
+            }
+
+            @Override
+            protected void paintThumb(Graphics graphics, JComponent component, java.awt.Rectangle thumbBounds) {
+                if (!component.isEnabled() || thumbBounds.isEmpty()) {
+                    return;
+                }
+                Graphics2D graphics2D = (Graphics2D) graphics.create();
+                graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                graphics2D.setColor(thumbColor);
+                graphics2D.fillRoundRect(thumbBounds.x, thumbBounds.y, thumbBounds.width, thumbBounds.height, 10, 10);
+                graphics2D.dispose();
+            }
+
+            @Override
+            protected void paintTrack(Graphics graphics, JComponent component, java.awt.Rectangle trackBounds) {
+                Graphics2D graphics2D = (Graphics2D) graphics.create();
+                graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                graphics2D.setColor(trackColor);
+                graphics2D.fillRect(trackBounds.x, trackBounds.y, trackBounds.width, trackBounds.height);
+                graphics2D.dispose();
+            }
+        });
     }
 
     private static int show(Component parent, String title, String message, Color accent, String[] buttons, int defaultIndex) {
