@@ -275,12 +275,14 @@ public class SecurityFoundReportPanel extends JDialog {
                 itemNameField.setEnabled(false);
                 itemDescriptionArea.setEnabled(false);
                 categoryComboBox.setEnabled(false);
+                applyMatchedPhoto(lr);
             } else {
                 itemNameField.setText("");
                 itemDescriptionArea.setText("");
                 itemNameField.setEnabled(true);
                 itemDescriptionArea.setEnabled(true);
                 categoryComboBox.setEnabled(true);
+                clearSelectedPhoto();
             }
         });
         
@@ -334,6 +336,31 @@ public class SecurityFoundReportPanel extends JDialog {
     private JPanel createPhotoPanel() {
         photoPreviewPanel = new PhotoPreviewPanel(this::choosePhoto);
         return photoPreviewPanel;
+    }
+
+    private void applyMatchedPhoto(com.model.LostReport report) {
+        if (report == null || report.getPhotoPath() == null || report.getPhotoPath().isBlank()) {
+            clearSelectedPhoto();
+            return;
+        }
+
+        File photoFile = new File(report.getPhotoPath());
+        if (!photoFile.exists() || !isSupportedImage(photoFile)) {
+            clearSelectedPhoto();
+            return;
+        }
+
+        selectedPhotoFile = photoFile;
+        if (photoPreviewPanel != null) {
+            photoPreviewPanel.setImageFile(photoFile);
+        }
+    }
+
+    private void clearSelectedPhoto() {
+        selectedPhotoFile = null;
+        if (photoPreviewPanel != null) {
+            photoPreviewPanel.clearImage();
+        }
     }
 
     private JTextField createTextField(String placeholder, int limit) {
@@ -752,6 +779,12 @@ public class SecurityFoundReportPanel extends JDialog {
 
         void setImageFile(File file) {
             this.image = new ImageIcon(file.getAbsolutePath()).getImage();
+            repaint();
+        }
+
+        void clearImage() {
+            this.image = null;
+            this.isHovered = false;
             repaint();
         }
 

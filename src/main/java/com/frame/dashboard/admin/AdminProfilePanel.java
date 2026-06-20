@@ -1,7 +1,7 @@
 package com.frame.dashboard.admin;
 
 import com.frame.AppDialog;
-import com.frame.dashboard.user.UserDashboardComponents;
+import com.frame.dashboard.shared.DashboardUi;
 import com.managers.UserManager;
 import com.model.User;
 import java.awt.BorderLayout;
@@ -43,17 +43,21 @@ public class AdminProfilePanel extends JPanel {
     private JPasswordField newPasswordField;
     private JPasswordField confirmPasswordField;
 
+    // -------------------------------------------------------------------------
+    // Panel Setup
+    // -------------------------------------------------------------------------
+
     public AdminProfilePanel(User currentUser) {
         this.currentUser = currentUser;
         setLayout(new BorderLayout());
-        setBackground(UserDashboardComponents.SURFACE);
+        setBackground(DashboardUi.SURFACE);
         setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
         refreshContent();
     }
 
     private void refreshContent() {
         removeAll();
-        JScrollPane scrollPane = UserDashboardComponents.scroll(createContent());
+        JScrollPane scrollPane = DashboardUi.scroll(createContent());
         add(scrollPane, BorderLayout.CENTER);
         revalidate();
         repaint();
@@ -61,18 +65,22 @@ public class AdminProfilePanel extends JPanel {
         SwingUtilities.invokeLater(() -> {
             scrollPane.revalidate();
             scrollPane.doLayout();
-            UserDashboardComponents.resetScrollPosition(scrollPane);
+            DashboardUi.resetScrollPosition(scrollPane);
         });
     }
+
+    // -------------------------------------------------------------------------
+    // Main Layout
+    // -------------------------------------------------------------------------
 
     private JPanel createContent() {
         JPanel content = new JPanel(new GridBagLayout());
         content.setOpaque(false);
 
-        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
+        GridBagConstraints gbc = DashboardUi.contentConstraints();
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 10, 0);
-        content.add(UserDashboardComponents.section(TITLE, SUBTITLE), gbc);
+        content.add(DashboardUi.section(TITLE, SUBTITLE), gbc);
 
         gbc.gridy = 1;
         gbc.insets = new Insets(0, 0, 20, 0);
@@ -92,10 +100,14 @@ public class AdminProfilePanel extends JPanel {
         return content;
     }
 
+    // -------------------------------------------------------------------------
+    // Profile Summary UI
+    // -------------------------------------------------------------------------
+
     private JPanel createProfileCard() {
-        UserDashboardComponents.RoundedPanel card = new UserDashboardComponents.RoundedPanel(Color.WHITE, 24);
+        DashboardUi.RoundedPanel card = new DashboardUi.RoundedPanel(Color.WHITE, 24);
         card.setLayout(new BorderLayout());
-        card.setBorder(new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 24, 1));
+        card.setBorder(new DashboardUi.RoundedLineBorder(DashboardUi.BORDER, 24, 1));
 
         JPanel hero = new JPanel(new GridBagLayout()) {
             @Override
@@ -154,6 +166,7 @@ public class AdminProfilePanel extends JPanel {
         card.add(details, BorderLayout.CENTER);
         return card;
     }
+
     private JPanel createAvatar() {
         JPanel avatar = new JPanel(new BorderLayout()) {
             @Override
@@ -184,7 +197,7 @@ public class AdminProfilePanel extends JPanel {
     }
 
     private JPanel createInfoGrid() {
-        JPanel grid = UserDashboardComponents.responsiveGrid(180);
+        JPanel grid = DashboardUi.responsiveGrid(180);
         grid.add(createInfoBox("NAMA", displayName()));
         grid.add(createInfoBox("USERNAME", safe(currentUser == null ? null : currentUser.getUsername())));
         grid.add(createInfoBox("ROLE", "ADMIN"));
@@ -192,9 +205,9 @@ public class AdminProfilePanel extends JPanel {
     }
 
     private JPanel createInfoBox(String title, String value) {
-        UserDashboardComponents.RoundedPanel box = new UserDashboardComponents.RoundedPanel(new Color(248, 250, 252), 16);
+        DashboardUi.RoundedPanel box = new DashboardUi.RoundedPanel(new Color(248, 250, 252), 16);
         box.setLayout(new GridBagLayout());
-        box.setBorder(new UserDashboardComponents.RoundedLineBorder(new Color(230, 230, 230), 16, 1));
+        box.setBorder(new DashboardUi.RoundedLineBorder(new Color(230, 230, 230), 16, 1));
         box.setPreferredSize(new Dimension(180, 75));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -205,7 +218,7 @@ public class AdminProfilePanel extends JPanel {
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.insets = new Insets(0, 12, 5, 12);
 
-        JLabel titleLabel = UserDashboardComponents.label(title, 10, Font.BOLD, new Color(130, 140, 150));
+        JLabel titleLabel = DashboardUi.label(title, 10, Font.BOLD, new Color(130, 140, 150));
         titleLabel.setHorizontalAlignment(JLabel.CENTER);
         box.add(titleLabel, gbc);
 
@@ -215,20 +228,24 @@ public class AdminProfilePanel extends JPanel {
         JLabel valueLabel = new JLabel("<html><div style='text-align:center; width:150px;'>" + safeValue + "</div></html>");
         valueLabel.setHorizontalAlignment(JLabel.CENTER);
         valueLabel.setFont(new Font("Poppins", Font.BOLD, 13));
-        valueLabel.setForeground(UserDashboardComponents.TEXT_DARK);
+        valueLabel.setForeground(DashboardUi.TEXT_DARK);
         box.add(valueLabel, gbc);
         return box;
     }
 
+    // -------------------------------------------------------------------------
+    // Form Cards UI
+    // -------------------------------------------------------------------------
+
     private JPanel createFormsGrid() {
-        JPanel grid = UserDashboardComponents.responsiveGrid(360);
+        JPanel grid = DashboardUi.responsiveGrid(360);
         grid.add(createUsernameCard());
         grid.add(createPasswordCard());
         return grid;
     }
 
     private JPanel createUsernameCard() {
-        UserDashboardComponents.RoundedPanel card = formCard();
+        DashboardUi.RoundedPanel card = formCard();
         GridBagConstraints gbc = formConstraints();
         addCardHeader(card, gbc, "Edit Username", "Konfirmasi password lama sebelum mengganti username.", "/assets/PNG/64x64/icon_pencil.png");
         currentUsernameField = addTextField(card, gbc, 1, "Username Saat Ini", "", false);
@@ -244,7 +261,7 @@ public class AdminProfilePanel extends JPanel {
     }
 
     private JPanel createPasswordCard() {
-        UserDashboardComponents.RoundedPanel card = formCard();
+        DashboardUi.RoundedPanel card = formCard();
         GridBagConstraints gbc = formConstraints();
         addCardHeader(card, gbc, "Ganti Password", "Gunakan password lama untuk validasi keamanan akun.", "/assets/PNG/64x64/icon_padlock.png");
         oldPasswordField = addPasswordField(card, gbc, 1, "Password Lama", "Masukkan password lama");
@@ -258,11 +275,11 @@ public class AdminProfilePanel extends JPanel {
         return card;
     }
 
-    private UserDashboardComponents.RoundedPanel formCard() {
-        UserDashboardComponents.RoundedPanel card = new UserDashboardComponents.RoundedPanel(Color.WHITE, 24);
+    private DashboardUi.RoundedPanel formCard() {
+        DashboardUi.RoundedPanel card = new DashboardUi.RoundedPanel(Color.WHITE, 24);
         card.setLayout(new GridBagLayout());
         card.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 24, 1),
+                new DashboardUi.RoundedLineBorder(DashboardUi.BORDER, 24, 1),
                 BorderFactory.createEmptyBorder(26, 28, 28, 28)
         ));
         return card;
@@ -292,17 +309,17 @@ public class AdminProfilePanel extends JPanel {
         hgbc.fill = GridBagConstraints.HORIZONTAL;
         hgbc.anchor = GridBagConstraints.WEST;
         hgbc.insets = new Insets(0, 0, 2, 0);
-        header.add(UserDashboardComponents.label(title, 18, Font.BOLD, UserDashboardComponents.TEXT_DARK), hgbc);
+        header.add(DashboardUi.label(title, 18, Font.BOLD, DashboardUi.TEXT_DARK), hgbc);
         hgbc.gridy = 1;
         hgbc.insets = new Insets(0, 0, 0, 0);
-        header.add(UserDashboardComponents.label(subtitle, 12, Font.PLAIN, UserDashboardComponents.TEXT_MUTED), hgbc);
+        header.add(DashboardUi.label(subtitle, 12, Font.PLAIN, DashboardUi.TEXT_MUTED), hgbc);
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 22, 0);
         card.add(header, gbc);
     }
 
     private JPanel iconBox(String iconPath) {
-        UserDashboardComponents.RoundedPanel box = new UserDashboardComponents.RoundedPanel(new Color(239, 246, 255), 14);
+        DashboardUi.RoundedPanel box = new DashboardUi.RoundedPanel(new Color(239, 246, 255), 14);
         box.setLayout(new GridBagLayout());
         box.setPreferredSize(new Dimension(42, 42));
         JLabel icon = new JLabel();
@@ -315,10 +332,14 @@ public class AdminProfilePanel extends JPanel {
         return box;
     }
 
+    // -------------------------------------------------------------------------
+    // Field Factories
+    // -------------------------------------------------------------------------
+
     private JTextField addTextField(JPanel card, GridBagConstraints gbc, int row, String label, String placeholder, boolean editable) {
         gbc.gridy = row;
         gbc.insets = new Insets(row == 1 ? 0 : 14, 0, 7, 0);
-        card.add(UserDashboardComponents.label(label, 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        card.add(DashboardUi.label(label, 13, Font.BOLD, DashboardUi.TEXT_DARK), gbc);
         JTextField field = textField(placeholder);
         field.setEditable(editable);
         if (!editable) {
@@ -333,7 +354,7 @@ public class AdminProfilePanel extends JPanel {
     private JPasswordField addPasswordField(JPanel card, GridBagConstraints gbc, int row, String label, String placeholder) {
         gbc.gridy = row;
         gbc.insets = new Insets(row == 1 ? 0 : 14, 0, 7, 0);
-        card.add(UserDashboardComponents.label(label, 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        card.add(DashboardUi.label(label, 13, Font.BOLD, DashboardUi.TEXT_DARK), gbc);
         JPasswordField field = passwordField(placeholder);
         gbc.gridy = row + 1;
         gbc.insets = new Insets(0, 0, 0, 0);
@@ -372,10 +393,10 @@ public class AdminProfilePanel extends JPanel {
     private void styleField(JTextField field) {
         field.setPreferredSize(new Dimension(0, 44));
         field.setFont(new Font("Poppins", Font.PLAIN, 13));
-        field.setForeground(UserDashboardComponents.TEXT_DARK);
+        field.setForeground(DashboardUi.TEXT_DARK);
         field.setBackground(new Color(248, 250, 252));
         field.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(new Color(226, 232, 240), 16, 1),
+                new DashboardUi.RoundedLineBorder(new Color(226, 232, 240), 16, 1),
                 BorderFactory.createEmptyBorder(4, 14, 4, 14)
         ));
     }
@@ -390,13 +411,17 @@ public class AdminProfilePanel extends JPanel {
         g2.dispose();
     }
 
+    // -------------------------------------------------------------------------
+    // Button UI
+    // -------------------------------------------------------------------------
+
     private JButton submitButton(String text) {
         JButton button = new JButton(text) {
             @Override
             protected void paintComponent(Graphics graphics) {
                 Graphics2D g2 = (Graphics2D) graphics.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                Color fill = getModel().isRollover() ? UserDashboardComponents.PRIMARY_DARK : UserDashboardComponents.PRIMARY;
+                Color fill = getModel().isRollover() ? DashboardUi.PRIMARY_DARK : DashboardUi.PRIMARY;
                 if (getModel().isPressed()) fill = fill.darker();
                 g2.setColor(fill);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
@@ -433,6 +458,10 @@ public class AdminProfilePanel extends JPanel {
         label.setForeground(color);
         return label;
     }
+
+    // -------------------------------------------------------------------------
+    // Actions
+    // -------------------------------------------------------------------------
 
     private void updateUsername() {
         if (currentUser == null) {
@@ -496,6 +525,10 @@ public class AdminProfilePanel extends JPanel {
         confirmPasswordField.setText("");
         AppDialog.success(this, "Berhasil", "Password admin berhasil diubah.");
     }
+
+    // -------------------------------------------------------------------------
+    // Text Helpers
+    // -------------------------------------------------------------------------
 
     private String displayName() {
         return currentUser == null || currentUser.getName() == null || currentUser.getName().isBlank()

@@ -3,7 +3,9 @@ package com.frame.dashboard.user;
 import com.enumeration.ReportStatus;
 import com.frame.AppDialog;
 import com.managers.ReportManager;
+import com.model.FoundReport;
 import com.model.LostReport;
+import com.model.Report;
 import com.model.User;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -145,6 +147,11 @@ public class UserReportsPanel extends JPanel {
 
     private void refreshReportGrid() {
         grid.removeAll();
+
+        if (user.getRole() == com.enumeration.Role.SECURITY) {
+            refreshSecurityFoundReportGrid();
+            return;
+        }
         
         ArrayList<LostReport> myReports = new ArrayList<>();
         for (LostReport report : reportManager.getLostReports()) {
@@ -197,6 +204,7 @@ public class UserReportsPanel extends JPanel {
         button.addActionListener(e -> {
             if (user.getRole() == com.enumeration.Role.SECURITY) {
                 com.frame.dashboard.security.SecurityFoundReportPanel dialog = new com.frame.dashboard.security.SecurityFoundReportPanel(user, reportManager, () -> {
+                    reportManager.reload();
                     refreshContent();
                 });
                 dialog.setVisible(true);
@@ -265,6 +273,63 @@ public class UserReportsPanel extends JPanel {
         );
         button.addActionListener(event -> openEditReportDialog(report));
         return button;
+    }
+
+    private void refreshSecurityFoundReportGrid() {
+        ArrayList<FoundReport> myReports = new ArrayList<>();
+        for (FoundReport report : reportManager.getFoundReports()) {
+            if (isMine(user, report)) {
+                myReports.add(report);
+            }
+        }
+
+        myReports.sort((first, second) -> second.getDate().compareTo(first.getDate()));
+
+        String keyword = searchField != null ? searchField.getText().trim().toLowerCase() : "";
+        int count = 0;
+        for (FoundReport report : myReports) {
+            boolean matchSearch = keyword.isEmpty()
+                    || contains(report.getReportId(), keyword)
+                    || (report.getItem() != null && contains(report.getItem().getName(), keyword))
+                    || contains(report.getFoundLocation(), keyword);
+            boolean matchFilter = currentFilter.equals("Semua")
+                    || (currentFilter.equals("Valid") && report.getStatus() == ReportStatus.VALID)
+                    || (currentFilter.equals("Pending") && report.getStatus() == ReportStatus.PENDING)
+                    || (currentFilter.equals("Ditolak") && report.getStatus() == ReportStatus.DITOLAK);
+
+            if (matchSearch && matchFilter) {
+                grid.add(createSecurityFoundReportCard(report));
+                count++;
+            }
+        }
+
+        if (count == 0) {
+            grid.add(UserDashboardComponents.emptyState(EMPTY_MESSAGE));
+        }
+
+        grid.revalidate();
+        grid.repaint();
+    }
+
+    private UserDashboardComponents.ReportCard createSecurityFoundReportCard(FoundReport report) {
+        String statusText;
+        Color statusColor;
+
+        if (report.getStatus() == ReportStatus.PENDING) {
+            statusText = "Pending";
+            statusColor = new Color(245, 158, 11);
+        } else if (report.getStatus() == ReportStatus.DITOLAK) {
+            statusText = "Ditolak";
+            statusColor = new Color(220, 38, 38);
+        } else if (report.getItem() != null && report.getItem().getStatus() == com.enumeration.ItemStatus.DIKLAIM) {
+            statusText = "Sudah Diklaim";
+            statusColor = new Color(22, 163, 74);
+        } else {
+            statusText = "Belum Diklaim";
+            statusColor = UserDashboardComponents.PRIMARY_DARK;
+        }
+
+        return new UserDashboardComponents.ReportCard(report, statusText, statusColor);
     }
 
     private JButton createDeleteReportButton(LostReport report) {
@@ -342,6 +407,17 @@ public class UserReportsPanel extends JPanel {
         return user != null
                 && report.getUser() != null
                 && user.getUserId().equals(report.getUser().getUserId());
+    }
+
+    private boolean isMine(User user, Report report) {
+        return user != null
+                && report != null
+                && report.getUser() != null
+                && user.getUserId().equals(report.getUser().getUserId());
+    }
+
+    private boolean contains(String value, String keyword) {
+        return value != null && value.toLowerCase().contains(keyword);
     }
 
     private static class RoundedActionButton extends JButton {

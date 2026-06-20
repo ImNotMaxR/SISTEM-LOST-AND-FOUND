@@ -196,7 +196,10 @@ public class ReportManager implements Managerable{
         String lostLoc  = (report instanceof LostReport) ? ((LostReport) report).getLostLocation() : null;
         String foundLoc = (report instanceof FoundReport) ? ((FoundReport) report).getFoundLocation() : null;
         
-        String sql = "INSERT INTO reports (report_id, user_id, item_id, type, description, status, date, editable_until, photo_path, rejection_reason, lost_location, found_location) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String matchedLostReportId = report instanceof FoundReport && ((FoundReport) report).getMatchedLostReport() != null
+                ? ((FoundReport) report).getMatchedLostReport().getReportId()
+                : null;
+        String sql = "INSERT INTO reports (report_id, user_id, item_id, type, description, status, date, editable_until, photo_path, rejection_reason, lost_location, found_location, matched_lost_report_id) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try {
             Connection conn = dbConnection.getConnection();
             PreparedStatement ps = conn.prepareStatement(sql);
@@ -212,6 +215,7 @@ public class ReportManager implements Managerable{
             ps.setString(10, report.getRejectionReason());
             ps.setString(11, lostLoc);
             ps.setString(12, foundLoc);
+            ps.setString(13, matchedLostReportId);
             ps.executeUpdate();
  
             report.submitReport();

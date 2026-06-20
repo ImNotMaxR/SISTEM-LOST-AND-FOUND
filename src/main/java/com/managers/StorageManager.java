@@ -196,4 +196,8 @@ public class StorageManager implements Managerable {
         }
         return filtered;
     }
+
+    public void reload() {
+        loadAllStorageRecordsFromDB();
+    }
 }

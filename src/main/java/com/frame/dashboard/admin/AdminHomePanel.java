@@ -1,6 +1,6 @@
 package com.frame.dashboard.admin;
 
-import com.frame.dashboard.user.UserDashboardComponents;
+import com.frame.dashboard.shared.DashboardUi;
 import com.managers.ClaimManager;
 import com.managers.ReportManager;
 import com.model.Claim;
@@ -12,12 +12,10 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.RenderingHints;
 import java.util.ArrayList;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.JTable;
-import javax.swing.SwingUtilities;
 
 public class AdminHomePanel extends JPanel {
 
@@ -27,15 +25,23 @@ public class AdminHomePanel extends JPanel {
     private final ReportManager reportManager;
     private final ClaimManager claimManager;
 
+    // -------------------------------------------------------------------------
+    // Panel Setup
+    // -------------------------------------------------------------------------
+
     public AdminHomePanel(ReportManager reportManager, ClaimManager claimManager) {
         this.reportManager = reportManager;
         this.claimManager = claimManager;
         setLayout(new GridBagLayout());
         setOpaque(true);
-        setBackground(UserDashboardComponents.SURFACE);
+        setBackground(DashboardUi.SURFACE);
         setBorder(BorderFactory.createEmptyBorder(44, 42, 48, 42));
         buildContent();
     }
+
+    // -------------------------------------------------------------------------
+    // Main Layout
+    // -------------------------------------------------------------------------
 
     private void buildContent() {
         GridBagConstraints gbc = new GridBagConstraints();
@@ -68,6 +74,10 @@ public class AdminHomePanel extends JPanel {
         add(createVerticalSpacer(), gbc);
     }
 
+    // -------------------------------------------------------------------------
+    // Header UI
+    // -------------------------------------------------------------------------
+
     private JPanel createHeader() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setOpaque(false);
@@ -79,19 +89,23 @@ public class AdminHomePanel extends JPanel {
         gbc.anchor = GridBagConstraints.WEST;
 
         gbc.gridy = 0;
-        panel.add(UserDashboardComponents.label(
+        panel.add(DashboardUi.label(
                 "Admin Panel - Sistem Informasi Lost & Found Kampus",
                 12,
                 Font.PLAIN,
-                UserDashboardComponents.TEXT_MUTED
+                DashboardUi.TEXT_MUTED
         ), gbc);
 
         gbc.gridy = 1;
         gbc.insets = new Insets(4, 0, 0, 0);
-        panel.add(UserDashboardComponents.label("Dashboard Admin", 30, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        panel.add(DashboardUi.label("Dashboard Admin", 30, Font.BOLD, DashboardUi.TEXT_DARK), gbc);
 
         return panel;
     }
+
+    // -------------------------------------------------------------------------
+    // Stats UI
+    // -------------------------------------------------------------------------
 
     private JPanel createStatsPanel() {
         JPanel panel = AdminDashboardComponents.statRow();
@@ -99,7 +113,7 @@ public class AdminHomePanel extends JPanel {
                 "Total Barang Hilang",
                 reportManager.getLostReports().size(),
                 "Laporan Kehilangan Dari User",
-                UserDashboardComponents.PRIMARY_DARK,
+                DashboardUi.PRIMARY_DARK,
                 new Color(54, 104, 184)
         ));
 
@@ -121,6 +135,10 @@ public class AdminHomePanel extends JPanel {
 
         return panel;
     }
+
+    // -------------------------------------------------------------------------
+    // Table UI
+    // -------------------------------------------------------------------------
 
     private JPanel createLostReportsTableSection() {
         JTable lostTable = AdminDashboardComponents.table(
@@ -152,6 +170,10 @@ public class AdminHomePanel extends JPanel {
         return panel;
     }
 
+    // -------------------------------------------------------------------------
+    // Table Data
+    // -------------------------------------------------------------------------
+
     private Object[][] createLostReportRows() {
         ArrayList<LostReport> reports = reportManager.getLostReports();
         if (reports.isEmpty()) {
@@ -164,7 +186,7 @@ public class AdminHomePanel extends JPanel {
             LostReport report = reports.get(i);
             rows[i][0] = userName(report);
             rows[i][1] = itemName(report);
-            rows[i][2] = UserDashboardComponents.date(report);
+            rows[i][2] = DashboardUi.date(report);
             rows[i][3] = reportStatus(report);
         }
         return rows;
@@ -182,7 +204,7 @@ public class AdminHomePanel extends JPanel {
             FoundReport report = reports.get(i);
             rows[i][0] = userName(report);
             rows[i][1] = itemName(report);
-            rows[i][2] = UserDashboardComponents.date(report);
+            rows[i][2] = DashboardUi.date(report);
             rows[i][3] = itemStatus(report);
         }
         return rows;
@@ -200,7 +222,7 @@ public class AdminHomePanel extends JPanel {
             Claim claim = claims.get(i);
             rows[i][0] = claim.getUser() == null ? EMPTY_VALUE : claim.getUser().getName();
             rows[i][1] = claim.getItem() == null ? EMPTY_VALUE : claim.getItem().getName();
-            rows[i][2] = UserDashboardComponents.date(claim);
+            rows[i][2] = DashboardUi.date(claim);
             rows[i][3] = claim.getStatus() == null ? EMPTY_VALUE : claim.getStatus().name();
         }
         return rows;
@@ -209,6 +231,10 @@ public class AdminHomePanel extends JPanel {
     private Object[][] emptyRows(String text) {
         return new Object[][]{{text, EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE}};
     }
+
+    // -------------------------------------------------------------------------
+    // Text Helpers
+    // -------------------------------------------------------------------------
 
     private String userName(Report report) {
         return report == null || report.getUser() == null ? EMPTY_VALUE : report.getUser().getName();

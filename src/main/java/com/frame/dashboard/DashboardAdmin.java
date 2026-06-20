@@ -1,13 +1,14 @@
 package com.frame.dashboard;
 
 import com.frame.AppDialog;
+import com.frame.LoginFrame;
 import com.frame.dashboard.admin.AdminClaimsPanel;
 import com.frame.dashboard.admin.AdminDashboardComponents;
 import com.frame.dashboard.admin.AdminFoundReportsPanel;
 import com.frame.dashboard.admin.AdminHomePanel;
 import com.frame.dashboard.admin.AdminLostReportsPanel;
 import com.frame.dashboard.admin.AdminProfilePanel;
-import com.frame.dashboard.user.UserDashboardComponents;
+import com.frame.dashboard.shared.DashboardUi;
 import com.managers.ClaimManager;
 import com.managers.ReportManager;
 import com.model.User;
@@ -22,6 +23,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.LinkedHashMap;
@@ -35,31 +37,89 @@ import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.Timer;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 
 public class DashboardAdmin extends JFrame {
 
+    private static final String FRAME_TITLE = "Dashboard Admin - Sistem Lost & Found";
+    private static final String LOGO_PATH = "/assets/icon-lost-found-COLOR.png";
+    private static final String LOGOUT_ICON_PATH = "/assets/PNG/64x64/icon_sign.png";
+    private static final String FONT_FAMILY = "Poppins";
+
+    private static final int SIDEBAR_WIDTH = 320;
+    private static final int SIDEBAR_HEIGHT = 820;
+    private static final int PAGE_STABILIZE_REPEATS = 12;
+    private static final int PAGE_STABILIZE_DELAY_MS = 60;
+
+    private static final Color SIDEBAR_BACKGROUND = Color.WHITE;
+    private static final Color USER_CARD_BACKGROUND = new Color(249, 252, 255);
+    private static final Color LOGOUT_TEXT = new Color(220, 38, 38);
+    private static final Color LOGOUT_HOVER_BACKGROUND = new Color(254, 226, 226);
+    private static final Color SCROLLBAR_THUMB = new Color(75, 145, 255);
+    private static final Color SCROLLBAR_TRACK = new Color(245, 248, 252);
+
     private static final String PAGE_DASHBOARD = "dashboard";
-    private static final String PAGE_LOST_REPORTS = "lost_reports";
-    private static final String PAGE_FOUND_REPORTS = "found_reports";
+    private static final String PAGE_LOST_REPORTS = "lostReports";
+    private static final String PAGE_FOUND_REPORTS = "foundReports";
     private static final String PAGE_CLAIMS = "claims";
     private static final String PAGE_PROFILE = "profile";
 
     private final ReportManager reportManager;
     private final ClaimManager claimManager;
     private final User currentUser;
-    private final Map<String, JButton> navigationButtons = new LinkedHashMap<>();
-    private final CardLayout contentLayout = new CardLayout();
-    private final JPanel pageContainer = new JPanel(contentLayout);
+
+    private final CardLayout pageLayout;
+    private final JPanel pageContainer;
+    private final Map<String, JButton> navigationButtons;
 
     public DashboardAdmin(ReportManager reportManager) {
         this.reportManager = reportManager == null ? new ReportManager() : reportManager;
         this.claimManager = new ClaimManager();
         this.currentUser = AuthService.getCurrentUser();
+        this.pageLayout = new CardLayout();
+        this.pageContainer = new JPanel(pageLayout);
+        this.navigationButtons = new LinkedHashMap<>();
 
-        setupFrame();
-        setContentPane(createMainPanel());
+        initializeFrame();
+    }
+
+    // =========================
+    // Frame Setup
+    // =========================
+
+    private void initializeFrame() {
+        configureWindow();
+        setContentPane(createMainLayout());
         showPage(PAGE_DASHBOARD);
+        installWindowLifecycleHandlers();
+    }
+
+    private void configureWindow() {
+        setTitle(FRAME_TITLE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        Rectangle screenBounds = java.awt.GraphicsEnvironment
+                .getLocalGraphicsEnvironment()
+                .getMaximumWindowBounds();
+        setMinimumSize(calculateMinimumWindowSize(screenBounds));
+        setSize(calculateInitialWindowSize(screenBounds));
+        setLocationRelativeTo(null);
+    }
+
+    private Dimension calculateInitialWindowSize(Rectangle screenBounds) {
+        int width = Math.min(1440, Math.max(1120, screenBounds.width - 80));
+        int height = Math.min(860, Math.max(720, screenBounds.height - 60));
+        return new Dimension(width, height);
+    }
+
+    private Dimension calculateMinimumWindowSize(Rectangle screenBounds) {
+        int width = Math.min(1180, Math.max(1024, screenBounds.width - 160));
+        int height = Math.min(760, Math.max(660, screenBounds.height - 140));
+        return new Dimension(width, height);
+    }
+
+    private void installWindowLifecycleHandlers() {
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowOpened(WindowEvent event) {
@@ -68,105 +128,330 @@ public class DashboardAdmin extends JFrame {
         });
     }
 
-    private void setupFrame() {
-        setTitle("Dashboard Admin - Sistem Lost & Found");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        java.awt.Rectangle screenBounds = java.awt.GraphicsEnvironment
-                .getLocalGraphicsEnvironment()
-                .getMaximumWindowBounds();
-        int width = Math.min(1440, Math.max(1120, screenBounds.width - 80));
-        int height = Math.min(860, Math.max(720, screenBounds.height - 60));
-        int minWidth = Math.min(1180, Math.max(1024, screenBounds.width - 160));
-        int minHeight = Math.min(760, Math.max(660, screenBounds.height - 140));
-        setMinimumSize(new Dimension(minWidth, minHeight));
-        setSize(width, height);
-        setLocationRelativeTo(null);
-    }
+    // =========================
+    // Main Layout
+    // =========================
 
-    private JPanel createMainPanel() {
+    private JPanel createMainLayout() {
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(UserDashboardComponents.SURFACE);
-        mainPanel.add(createSidebarScroll(), BorderLayout.WEST);
+        mainPanel.setBackground(DashboardUi.SURFACE);
+        mainPanel.add(createSidebarScrollPane(), BorderLayout.WEST);
         mainPanel.add(createPageContainer(), BorderLayout.CENTER);
         return mainPanel;
     }
 
-    private JScrollPane createSidebarScroll() {
-        JScrollPane scrollPane = new JScrollPane(createSidebar());
+    private JPanel createPageContainer() {
+        pageContainer.setOpaque(false);
+        rebuildPages();
+        return pageContainer;
+    }
+
+    private void rebuildPages() {
+        pageContainer.removeAll();
+        refreshDashboardData();
+        registerPages();
+    }
+
+    private void refreshDashboardData() {
+        reportManager.reload();
+        claimManager.refreshClaimsFromDatabase();
+    }
+
+    private void registerPages() {
+        pageContainer.add(DashboardUi.scroll(new AdminHomePanel(reportManager, claimManager)), PAGE_DASHBOARD);
+        pageContainer.add(DashboardUi.scroll(new AdminLostReportsPanel(reportManager)), PAGE_LOST_REPORTS);
+        pageContainer.add(DashboardUi.scroll(new AdminFoundReportsPanel(reportManager)), PAGE_FOUND_REPORTS);
+        pageContainer.add(DashboardUi.scroll(new AdminClaimsPanel(claimManager)), PAGE_CLAIMS);
+        pageContainer.add(new AdminProfilePanel(currentUser), PAGE_PROFILE);
+    }
+
+    // =========================
+    // Sidebar Layout
+    // =========================
+
+    private JScrollPane createSidebarScrollPane() {
+        JScrollPane scrollPane = new JScrollPane(createSidebarPanel());
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.getViewport().setBackground(Color.WHITE);
-        scrollPane.setBackground(Color.WHITE);
-        scrollPane.setPreferredSize(new Dimension(320, 760));
+        scrollPane.getViewport().setBackground(SIDEBAR_BACKGROUND);
+        scrollPane.setBackground(SIDEBAR_BACKGROUND);
+        scrollPane.setPreferredSize(new Dimension(SIDEBAR_WIDTH, 760));
         applySidebarScrollStyle(scrollPane);
         return scrollPane;
     }
 
-    private JPanel createSidebar() {
+    private JPanel createSidebarPanel() {
         JPanel sidebar = new JPanel(new GridBagLayout());
-        sidebar.setBackground(Color.WHITE);
-        sidebar.setPreferredSize(new Dimension(320, 820));
+        sidebar.setBackground(SIDEBAR_BACKGROUND);
+        sidebar.setPreferredSize(new Dimension(SIDEBAR_WIDTH, SIDEBAR_HEIGHT));
         sidebar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 0, 1, UserDashboardComponents.BORDER),
+                BorderFactory.createMatteBorder(0, 0, 0, 1, DashboardUi.BORDER),
                 BorderFactory.createEmptyBorder(36, 22, 22, 22)
         ));
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.NORTHWEST;
+        GridBagConstraints gbc = sidebarConstraints();
+        addSidebarBrand(sidebar, gbc);
+        addSidebarUserCard(sidebar, gbc);
+        addSidebarNavigation(sidebar, gbc);
+        addSidebarFooter(sidebar, gbc);
+        return sidebar;
+    }
 
+    private void addSidebarBrand(JPanel sidebar, GridBagConstraints gbc) {
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 38, 0);
         sidebar.add(createLogoLabel(), gbc);
+    }
 
+    private void addSidebarUserCard(JPanel sidebar, GridBagConstraints gbc) {
         gbc.gridy = 1;
         gbc.insets = new Insets(0, 0, 28, 0);
-        sidebar.add(createAdminCard(), gbc);
+        sidebar.add(createAdminIdentityCard(), gbc);
+    }
 
-        gbc.gridy = 2;
-        gbc.insets = new Insets(0, 0, 12, 0);
-        sidebar.add(createSectionLabel("UTAMA"), gbc);
+    private void addSidebarNavigation(JPanel sidebar, GridBagConstraints gbc) {
+        addSidebarSection(sidebar, gbc, 2, "UTAMA", new Insets(0, 0, 12, 0));
+        addSidebarButton(sidebar, gbc, 3, PAGE_DASHBOARD, "Dashboard", "\u25A6", new Insets(0, 0, 22, 0));
 
-        gbc.gridy = 3;
-        gbc.insets = new Insets(0, 0, 22, 0);
-        sidebar.add(createNavigationButton(PAGE_DASHBOARD, "Dashboard", "\u25A6"), gbc);
+        addSidebarSection(sidebar, gbc, 4, "MANAJEMEN", new Insets(0, 0, 12, 0));
+        addSidebarButton(sidebar, gbc, 5, PAGE_LOST_REPORTS, "Kelola Laporan Barang Hilang", "\u25A3", new Insets(0, 0, 10, 0));
+        addSidebarButton(sidebar, gbc, 6, PAGE_FOUND_REPORTS, "Kelola Barang Ditemukan", "\u25C8", new Insets(0, 0, 12, 0));
+        addSidebarButton(sidebar, gbc, 7, PAGE_CLAIMS, "Kelola Klaim", "\u25CC", new Insets(0, 0, 24, 0));
 
-        gbc.gridy = 4;
-        gbc.insets = new Insets(0, 0, 12, 0);
-        sidebar.add(createSectionLabel("MANAJEMEN"), gbc);
-
-        gbc.gridy = 5;
-        gbc.insets = new Insets(0, 0, 8, 0);
-        sidebar.add(createNavigationButton(PAGE_LOST_REPORTS, "Kelola Laporan Barang Hilang", "\u25A3"), gbc);
-
-        gbc.gridy = 6;
-        sidebar.add(createNavigationButton(PAGE_FOUND_REPORTS, "Kelola Barang Ditemukan", "\u25C8"), gbc);
-
-        gbc.gridy = 7;
-        sidebar.add(createNavigationButton(PAGE_CLAIMS, "Kelola Klaim", "\u25CC"), gbc);
-
-        gbc.gridy = 8;
-        gbc.insets = new Insets(18, 0, 12, 0);
-        sidebar.add(createSectionLabel("AKUN"), gbc);
-
-        gbc.gridy = 9;
-        gbc.insets = new Insets(0, 0, 0, 0);
-        sidebar.add(createNavigationButton(PAGE_PROFILE, "Edit Profil", "\u26AD"), gbc);
+        addSidebarSection(sidebar, gbc, 8, "AKUN", new Insets(4, 0, 12, 0));
+        addSidebarButton(sidebar, gbc, 9, PAGE_PROFILE, "Edit Profil", "\u26AD", new Insets(0, 0, 0, 0));
 
         gbc.gridy = 10;
         gbc.weighty = 1;
         sidebar.add(createSidebarSpacer(), gbc);
-
-        gbc.gridy = 11;
         gbc.weighty = 0;
+    }
+
+    private void addSidebarFooter(JPanel sidebar, GridBagConstraints gbc) {
+        gbc.gridy = 11;
         gbc.insets = new Insets(24, 0, 0, 0);
         sidebar.add(createLogoutButton(), gbc);
-
-        return sidebar;
     }
+
+    private void addSidebarSection(JPanel sidebar, GridBagConstraints gbc, int row, String title, Insets insets) {
+        gbc.gridy = row;
+        gbc.insets = insets;
+        sidebar.add(createSectionLabel(title), gbc);
+    }
+
+    private void addSidebarButton(JPanel sidebar, GridBagConstraints gbc, int row, String pageKey,
+            String title, String symbol, Insets insets) {
+        gbc.gridy = row;
+        gbc.insets = insets;
+        sidebar.add(createNavigationButton(pageKey, title, symbol), gbc);
+    }
+
+    // =========================
+    // Sidebar Components
+    // =========================
+
+    private JLabel createLogoLabel() {
+        JLabel logo = new JLabel();
+        java.net.URL logoUrl = getClass().getResource(LOGO_PATH);
+        if (logoUrl != null) {
+            ImageIcon original = new ImageIcon(logoUrl);
+            Image image = original.getImage().getScaledInstance(142, calculateLogoHeight(original, 142), Image.SCALE_SMOOTH);
+            logo.setIcon(new ImageIcon(image));
+        } else {
+            logo.setText("Lost & Found");
+            logo.setForeground(DashboardUi.PRIMARY_DARK);
+            logo.setFont(new Font(FONT_FAMILY, Font.BOLD, 15));
+        }
+        return logo;
+    }
+
+    private int calculateLogoHeight(ImageIcon icon, int width) {
+        double ratio = (double) icon.getIconWidth() / icon.getIconHeight();
+        return Math.max(30, (int) Math.round(width / ratio));
+    }
+
+    private JPanel createAdminIdentityCard() {
+        DashboardUi.RoundedPanel card = new DashboardUi.RoundedPanel(USER_CARD_BACKGROUND, 18);
+        card.setLayout(new GridBagLayout());
+        card.setBorder(BorderFactory.createCompoundBorder(
+                new DashboardUi.RoundedLineBorder(DashboardUi.BORDER, 18, 1),
+                BorderFactory.createEmptyBorder(14, 14, 14, 14)
+        ));
+
+        GridBagConstraints gbc = horizontalConstraints();
+        gbc.gridy = 0;
+        card.add(DashboardUi.label("ADMIN", 10, Font.BOLD, DashboardUi.TEXT_MUTED), gbc);
+
+        gbc.gridy = 1;
+        gbc.insets = new Insets(8, 0, 0, 0);
+        card.add(DashboardUi.label(getAdminDisplayName(), 14, Font.BOLD, DashboardUi.TEXT_DARK), gbc);
+        return card;
+    }
+
+    private JLabel createSectionLabel(String text) {
+        return DashboardUi.label(text, 10, Font.BOLD, DashboardUi.TEXT_MUTED);
+    }
+
+    private JButton createNavigationButton(String pageKey, String text, String symbol) {
+        JButton button = AdminDashboardComponents.sidebarButton(text, symbol, PAGE_DASHBOARD.equals(pageKey));
+        button.addActionListener(event -> showPage(pageKey));
+        navigationButtons.put(pageKey, button);
+        return button;
+    }
+
+    private JButton createLogoutButton() {
+        JButton button = new JButton("Logout");
+        applyLogoutIcon(button);
+        applyLogoutButtonStyle(button);
+        installLogoutHoverStyle(button);
+        button.addActionListener(event -> handleLogoutAction());
+        return button;
+    }
+
+    private void applyLogoutIcon(JButton button) {
+        java.net.URL iconUrl = getClass().getResource(LOGOUT_ICON_PATH);
+        if (iconUrl == null) {
+            return;
+        }
+        Image image = new ImageIcon(iconUrl).getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+        button.setIcon(new ImageIcon(image));
+        button.setIconTextGap(12);
+    }
+
+    private void applyLogoutButtonStyle(JButton button) {
+        button.setFocusPainted(false);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        button.setHorizontalAlignment(JButton.LEFT);
+        button.setFont(new Font(FONT_FAMILY, Font.BOLD, 13));
+        button.setForeground(LOGOUT_TEXT);
+        button.setBackground(Color.WHITE);
+        button.setBorder(BorderFactory.createCompoundBorder(
+                new DashboardUi.RoundedLineBorder(DashboardUi.BORDER, 18, 1),
+                BorderFactory.createEmptyBorder(12, 16, 12, 16)
+        ));
+    }
+
+    private void installLogoutHoverStyle(JButton button) {
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent event) {
+                button.setBackground(LOGOUT_HOVER_BACKGROUND);
+                button.setForeground(LOGOUT_TEXT);
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent event) {
+                button.setBackground(Color.WHITE);
+                button.setForeground(LOGOUT_TEXT);
+            }
+        });
+    }
+
+    private JPanel createSidebarSpacer() {
+        JPanel panel = new JPanel();
+        panel.setOpaque(false);
+        return panel;
+    }
+
+    // =========================
+    // Actions
+    // =========================
+
+    private void showPage(String pageKey) {
+        if (shouldRebuildBeforeShowing(pageKey)) {
+            rebuildPages();
+        }
+
+        pageLayout.show(pageContainer, pageKey);
+        updateActiveNavigation(pageKey);
+        clearGlobalFocus();
+        stabilizeVisiblePage();
+    }
+
+    private boolean shouldRebuildBeforeShowing(String pageKey) {
+        return PAGE_DASHBOARD.equals(pageKey)
+                || PAGE_LOST_REPORTS.equals(pageKey)
+                || PAGE_FOUND_REPORTS.equals(pageKey)
+                || PAGE_CLAIMS.equals(pageKey);
+    }
+
+    private void updateActiveNavigation(String activePageKey) {
+        for (Map.Entry<String, JButton> entry : navigationButtons.entrySet()) {
+            AdminDashboardComponents.setSidebarButtonActive(entry.getValue(), entry.getKey().equals(activePageKey));
+        }
+    }
+
+    private void handleLogoutAction() {
+        boolean confirmed = AppDialog.confirm(
+                this,
+                "Konfirmasi Logout",
+                "Anda yakin ingin keluar dari dashboard admin?",
+                "Logout",
+                "Batal"
+        );
+        if (!confirmed) {
+            return;
+        }
+
+        dispose();
+        new LoginFrame().setVisible(true);
+    }
+
+    // =========================
+    // Page Stabilization
+    // =========================
+
+    private void stabilizeVisiblePage() {
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            stabilizeVisiblePageNow();
+            startPageStabilizationTimer();
+        });
+    }
+
+    private void startPageStabilizationTimer() {
+        Timer timer = new Timer(PAGE_STABILIZE_DELAY_MS, null);
+        final int[] runCount = {0};
+        timer.addActionListener(event -> {
+            stabilizeVisiblePageNow();
+            runCount[0]++;
+            if (runCount[0] >= PAGE_STABILIZE_REPEATS) {
+                timer.stop();
+            }
+        });
+        timer.setRepeats(true);
+        timer.start();
+    }
+
+    private void stabilizeVisiblePageNow() {
+        pageContainer.requestFocusInWindow();
+        pageContainer.invalidate();
+        pageContainer.revalidate();
+        pageContainer.doLayout();
+        getContentPane().invalidate();
+        getContentPane().doLayout();
+        validate();
+        repaint();
+        DashboardUi.resetScrollPosition(getVisiblePage());
+    }
+
+    private void clearGlobalFocus() {
+        pageContainer.setFocusable(true);
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+    }
+
+    private java.awt.Component getVisiblePage() {
+        for (java.awt.Component component : pageContainer.getComponents()) {
+            if (component.isVisible()) {
+                return component;
+            }
+        }
+        return pageContainer;
+    }
+
+    // =========================
+    // Style Helpers
+    // =========================
 
     private void applySidebarScrollStyle(JScrollPane scrollPane) {
         JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
@@ -176,11 +461,8 @@ public class DashboardAdmin extends JFrame {
         verticalScrollBar.setUI(new BasicScrollBarUI() {
             @Override
             protected void configureScrollBarColors() {
-                thumbColor = new Color(75, 145, 255);
-                trackColor = new Color(245, 248, 252);
-                thumbDarkShadowColor = thumbColor.darker();
-                thumbHighlightColor = thumbColor.brighter();
-                thumbLightShadowColor = thumbColor;
+                thumbColor = SCROLLBAR_THUMB;
+                trackColor = SCROLLBAR_TRACK;
             }
 
             @Override
@@ -213,14 +495,7 @@ public class DashboardAdmin extends JFrame {
                         java.awt.RenderingHints.VALUE_ANTIALIAS_ON
                 );
                 graphics2D.setColor(thumbColor);
-                graphics2D.fillRoundRect(
-                        thumbBounds.x,
-                        thumbBounds.y,
-                        thumbBounds.width,
-                        thumbBounds.height,
-                        10,
-                        10
-                );
+                graphics2D.fillRoundRect(thumbBounds.x, thumbBounds.y, thumbBounds.width, thumbBounds.height, 10, 10);
                 graphics2D.dispose();
             }
 
@@ -239,210 +514,41 @@ public class DashboardAdmin extends JFrame {
         });
     }
 
-    private JPanel createSidebarSpacer() {
-        JPanel panel = new JPanel();
-        panel.setOpaque(false);
-        return panel;
-    }
+    // =========================
+    // Text Helpers
+    // =========================
 
-    private JPanel createPageContainer() {
-        pageContainer.setOpaque(false);
-        refreshPageContainer();
-        return pageContainer;
-    }
-
-    private void refreshPageContainer() {
-        pageContainer.removeAll();
-        reportManager.reload();
-        claimManager.refreshClaimsFromDatabase();
-        pageContainer.add(UserDashboardComponents.scroll(new AdminHomePanel(reportManager, claimManager)), PAGE_DASHBOARD);
-        pageContainer.add(UserDashboardComponents.scroll(new AdminLostReportsPanel(reportManager)), PAGE_LOST_REPORTS);
-        pageContainer.add(UserDashboardComponents.scroll(new AdminFoundReportsPanel(reportManager)), PAGE_FOUND_REPORTS);
-        pageContainer.add(UserDashboardComponents.scroll(new AdminClaimsPanel(claimManager)), PAGE_CLAIMS);
-        pageContainer.add(new AdminProfilePanel(currentUser), PAGE_PROFILE);
-    }
-
-    private JLabel createLogoLabel() {
-        JLabel logo = new JLabel();
-        java.net.URL logoUrl = getClass().getResource("/assets/icon-lost-found-COLOR.png");
-        if (logoUrl != null) {
-            ImageIcon original = new ImageIcon(logoUrl);
-            int width = 142;
-            int height = Math.max(30, (int) Math.round(width / ((double) original.getIconWidth() / original.getIconHeight())));
-            Image image = original.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-            logo.setIcon(new ImageIcon(image));
-        } else {
-            logo.setText("Lost & Found");
-            logo.setForeground(UserDashboardComponents.PRIMARY_DARK);
-            logo.setFont(new Font("Poppins", Font.BOLD, 15));
-        }
-        return logo;
-    }
-
-    private JPanel createAdminCard() {
-        UserDashboardComponents.RoundedPanel card = new UserDashboardComponents.RoundedPanel(new Color(249, 252, 255), 18);
-        card.setLayout(new GridBagLayout());
-        card.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 18, 1),
-                BorderFactory.createEmptyBorder(14, 14, 14, 14)
-        ));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.WEST;
-
-        gbc.gridy = 0;
-        card.add(UserDashboardComponents.label("ADMIN", 10, Font.BOLD, UserDashboardComponents.TEXT_MUTED), gbc);
-
-        gbc.gridy = 1;
-        gbc.insets = new Insets(8, 0, 0, 0);
-        card.add(UserDashboardComponents.label(getAdminName(), 14, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
-
-        return card;
-    }
-
-    private JLabel createSectionLabel(String text) {
-        return UserDashboardComponents.label(text, 10, Font.BOLD, UserDashboardComponents.TEXT_MUTED);
-    }
-
-    private JButton createNavigationButton(String pageKey, String text, String symbol) {
-        JButton button = AdminDashboardComponents.sidebarButton(text, symbol, PAGE_DASHBOARD.equals(pageKey));
-        button.addActionListener(event -> showPage(pageKey));
-        navigationButtons.put(pageKey, button);
-        return button;
-    }
-
-    private JButton createLogoutButton() {
-        JButton button = new JButton("Logout");
-        try {
-            java.net.URL url = getClass().getResource("/assets/PNG/64x64/icon_sign.png");
-            if (url != null) {
-                Image image = new ImageIcon(url).getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-                button.setIcon(new ImageIcon(image));
-                button.setIconTextGap(12);
-            }
-        } catch (Exception exception) {
-        }
-        button.setFocusPainted(false);
-        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        button.setHorizontalAlignment(JButton.LEFT);
-        button.setFont(new Font("Poppins", Font.BOLD, 13));
-        button.setForeground(new Color(220, 38, 38));
-        button.setBackground(Color.WHITE);
-        button.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 18, 1),
-                BorderFactory.createEmptyBorder(12, 16, 12, 16)
-        ));
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent event) {
-                button.setBackground(new Color(254, 226, 226));
-                button.setForeground(new Color(220, 38, 38));
-            }
-
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent event) {
-                button.setBackground(Color.WHITE);
-                button.setForeground(new Color(220, 38, 38));
-            }
-        });
-        button.addActionListener(event -> {
-            boolean confirmed = AppDialog.confirm(
-                    this,
-                    "Konfirmasi Logout",
-                    "Anda yakin ingin keluar dari dashboard admin?",
-                    "Logout",
-                    "Batal"
-            );
-            if (!confirmed) {
-                return;
-            }
-            dispose();
-            openLoginFrame();
-        });
-        return button;
-    }
-
-    private JPanel createPlaceholderPage(String text) {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setOpaque(false);
-        panel.setBorder(BorderFactory.createEmptyBorder(44, 42, 44, 42));
-        panel.add(UserDashboardComponents.emptyState(text));
-        return panel;
-    }
-
-    private void showPage(String pageKey) {
-        if (PAGE_DASHBOARD.equals(pageKey) || PAGE_LOST_REPORTS.equals(pageKey) || PAGE_FOUND_REPORTS.equals(pageKey) || PAGE_CLAIMS.equals(pageKey)) {
-            refreshPageContainer();
-        }
-
-        contentLayout.show(pageContainer, pageKey);
-        for (Map.Entry<String, JButton> entry : navigationButtons.entrySet()) {
-            AdminDashboardComponents.setSidebarButtonActive(entry.getValue(), entry.getKey().equals(pageKey));
-        }
-        pageContainer.setFocusable(true);
-        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
-        stabilizeVisiblePage();
-    }
-
-    private void stabilizeVisiblePage() {
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            stabilizeVisiblePageNow();
-
-            javax.swing.Timer timer = new javax.swing.Timer(60, null);
-            final int[] runCount = {0};
-            timer.addActionListener(event -> {
-                stabilizeVisiblePageNow();
-                runCount[0]++;
-                if (runCount[0] >= 12) {
-                    timer.stop();
-                }
-            });
-            timer.setRepeats(true);
-            timer.start();
-        });
-    }
-
-    private void stabilizeVisiblePageNow() {
-        pageContainer.requestFocusInWindow();
-        pageContainer.invalidate();
-        pageContainer.revalidate();
-        pageContainer.doLayout();
-        getContentPane().invalidate();
-        getContentPane().doLayout();
-        validate();
-        repaint();
-        UserDashboardComponents.resetScrollPosition(getVisiblePage());
-    }
-
-    private java.awt.Component getVisiblePage() {
-        for (java.awt.Component component : pageContainer.getComponents()) {
-            if (component.isVisible()) {
-                return component;
-            }
-        }
-        return pageContainer;
-    }
-
-    private String getAdminName() {
+    private String getAdminDisplayName() {
         if (currentUser == null || currentUser.getName() == null || currentUser.getName().isBlank()) {
             return "Admin";
         }
         return currentUser.getName();
     }
 
-    private void openLoginFrame() {
-        try {
-            JFrame loginFrame = (JFrame) Class.forName("com.frame.LoginFrame").getDeclaredConstructor().newInstance();
-            loginFrame.setVisible(true);
-        } catch (ReflectiveOperationException exception) {
-            AppDialog.error(this, "Gagal Membuka Login", "Frame login tidak dapat dibuka: " + exception.getMessage());
-        }
+    // =========================
+    // Constraints Helpers
+    // =========================
+
+    private GridBagConstraints sidebarConstraints() {
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        return gbc;
+    }
+
+    private GridBagConstraints horizontalConstraints() {
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+        return gbc;
     }
 
     public static void main(String[] args) {
         java.awt.EventQueue.invokeLater(() -> new DashboardAdmin(new ReportManager()).setVisible(true));
     }
 }
+
