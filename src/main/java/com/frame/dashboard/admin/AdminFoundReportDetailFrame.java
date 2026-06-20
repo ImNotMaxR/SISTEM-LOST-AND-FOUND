@@ -1,8 +1,8 @@
 package com.frame.dashboard.admin;
 
 import com.enumeration.ItemStatus;
-import com.frame.dashboard.user.ReportDetailFrame;
-import com.frame.dashboard.user.UserDashboardComponents;
+import com.frame.dashboard.shared.ReportDetailFrame;
+import com.frame.dashboard.shared.DashboardUi;
 import com.managers.ReportManager;
 import com.model.FoundReport;
 import com.model.Item;
@@ -36,6 +36,10 @@ public class AdminFoundReportDetailFrame extends JDialog {
     private final FoundReport report;
     private final Runnable onUpdated;
 
+    // -------------------------------------------------------------------------
+    // Frame Setup
+    // -------------------------------------------------------------------------
+
     public AdminFoundReportDetailFrame(FoundReport report, ReportManager reportManager, Runnable onUpdated) {
         super((java.awt.Frame) null, "Detail Barang Ditemukan", true);
         this.report = report;
@@ -50,6 +54,10 @@ public class AdminFoundReportDetailFrame extends JDialog {
         setLocationRelativeTo(null);
     }
 
+    // -------------------------------------------------------------------------
+    // Frame Sizing
+    // -------------------------------------------------------------------------
+
     private Dimension responsiveFrameSize() {
         java.awt.Rectangle bounds = java.awt.GraphicsEnvironment
                 .getLocalGraphicsEnvironment()
@@ -59,12 +67,16 @@ public class AdminFoundReportDetailFrame extends JDialog {
         return new Dimension(width, height);
     }
 
+    // -------------------------------------------------------------------------
+    // Main Layout
+    // -------------------------------------------------------------------------
+
     private JPanel createContent() {
         JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(UserDashboardComponents.SURFACE);
+        root.setBackground(DashboardUi.SURFACE);
         root.setBorder(BorderFactory.createEmptyBorder(24, 28, 24, 28));
 
-        root.add(UserDashboardComponents.section("Detail Barang Ditemukan", "Informasi Barang Temuan Dan Status Klaim."), BorderLayout.NORTH);
+        root.add(DashboardUi.section("Detail Barang Ditemukan", "Informasi Barang Temuan Dan Status Klaim."), BorderLayout.NORTH);
 
         JPanel center = new JPanel(new BorderLayout());
         center.setOpaque(false);
@@ -80,6 +92,10 @@ public class AdminFoundReportDetailFrame extends JDialog {
 
         return root;
     }
+
+    // -------------------------------------------------------------------------
+    // Scroll UI
+    // -------------------------------------------------------------------------
 
     private JScrollPane createDetailScroll() {
         JPanel wrapper = new JPanel(new GridBagLayout());
@@ -171,17 +187,21 @@ public class AdminFoundReportDetailFrame extends JDialog {
         });
     }
 
+    // -------------------------------------------------------------------------
+    // Detail Card UI
+    // -------------------------------------------------------------------------
+
     private JPanel createDetailCard() {
-        UserDashboardComponents.RoundedPanel card = new UserDashboardComponents.RoundedPanel(Color.WHITE, 20);
+        DashboardUi.RoundedPanel card = new DashboardUi.RoundedPanel(Color.WHITE, 20);
         card.setLayout(new GridBagLayout());
         card.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 20, 1),
+                new DashboardUi.RoundedLineBorder(DashboardUi.BORDER, 20, 1),
                 BorderFactory.createEmptyBorder(22, 24, 22, 24)
         ));
 
-        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
+        GridBagConstraints gbc = DashboardUi.contentConstraints();
         gbc.gridy = 0;
-        card.add(UserDashboardComponents.label("Informasi Barang", 18, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        card.add(DashboardUi.label("Informasi Barang", 18, Font.BOLD, DashboardUi.TEXT_DARK), gbc);
 
         gbc.gridy = 1;
         gbc.insets = new Insets(14, 0, 0, 0);
@@ -189,6 +209,10 @@ public class AdminFoundReportDetailFrame extends JDialog {
 
         return card;
     }
+
+    // -------------------------------------------------------------------------
+    // Information Grid UI
+    // -------------------------------------------------------------------------
 
     private JPanel createInfoGrid() {
         JPanel grid = new JPanel(new GridBagLayout());
@@ -204,7 +228,7 @@ public class AdminFoundReportDetailFrame extends JDialog {
         addInfoCell(grid, gbc, 0, 1, "Barang", item == null ? "-" : titleCase(item.getName()));
         addInfoCell(grid, gbc, 1, 1, "Kategori", item == null || item.getCategory() == null ? "-" : titleCase(item.getCategory().getName()));
         addInfoCell(grid, gbc, 0, 2, "Lokasi Ditemukan", titleCase(report.getFoundLocation()));
-        addInfoCell(grid, gbc, 1, 2, "Tanggal", UserDashboardComponents.date(report));
+        addInfoCell(grid, gbc, 1, 2, "Tanggal", DashboardUi.date(report));
         addInfoCell(grid, gbc, 0, 3, "Status Klaim", claimStatus());
         addInfoCell(grid, gbc, 1, 3, "Match Laporan Hilang", matchedReport(report.getMatchedLostReport()));
         return grid;
@@ -218,15 +242,15 @@ public class AdminFoundReportDetailFrame extends JDialog {
     }
 
     private JPanel createInfoCell(String label, String value) {
-        UserDashboardComponents.RoundedPanel cell = new UserDashboardComponents.RoundedPanel(new Color(248, 250, 252), 14);
+        DashboardUi.RoundedPanel cell = new DashboardUi.RoundedPanel(new Color(248, 250, 252), 14);
         cell.setLayout(new GridBagLayout());
         cell.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(new Color(226, 232, 240), 14, 1),
+                new DashboardUi.RoundedLineBorder(new Color(226, 232, 240), 14, 1),
                 BorderFactory.createEmptyBorder(10, 12, 10, 12)
         ));
-        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
+        GridBagConstraints gbc = DashboardUi.contentConstraints();
         gbc.gridy = 0;
-        cell.add(UserDashboardComponents.label(label, 11, Font.BOLD, UserDashboardComponents.TEXT_MUTED), gbc);
+        cell.add(DashboardUi.label(label, 11, Font.BOLD, DashboardUi.TEXT_MUTED), gbc);
         gbc.gridy = 1;
         gbc.insets = new Insets(5, 0, 0, 0);
         cell.add(createValueText(value), gbc);
@@ -236,7 +260,7 @@ public class AdminFoundReportDetailFrame extends JDialog {
     private JTextArea createValueText(String value) {
         JTextArea area = new JTextArea(safe(value));
         area.setFont(new Font("Poppins", Font.BOLD, 13));
-        area.setForeground(UserDashboardComponents.TEXT_DARK);
+        area.setForeground(DashboardUi.TEXT_DARK);
         area.setLineWrap(true);
         area.setWrapStyleWord(true);
         area.setOpaque(false);
@@ -245,6 +269,10 @@ public class AdminFoundReportDetailFrame extends JDialog {
         area.setBorder(BorderFactory.createEmptyBorder());
         return area;
     }
+
+    // -------------------------------------------------------------------------
+    // Actions UI
+    // -------------------------------------------------------------------------
 
     private JPanel createActions() {
         JPanel panel = new JPanel(new GridBagLayout());
@@ -311,6 +339,10 @@ public class AdminFoundReportDetailFrame extends JDialog {
                 ? "Sudah Diklaim"
                 : "Belum Diklaim";
     }
+
+    // -------------------------------------------------------------------------
+    // Text Helpers
+    // -------------------------------------------------------------------------
 
     private String safe(String value) {
         return value == null || value.isBlank() ? "-" : value.trim();

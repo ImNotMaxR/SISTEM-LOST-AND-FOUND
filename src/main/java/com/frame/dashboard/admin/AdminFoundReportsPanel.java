@@ -1,8 +1,8 @@
 package com.frame.dashboard.admin;
 
 import com.enumeration.ItemStatus;
-import com.frame.dashboard.user.UserDashboardComponents;
-import com.frame.dashboard.user.WrapLayout;
+import com.frame.dashboard.shared.DashboardUi;
+import com.frame.dashboard.shared.WrapLayout;
 import com.managers.ReportManager;
 import com.model.Category;
 import com.model.FoundReport;
@@ -41,17 +41,25 @@ public class AdminFoundReportsPanel extends JPanel {
     private JTextField searchField;
     private String currentClaimFilter = "Semua";
 
+    // -------------------------------------------------------------------------
+    // Panel Setup
+    // -------------------------------------------------------------------------
+
     public AdminFoundReportsPanel(ReportManager reportManager) {
         this.reportManager = reportManager;
         setLayout(new GridBagLayout());
         setOpaque(true);
-        setBackground(UserDashboardComponents.SURFACE);
+        setBackground(DashboardUi.SURFACE);
         setBorder(BorderFactory.createEmptyBorder(44, 42, 48, 42));
         buildContent();
     }
 
+    // -------------------------------------------------------------------------
+    // Main Layout
+    // -------------------------------------------------------------------------
+
     private void buildContent() {
-        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
+        GridBagConstraints gbc = DashboardUi.contentConstraints();
 
         gbc.gridy = 0;
         add(createHeader(), gbc);
@@ -73,6 +81,10 @@ public class AdminFoundReportsPanel extends JPanel {
         refreshTables();
     }
 
+    // -------------------------------------------------------------------------
+    // Header UI
+    // -------------------------------------------------------------------------
+
     private JPanel createHeader() {
         JButton addButton = createAddButton();
         addButton.addActionListener(event -> new AdminFoundReportFormFrame(
@@ -81,24 +93,28 @@ public class AdminFoundReportsPanel extends JPanel {
                 this::reloadTables
         ).setVisible(true));
 
-        return UserDashboardComponents.responsiveActionRow(UserDashboardComponents.section(
+        return DashboardUi.responsiveActionRow(DashboardUi.section(
                 "Kelola Barang Ditemukan",
                 "Daftar Laporan Barang Ditemukan Yang Dibuat Oleh Security Dan Admin."
         ), addButton);
     }
+
+    // -------------------------------------------------------------------------
+    // Filter and Search UI
+    // -------------------------------------------------------------------------
 
     private JPanel createFilterSearchPanel() {
         JPanel pillsPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 10, 8));
         pillsPanel.setOpaque(false);
 
         String[] filters = {"Semua", "Belum Diklaim", "Sudah Diklaim"};
-        UserDashboardComponents.FilterPill[] pillButtons = new UserDashboardComponents.FilterPill[filters.length];
+        DashboardUi.FilterPill[] pillButtons = new DashboardUi.FilterPill[filters.length];
         for (int i = 0; i < filters.length; i++) {
             String filter = filters[i];
-            UserDashboardComponents.FilterPill pill = new UserDashboardComponents.FilterPill(filter, filter.equals(currentClaimFilter));
+            DashboardUi.FilterPill pill = new DashboardUi.FilterPill(filter, filter.equals(currentClaimFilter));
             pillButtons[i] = pill;
             pill.addActionListener(event -> {
-                for (UserDashboardComponents.FilterPill otherPill : pillButtons) {
+                for (DashboardUi.FilterPill otherPill : pillButtons) {
                     otherPill.setActive(false);
                 }
                 pill.setActive(true);
@@ -108,7 +124,7 @@ public class AdminFoundReportsPanel extends JPanel {
             pillsPanel.add(pill);
         }
 
-        searchField = new UserDashboardComponents.SearchField("Cari Barang Ditemukan...");
+        searchField = new DashboardUi.SearchField("Cari Barang Ditemukan...");
         searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent event) { refreshTables(); }
             public void removeUpdate(javax.swing.event.DocumentEvent event) { refreshTables(); }
@@ -124,8 +140,12 @@ public class AdminFoundReportsPanel extends JPanel {
         searchGbc.fill = GridBagConstraints.HORIZONTAL;
         searchWrapper.add(searchField, searchGbc);
 
-        return UserDashboardComponents.responsiveActionRow(pillsPanel, searchWrapper);
+        return DashboardUi.responsiveActionRow(pillsPanel, searchWrapper);
     }
+
+    // -------------------------------------------------------------------------
+    // Table Refresh
+    // -------------------------------------------------------------------------
 
     private void refreshTables() {
         if (tableContainer == null) {
@@ -133,7 +153,7 @@ public class AdminFoundReportsPanel extends JPanel {
         }
 
         tableContainer.removeAll();
-        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
+        GridBagConstraints gbc = DashboardUi.contentConstraints();
         int row = 0;
 
         if (shouldShow("Belum Diklaim")) {
@@ -156,6 +176,10 @@ public class AdminFoundReportsPanel extends JPanel {
         gbc.insets = new Insets(row == 0 ? 0 : 24, 0, 0, 0);
         tableContainer.add(createFoundReportsTableSection(title, claimed), gbc);
     }
+
+    // -------------------------------------------------------------------------
+    // Table UI
+    // -------------------------------------------------------------------------
 
     private JPanel createFoundReportsTableSection(String title, boolean claimed) {
         ArrayList<FoundReport> reports = getFilteredReports(claimed);
@@ -209,6 +233,10 @@ public class AdminFoundReportsPanel extends JPanel {
         table.repaint();
     }
 
+    // -------------------------------------------------------------------------
+    // Data Filtering
+    // -------------------------------------------------------------------------
+
     private ArrayList<FoundReport> getFilteredReports(boolean claimed) {
         ArrayList<FoundReport> result = new ArrayList<>();
         String keyword = searchField == null ? "" : searchField.getText().trim().toLowerCase();
@@ -242,6 +270,10 @@ public class AdminFoundReportsPanel extends JPanel {
         return value != null && value.toLowerCase().contains(keyword);
     }
 
+    // -------------------------------------------------------------------------
+    // Table Data
+    // -------------------------------------------------------------------------
+
     private Object[][] createFoundReportRows(ArrayList<FoundReport> reports) {
         if (reports.isEmpty()) {
             return new Object[][]{{"Belum Ada Laporan", EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE}};
@@ -258,11 +290,15 @@ public class AdminFoundReportsPanel extends JPanel {
             rows[i][3] = categoryName(item);
             rows[i][4] = titleCase(report.getFoundLocation());
             rows[i][5] = matchedReport(report.getMatchedLostReport());
-            rows[i][6] = UserDashboardComponents.date(report);
+            rows[i][6] = DashboardUi.date(report);
             rows[i][7] = report.getItem() != null && report.getItem().getStatus() == ItemStatus.DIKLAIM ? "Sudah Diklaim" : "Belum Diklaim";
         }
         return rows;
     }
+
+    // -------------------------------------------------------------------------
+    // Button UI
+    // -------------------------------------------------------------------------
 
     private JButton createAddButton() {
         JButton button = new JButton("+ Tambah Barang Temuan");
@@ -281,8 +317,8 @@ public class AdminFoundReportsPanel extends JPanel {
                 Graphics2D g2 = (Graphics2D) graphics.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 Color background = button.getModel().isRollover()
-                        ? UserDashboardComponents.PRIMARY_DARK
-                        : UserDashboardComponents.PRIMARY;
+                        ? DashboardUi.PRIMARY_DARK
+                        : DashboardUi.PRIMARY;
                 g2.setColor(background);
                 g2.fillRoundRect(0, 0, component.getWidth(), component.getHeight(), 18, 18);
                 g2.dispose();
@@ -291,6 +327,10 @@ public class AdminFoundReportsPanel extends JPanel {
         });
         return button;
     }
+
+    // -------------------------------------------------------------------------
+    // Actions
+    // -------------------------------------------------------------------------
 
     private void openDetail(FoundReport report) {
         new AdminFoundReportDetailFrame(report, reportManager, this::reloadTables).setVisible(true);
@@ -306,6 +346,10 @@ public class AdminFoundReportsPanel extends JPanel {
         panel.setOpaque(false);
         return panel;
     }
+
+    // -------------------------------------------------------------------------
+    // Text Helpers
+    // -------------------------------------------------------------------------
 
     private String userName(User user) {
         return user == null ? EMPTY_VALUE : titleCase(user.getName());
