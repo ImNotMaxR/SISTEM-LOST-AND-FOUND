@@ -1,8 +1,8 @@
 package com.frame.dashboard.admin;
 
 import com.enumeration.ClaimStatus;
-import com.frame.dashboard.user.UserDashboardComponents;
-import com.frame.dashboard.user.WrapLayout;
+import com.frame.dashboard.shared.DashboardUi;
+import com.frame.dashboard.shared.WrapLayout;
 import com.managers.ClaimManager;
 import com.model.Claim;
 import com.model.Item;
@@ -30,17 +30,25 @@ public class AdminClaimsPanel extends JPanel {
     private JTextField searchField;
     private String currentFilter = "Semua";
 
+    // -------------------------------------------------------------------------
+    // Panel Setup
+    // -------------------------------------------------------------------------
+
     public AdminClaimsPanel(ClaimManager claimManager) {
         this.claimManager = claimManager;
         setLayout(new GridBagLayout());
         setOpaque(true);
-        setBackground(UserDashboardComponents.SURFACE);
+        setBackground(DashboardUi.SURFACE);
         setBorder(BorderFactory.createEmptyBorder(44, 42, 48, 42));
         buildContent();
     }
 
+    // -------------------------------------------------------------------------
+    // Main Layout
+    // -------------------------------------------------------------------------
+
     private void buildContent() {
-        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
+        GridBagConstraints gbc = DashboardUi.contentConstraints();
 
         gbc.gridy = 0;
         add(createHeader(), gbc);
@@ -62,25 +70,33 @@ public class AdminClaimsPanel extends JPanel {
         refreshTables();
     }
 
+    // -------------------------------------------------------------------------
+    // Header UI
+    // -------------------------------------------------------------------------
+
     private JPanel createHeader() {
-        return UserDashboardComponents.section(
+        return DashboardUi.section(
                 "Kelola Klaim",
                 "Daftar Pengajuan Klaim Barang Ditemukan Dari Pengguna."
         );
     }
+
+    // -------------------------------------------------------------------------
+    // Filter and Search UI
+    // -------------------------------------------------------------------------
 
     private JPanel createFilterSearchPanel() {
         JPanel pillsPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 10, 8));
         pillsPanel.setOpaque(false);
 
         String[] filters = {"Semua", "Pending", "Diterima", "Ditolak"};
-        UserDashboardComponents.FilterPill[] pillButtons = new UserDashboardComponents.FilterPill[filters.length];
+        DashboardUi.FilterPill[] pillButtons = new DashboardUi.FilterPill[filters.length];
         for (int i = 0; i < filters.length; i++) {
             String filter = filters[i];
-            UserDashboardComponents.FilterPill pill = new UserDashboardComponents.FilterPill(filter, filter.equals(currentFilter));
+            DashboardUi.FilterPill pill = new DashboardUi.FilterPill(filter, filter.equals(currentFilter));
             pillButtons[i] = pill;
             pill.addActionListener(event -> {
-                for (UserDashboardComponents.FilterPill otherPill : pillButtons) {
+                for (DashboardUi.FilterPill otherPill : pillButtons) {
                     otherPill.setActive(false);
                 }
                 pill.setActive(true);
@@ -90,7 +106,7 @@ public class AdminClaimsPanel extends JPanel {
             pillsPanel.add(pill);
         }
 
-        searchField = new UserDashboardComponents.SearchField("Cari Klaim...");
+        searchField = new DashboardUi.SearchField("Cari Klaim...");
         searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent event) { refreshTables(); }
             public void removeUpdate(javax.swing.event.DocumentEvent event) { refreshTables(); }
@@ -106,8 +122,12 @@ public class AdminClaimsPanel extends JPanel {
         searchGbc.fill = GridBagConstraints.HORIZONTAL;
         searchWrapper.add(searchField, searchGbc);
 
-        return UserDashboardComponents.responsiveActionRow(pillsPanel, searchWrapper);
+        return DashboardUi.responsiveActionRow(pillsPanel, searchWrapper);
     }
+
+    // -------------------------------------------------------------------------
+    // Table Refresh
+    // -------------------------------------------------------------------------
 
     private void refreshTables() {
         if (tableContainer == null) {
@@ -115,7 +135,7 @@ public class AdminClaimsPanel extends JPanel {
         }
 
         tableContainer.removeAll();
-        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
+        GridBagConstraints gbc = DashboardUi.contentConstraints();
         int row = 0;
 
         if (shouldShow("Pending")) {
@@ -141,6 +161,10 @@ public class AdminClaimsPanel extends JPanel {
         gbc.insets = new Insets(row == 0 ? 0 : 24, 0, 0, 0);
         tableContainer.add(createClaimsTableSection(title, status), gbc);
     }
+
+    // -------------------------------------------------------------------------
+    // Table UI
+    // -------------------------------------------------------------------------
 
     private JPanel createClaimsTableSection(String title, ClaimStatus status) {
         ArrayList<Claim> claims = getFilteredClaims(status);
@@ -194,6 +218,10 @@ public class AdminClaimsPanel extends JPanel {
         table.repaint();
     }
 
+    // -------------------------------------------------------------------------
+    // Data Filtering
+    // -------------------------------------------------------------------------
+
     private ArrayList<Claim> getFilteredClaims(ClaimStatus status) {
         ArrayList<Claim> result = new ArrayList<>();
         String keyword = searchField == null ? "" : searchField.getText().trim().toLowerCase();
@@ -225,6 +253,10 @@ public class AdminClaimsPanel extends JPanel {
         return value != null && value.toLowerCase().contains(keyword);
     }
 
+    // -------------------------------------------------------------------------
+    // Table Data
+    // -------------------------------------------------------------------------
+
     private Object[][] createClaimRows(ArrayList<Claim> claims) {
         if (claims.isEmpty()) {
             return new Object[][]{{"Belum Ada Klaim", EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE}};
@@ -239,11 +271,15 @@ public class AdminClaimsPanel extends JPanel {
             rows[i][2] = itemName(item);
             rows[i][3] = categoryName(item);
             rows[i][4] = safe(claim.getRelatedReportId());
-            rows[i][5] = UserDashboardComponents.date(claim);
+            rows[i][5] = DashboardUi.date(claim);
             rows[i][6] = statusText(claim.getStatus());
         }
         return rows;
     }
+
+    // -------------------------------------------------------------------------
+    // Actions
+    // -------------------------------------------------------------------------
 
     private void openDetail(Claim claim) {
         new AdminClaimDetailFrame(claim, claimManager, this::reloadTables).setVisible(true);
@@ -259,6 +295,10 @@ public class AdminClaimsPanel extends JPanel {
         panel.setOpaque(false);
         return panel;
     }
+
+    // -------------------------------------------------------------------------
+    // Text Helpers
+    // -------------------------------------------------------------------------
 
     private String userName(User user) {
         return user == null ? EMPTY_VALUE : titleCase(user.getName());

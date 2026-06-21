@@ -1,6 +1,6 @@
 package com.frame.dashboard.admin;
 
-import com.frame.dashboard.user.UserDashboardComponents;
+import com.frame.dashboard.shared.DashboardUi;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -25,6 +25,10 @@ import javax.swing.table.DefaultTableModel;
 
 public final class AdminDashboardComponents {
 
+    // -------------------------------------------------------------------------
+    // Constants
+    // -------------------------------------------------------------------------
+
     private static final Color STATUS_PENDING_TEXT = new Color(181, 112, 0);
     private static final Color STATUS_PENDING_BACKGROUND = new Color(255, 246, 229);
     private static final Color STATUS_VALID_TEXT = new Color(20, 125, 78);
@@ -39,8 +43,12 @@ public final class AdminDashboardComponents {
     private AdminDashboardComponents() {
     }
 
+    // -------------------------------------------------------------------------
+    // Public Factories
+    // -------------------------------------------------------------------------
+
     public static JPanel statRow() {
-        return UserDashboardComponents.statGrid();
+        return DashboardUi.statGrid();
     }
 
     public static JPanel statCard(String title, int value, String subtitle, Color start, Color end) {
@@ -48,23 +56,23 @@ public final class AdminDashboardComponents {
     }
 
     public static JTable table(String[] columns, Object[][] rows) {
-        DefaultTableModel model = new DefaultTableModel(rows, columns) {
+        DefaultTableModel readOnlyModel = new DefaultTableModel(rows, columns) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
 
-        JTable table = new JTable(model);
+        JTable table = new JTable(readOnlyModel);
         table.setRowHeight(54);
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
         table.setFocusable(false);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         table.setSelectionBackground(new Color(237, 246, 255));
-        table.setSelectionForeground(UserDashboardComponents.TEXT_DARK);
+        table.setSelectionForeground(DashboardUi.TEXT_DARK);
         table.setFont(new Font("Poppins", Font.PLAIN, 12));
-        table.setForeground(UserDashboardComponents.TEXT_MUTED);
+        table.setForeground(DashboardUi.TEXT_MUTED);
         table.getTableHeader().setReorderingAllowed(false);
         table.getTableHeader().setResizingAllowed(false);
         table.getTableHeader().setDefaultRenderer(new HeaderRenderer());
@@ -81,41 +89,41 @@ public final class AdminDashboardComponents {
     }
 
     public static JPanel tableSection(String title, JTable table) {
-        JPanel wrapper = new JPanel(new GridBagLayout());
-        wrapper.setOpaque(false);
+        JPanel sectionPanel = new JPanel(new GridBagLayout());
+        sectionPanel.setOpaque(false);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.WEST;
+        GridBagConstraints sectionConstraints = new GridBagConstraints();
+        sectionConstraints.gridx = 0;
+        sectionConstraints.gridy = 0;
+        sectionConstraints.weightx = 1;
+        sectionConstraints.fill = GridBagConstraints.HORIZONTAL;
+        sectionConstraints.anchor = GridBagConstraints.WEST;
 
-        wrapper.add(UserDashboardComponents.label(title, 18, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        sectionPanel.add(DashboardUi.label(title, 18, Font.BOLD, DashboardUi.TEXT_DARK), sectionConstraints);
 
-        gbc.gridy = 1;
-        gbc.insets = new Insets(12, 0, 0, 0);
-        UserDashboardComponents.RoundedPanel card = new UserDashboardComponents.RoundedPanel(Color.WHITE, 18);
+        sectionConstraints.gridy = 1;
+        sectionConstraints.insets = new Insets(12, 0, 0, 0);
+        DashboardUi.RoundedPanel card = new DashboardUi.RoundedPanel(Color.WHITE, 18);
         card.setLayout(new GridBagLayout());
         card.setMinimumSize(new Dimension(260, Math.max(126, table.getRowHeight() * Math.max(1, table.getRowCount()) + 40)));
         card.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 18, 1),
+                new DashboardUi.RoundedLineBorder(DashboardUi.BORDER, 18, 1),
                 BorderFactory.createEmptyBorder(0, 0, 0, 0)
         ));
 
-        GridBagConstraints tableGbc = new GridBagConstraints();
-        tableGbc.gridx = 0;
-        tableGbc.gridy = 0;
-        tableGbc.weightx = 1;
-        tableGbc.weighty = 1;
-        tableGbc.fill = GridBagConstraints.BOTH;
-        card.add(table.getTableHeader(), tableGbc);
+        GridBagConstraints tableConstraints = new GridBagConstraints();
+        tableConstraints.gridx = 0;
+        tableConstraints.gridy = 0;
+        tableConstraints.weightx = 1;
+        tableConstraints.weighty = 1;
+        tableConstraints.fill = GridBagConstraints.BOTH;
+        card.add(table.getTableHeader(), tableConstraints);
 
-        tableGbc.gridy = 1;
-        card.add(table, tableGbc);
-        wrapper.add(card, gbc);
+        tableConstraints.gridy = 1;
+        card.add(table, tableConstraints);
+        sectionPanel.add(card, sectionConstraints);
 
-        return wrapper;
+        return sectionPanel;
     }
 
     public static JButton sidebarButton(String text, String symbol, boolean active) {
@@ -129,7 +137,11 @@ public final class AdminDashboardComponents {
         button.repaint();
     }
 
-    private static class StatCard extends UserDashboardComponents.GradientPanel {
+    // -------------------------------------------------------------------------
+    // Cards
+    // -------------------------------------------------------------------------
+
+    private static class StatCard extends DashboardUi.GradientPanel {
 
         StatCard(String title, String value, String subtitle, Color start, Color end) {
             super(start, end, 18);
@@ -137,29 +149,33 @@ public final class AdminDashboardComponents {
             setLayout(new GridBagLayout());
             setBorder(BorderFactory.createEmptyBorder(18, 20, 16, 20));
 
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.gridx = 0;
-            gbc.weightx = 1;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            gbc.anchor = GridBagConstraints.WEST;
+            GridBagConstraints sectionConstraints = new GridBagConstraints();
+            sectionConstraints.gridx = 0;
+            sectionConstraints.weightx = 1;
+            sectionConstraints.fill = GridBagConstraints.HORIZONTAL;
+            sectionConstraints.anchor = GridBagConstraints.WEST;
 
-            gbc.gridy = 0;
-            add(UserDashboardComponents.label(title, 14, Font.PLAIN, Color.WHITE), gbc);
-            gbc.gridy = 1;
-            gbc.insets = new Insets(8, 0, 4, 0);
-            add(UserDashboardComponents.label(value, 28, Font.BOLD, Color.WHITE), gbc);
-            gbc.gridy = 2;
-            gbc.insets = new Insets(0, 0, 0, 0);
-            add(UserDashboardComponents.label(subtitle, 11, Font.PLAIN, new Color(239, 248, 255)), gbc);
+            sectionConstraints.gridy = 0;
+            add(DashboardUi.label(title, 14, Font.PLAIN, Color.WHITE), sectionConstraints);
+            sectionConstraints.gridy = 1;
+            sectionConstraints.insets = new Insets(8, 0, 4, 0);
+            add(DashboardUi.label(value, 28, Font.BOLD, Color.WHITE), sectionConstraints);
+            sectionConstraints.gridy = 2;
+            sectionConstraints.insets = new Insets(0, 0, 0, 0);
+            add(DashboardUi.label(subtitle, 11, Font.PLAIN, new Color(239, 248, 255)), sectionConstraints);
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Table Renderers
+    // -------------------------------------------------------------------------
 
     private static class HeaderRenderer extends JLabel implements javax.swing.table.TableCellRenderer {
 
         HeaderRenderer() {
             setOpaque(true);
             setBackground(new Color(232, 243, 251));
-            setForeground(UserDashboardComponents.TEXT_MUTED);
+            setForeground(DashboardUi.TEXT_MUTED);
             setFont(new Font("Poppins", Font.BOLD, 10));
             setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 12));
         }
@@ -187,7 +203,7 @@ public final class AdminDashboardComponents {
             super.getTableCellRendererComponent(table, value, selected, focus, row, column);
             boolean hovered = isHoverRow(table, row);
             setFont(new Font("Poppins", strong ? Font.BOLD : Font.PLAIN, 12));
-            setForeground(strong ? UserDashboardComponents.TEXT_DARK : UserDashboardComponents.TEXT_MUTED);
+            setForeground(strong ? DashboardUi.TEXT_DARK : DashboardUi.TEXT_MUTED);
             setBackground(selected ? table.getSelectionBackground() : hovered ? TABLE_HOVER_BACKGROUND : Color.WHITE);
             setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 12));
             return this;
@@ -207,7 +223,7 @@ public final class AdminDashboardComponents {
             String text = value == null ? "-" : value.toString();
             boolean hovered = isHoverRow(table, row);
             Color cellBackground = selected ? table.getSelectionBackground() : hovered ? TABLE_HOVER_BACKGROUND : Color.WHITE;
-            return new StatusBadge(text, statusForeground(text), statusBackground(text), cellBackground);
+            return new StatusBadge(text, resolveStatusForeground(text), resolveStatusBackground(text), cellBackground);
         }
     }
 
@@ -215,6 +231,10 @@ public final class AdminDashboardComponents {
         Object hoverRow = table.getClientProperty("hoverRow");
         return hoverRow instanceof Integer && ((Integer) hoverRow) == row;
     }
+
+    // -------------------------------------------------------------------------
+    // Status Badge
+    // -------------------------------------------------------------------------
 
     private static class StatusBadge extends JPanel {
 
@@ -277,6 +297,10 @@ public final class AdminDashboardComponents {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Sidebar
+    // -------------------------------------------------------------------------
+
     private static class SidebarButton extends JButton {
 
         private final String symbol;
@@ -300,7 +324,7 @@ public final class AdminDashboardComponents {
                 @Override
                 public void mouseEntered(MouseEvent event) {
                     if (!active) {
-                        setForeground(UserDashboardComponents.PRIMARY);
+                        setForeground(DashboardUi.PRIMARY);
                         repaint();
                     }
                 }
@@ -308,7 +332,7 @@ public final class AdminDashboardComponents {
                 @Override
                 public void mouseExited(MouseEvent event) {
                     if (!active) {
-                        setForeground(UserDashboardComponents.TEXT_MUTED);
+                        setForeground(DashboardUi.TEXT_MUTED);
                         repaint();
                     }
                 }
@@ -324,7 +348,7 @@ public final class AdminDashboardComponents {
         private void setActive(boolean active) {
             this.active = active;
             setFont(new Font("Poppins", active ? Font.BOLD : Font.PLAIN, 14));
-            setForeground(active ? Color.WHITE : UserDashboardComponents.TEXT_MUTED);
+            setForeground(active ? Color.WHITE : DashboardUi.TEXT_MUTED);
             repaint();
         }
 
@@ -333,14 +357,14 @@ public final class AdminDashboardComponents {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             if (active) {
-                g2.setColor(UserDashboardComponents.PRIMARY_DARK);
+                g2.setColor(DashboardUi.PRIMARY_DARK);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 22, 22);
             } else if (getModel().isRollover()) {
                 g2.setColor(new Color(235, 244, 252));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 22, 22);
             }
             g2.setFont(new Font("Segoe UI Symbol", Font.PLAIN, 15));
-            g2.setColor(active ? Color.WHITE : UserDashboardComponents.TEXT_MUTED);
+            g2.setColor(active ? Color.WHITE : DashboardUi.TEXT_MUTED);
             g2.drawString(symbol, 16, getHeight() / 2 + 5);
             g2.dispose();
 
@@ -349,8 +373,12 @@ public final class AdminDashboardComponents {
         }
     }
 
-    private static Color statusForeground(String status) {
-        String normalized = normalize(status);
+    // -------------------------------------------------------------------------
+    // Status Styling
+    // -------------------------------------------------------------------------
+
+    private static Color resolveStatusForeground(String status) {
+        String normalized = normalizeStatusText(status);
         if (normalized.contains("PENDING") || normalized.contains("MENUNGGU")) {
             return STATUS_PENDING_TEXT;
         }
@@ -363,11 +391,11 @@ public final class AdminDashboardComponents {
         if (normalized.contains("DITOLAK")) {
             return STATUS_REJECT_TEXT;
         }
-        return UserDashboardComponents.PRIMARY_DARK;
+        return DashboardUi.PRIMARY_DARK;
     }
 
-    private static Color statusBackground(String status) {
-        String normalized = normalize(status);
+    private static Color resolveStatusBackground(String status) {
+        String normalized = normalizeStatusText(status);
         if (normalized.contains("PENDING") || normalized.contains("MENUNGGU")) {
             return STATUS_PENDING_BACKGROUND;
         }
@@ -383,7 +411,11 @@ public final class AdminDashboardComponents {
         return STATUS_DEFAULT_BACKGROUND;
     }
 
-    private static String normalize(String status) {
+    // -------------------------------------------------------------------------
+    // Text Helpers
+    // -------------------------------------------------------------------------
+
+    private static String normalizeStatusText(String status) {
         return status == null ? "" : status.toUpperCase();
     }
 }

@@ -425,7 +425,7 @@ public class DashboardUser extends JFrame {
     // =========================
 
     private void showPage(String pageKey) {
-        if (PAGE_CLAIMS.equals(pageKey) || PAGE_FOUND_ITEMS.equals(pageKey) || PAGE_LOST_ITEMS.equals(pageKey)) {
+        if (PAGE_CLAIMS.equals(pageKey) || PAGE_FOUND_ITEMS.equals(pageKey) || PAGE_LOST_ITEMS.equals(pageKey) || PAGE_STORAGE.equals(pageKey)) {
             reportManager.reload();
             claimManager.refreshClaimsFromDatabase();
             rebuildPages();

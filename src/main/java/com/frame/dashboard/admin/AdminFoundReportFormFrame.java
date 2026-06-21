@@ -4,13 +4,14 @@ import com.database.DBConnection;
 import com.enumeration.ItemStatus;
 import com.enumeration.ReportStatus;
 import com.frame.AppDialog;
-import com.frame.dashboard.user.UserDashboardComponents;
+import com.frame.dashboard.shared.DashboardUi;
 import com.managers.ItemManager;
 import com.managers.ReportManager;
 import com.model.Admin;
 import com.model.Category;
 import com.model.FoundReport;
 import com.model.Item;
+import com.model.LostReport;
 import com.model.User;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
@@ -74,8 +75,14 @@ public class AdminFoundReportFormFrame extends JDialog {
     private JTextArea itemDescriptionArea;
     private JTextArea reportDescriptionArea;
     private JComboBox<Category> categoryComboBox;
+    private JComboBox<String> lostReportComboBox;
+    private ArrayList<LostReport> pendingLostReports;
     private PhotoPreviewPanel photoPreviewPanel;
     private File selectedPhotoFile;
+
+    // -------------------------------------------------------------------------
+    // Frame Setup
+    // -------------------------------------------------------------------------
 
     public AdminFoundReportFormFrame(User user, ReportManager reportManager, Runnable onReportSaved) {
         super((java.awt.Frame) null, TITLE, true);
@@ -96,14 +103,18 @@ public class AdminFoundReportFormFrame extends JDialog {
         setLocationRelativeTo(null);
     }
 
+    // -------------------------------------------------------------------------
+    // Main Layout
+    // -------------------------------------------------------------------------
+
     private JPanel createMainPanel() {
         JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(UserDashboardComponents.SURFACE);
+        root.setBackground(DashboardUi.SURFACE);
         root.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setOpaque(false);
-        headerPanel.add(UserDashboardComponents.section(TITLE, SUBTITLE), BorderLayout.WEST);
+        headerPanel.add(DashboardUi.section(TITLE, SUBTITLE), BorderLayout.WEST);
         root.add(headerPanel, BorderLayout.NORTH);
 
         JPanel contentPanel = new JPanel(new GridBagLayout());
@@ -143,10 +154,14 @@ public class AdminFoundReportFormFrame extends JDialog {
         return root;
     }
 
+    // -------------------------------------------------------------------------
+    // Form UI
+    // -------------------------------------------------------------------------
+
     private JPanel createFormPanel() {
-        UserDashboardComponents.RoundedPanel panel = new UserDashboardComponents.RoundedPanel(Color.WHITE, 20);
+        DashboardUi.RoundedPanel panel = new DashboardUi.RoundedPanel(Color.WHITE, 20);
         panel.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(new Color(230, 230, 230), 20, 1),
+                new DashboardUi.RoundedLineBorder(new Color(230, 230, 230), 20, 1),
                 BorderFactory.createEmptyBorder(20, 25, 20, 25)
         ));
         panel.setLayout(new GridBagLayout());
@@ -157,26 +172,40 @@ public class AdminFoundReportFormFrame extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.NORTHWEST;
 
+        pendingLostReports = new ArrayList<>();
+        if (reportManager != null) {
+            for (LostReport report : reportManager.getLostReports()) {
+                if (report.getStatus() == ReportStatus.PENDING) {
+                    pendingLostReports.add(report);
+                }
+            }
+        }
+
+        lostReportComboBox = createLostReportComboBox();
+        addField(panel, gbc, 0, "Pilih Laporan Kehilangan Terkait (Opsional)", lostReportComboBox, 0.0);
+
         itemNameField = createTextField("Contoh: Tumbler Tuku", 50);
-        addField(panel, gbc, 0, "Nama barang*", itemNameField, 0.0);
+        addField(panel, gbc, 1, "Nama barang*", itemNameField, 0.0);
 
         itemDescriptionArea = createTextArea("Ciri-Ciri Barang, Warna, Merek, Tanda Khusus", 300);
-        addField(panel, gbc, 1, "Deskripsi barang*", createTextAreaScroll(itemDescriptionArea), 1.0);
+        addField(panel, gbc, 2, "Deskripsi barang*", createTextAreaScroll(itemDescriptionArea), 1.0);
 
         foundLocationField = createTextField("Contoh: Lab Komputer FIF Lt.2", 100);
-        addField(panel, gbc, 2, "Lokasi ditemukan*", foundLocationField, 0.0);
+        addField(panel, gbc, 3, "Lokasi ditemukan*", foundLocationField, 0.0);
 
         reportDescriptionArea = createTextArea("Kronologi singkat penemuan", 500);
-        addField(panel, gbc, 3, "Deskripsi laporan*", createTextAreaScroll(reportDescriptionArea), 1.0);
+        addField(panel, gbc, 4, "Deskripsi laporan*", createTextAreaScroll(reportDescriptionArea), 1.0);
 
         categoryComboBox = createCategoryComboBox();
-        addField(panel, gbc, 4, "Pilih kategori*", categoryComboBox, 0.0);
+        addField(panel, gbc, 5, "Pilih kategori*", categoryComboBox, 0.0);
 
-        gbc.gridy = 10;
+        lostReportComboBox.addActionListener(event -> applySelectedLostReport());
+
+        gbc.gridy = 12;
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(12, 0, 0, 0);
-        JLabel noteLabel = new JLabel("*Semua input termasuk foto wajib diisi.");
+        JLabel noteLabel = new JLabel("*Mohon tidak membuat laporan palsu.");
         noteLabel.setFont(new Font("Poppins", Font.PLAIN, 11));
         noteLabel.setForeground(new Color(150, 150, 150));
         panel.add(noteLabel, gbc);
@@ -189,7 +218,7 @@ public class AdminFoundReportFormFrame extends JDialog {
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(row == 0 ? 0 : 20, 0, 6, 0);
-        panel.add(UserDashboardComponents.label(label, 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        panel.add(DashboardUi.label(label, 13, Font.BOLD, DashboardUi.TEXT_DARK), gbc);
 
         gbc.gridy = row * 2 + 1;
         gbc.weighty = weighty;
@@ -197,6 +226,89 @@ public class AdminFoundReportFormFrame extends JDialog {
         gbc.insets = new Insets(0, 0, 0, 0);
         panel.add(input, gbc);
     }
+
+    // -------------------------------------------------------------------------
+    // Matched Lost Report UI
+    // -------------------------------------------------------------------------
+
+    private JComboBox<String> createLostReportComboBox() {
+        String[] options = new String[pendingLostReports.size() + 1];
+        options[0] = "-- Item Baru (Tidak ada kecocokan) --";
+        for (int i = 0; i < pendingLostReports.size(); i++) {
+            LostReport report = pendingLostReports.get(i);
+            options[i + 1] = report.getReportId() + " - " + report.getItem().getName() + " (" + report.getUser().getName() + ")";
+        }
+
+        JComboBox<String> comboBox = new JComboBox<>(options);
+        comboBox.setPreferredSize(new Dimension(300, 45));
+        comboBox.setFont(new Font("Poppins", Font.BOLD, 13));
+        comboBox.setForeground(DashboardUi.TEXT_DARK);
+        comboBox.setBackground(Color.WHITE);
+        comboBox.setFocusable(false);
+        comboBox.setBorder(BorderFactory.createCompoundBorder(
+                new DashboardUi.RoundedLineBorder(new Color(230, 230, 230), 16, 1),
+                BorderFactory.createEmptyBorder(2, 10, 2, 0)
+        ));
+        comboBox.setUI(createComboBoxUI());
+        return comboBox;
+    }
+
+    private void applySelectedLostReport() {
+        int selectedIndex = lostReportComboBox.getSelectedIndex();
+        if (selectedIndex > 0) {
+            LostReport report = pendingLostReports.get(selectedIndex - 1);
+            itemNameField.setText(report.getItem().getName());
+            itemDescriptionArea.setText(report.getItem().getDescription());
+            for (int i = 0; i < categoryComboBox.getItemCount(); i++) {
+                Category category = categoryComboBox.getItemAt(i);
+                if (category.getCategoryID().equals(report.getItem().getCategory().getCategoryID())) {
+                    categoryComboBox.setSelectedIndex(i);
+                    break;
+                }
+            }
+            itemNameField.setEnabled(false);
+            itemDescriptionArea.setEnabled(false);
+            categoryComboBox.setEnabled(false);
+            applyMatchedPhoto(report);
+            return;
+        }
+
+        itemNameField.setText("");
+        itemDescriptionArea.setText("");
+        itemNameField.setEnabled(true);
+        itemDescriptionArea.setEnabled(true);
+        categoryComboBox.setEnabled(true);
+        clearSelectedPhoto();
+    }
+
+    private void applyMatchedPhoto(LostReport report) {
+        if (report == null || report.getPhotoPath() == null || report.getPhotoPath().isBlank()) {
+            clearSelectedPhoto();
+            return;
+        }
+
+        File photoFile = new File(report.getPhotoPath());
+        if (!photoFile.exists() || !isSupportedImage(photoFile)) {
+            clearSelectedPhoto();
+            return;
+        }
+
+        selectedPhotoFile = photoFile;
+        if (photoPreviewPanel != null) {
+            photoPreviewPanel.setImageFile(photoFile);
+        }
+    }
+
+    private void clearSelectedPhoto() {
+        selectedPhotoFile = null;
+        if (photoPreviewPanel != null) {
+            photoPreviewPanel.clearImage();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Field Factories
+    // -------------------------------------------------------------------------
 
     private JPanel createPhotoPanel() {
         photoPreviewPanel = new PhotoPreviewPanel(this::choosePhoto);
@@ -221,10 +333,10 @@ public class AdminFoundReportFormFrame extends JDialog {
         };
         field.setPreferredSize(new Dimension(300, 45));
         field.setFont(new Font("Poppins", Font.PLAIN, 13));
-        field.setForeground(UserDashboardComponents.TEXT_DARK);
+        field.setForeground(DashboardUi.TEXT_DARK);
         field.setBackground(Color.WHITE);
         field.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(new Color(230, 230, 230), 16, 1),
+                new DashboardUi.RoundedLineBorder(new Color(230, 230, 230), 16, 1),
                 BorderFactory.createEmptyBorder(4, 12, 4, 12)
         ));
         ((AbstractDocument) field.getDocument()).setDocumentFilter(new LimitedDocumentFilter(limit));
@@ -249,7 +361,7 @@ public class AdminFoundReportFormFrame extends JDialog {
         area.setLineWrap(true);
         area.setWrapStyleWord(true);
         area.setFont(new Font("Poppins", Font.PLAIN, 13));
-        area.setForeground(UserDashboardComponents.TEXT_DARK);
+        area.setForeground(DashboardUi.TEXT_DARK);
         area.setBackground(Color.WHITE);
         area.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         ((AbstractDocument) area.getDocument()).setDocumentFilter(new LimitedDocumentFilter(limit));
@@ -267,7 +379,7 @@ public class AdminFoundReportFormFrame extends JDialog {
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
         wrapper.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(new Color(230, 230, 230), 16, 1),
+                new DashboardUi.RoundedLineBorder(new Color(230, 230, 230), 16, 1),
                 BorderFactory.createEmptyBorder(2, 2, 2, 2)
         ));
         wrapper.setPreferredSize(new Dimension(300, 110));
@@ -279,29 +391,24 @@ public class AdminFoundReportFormFrame extends JDialog {
         JComboBox<Category> comboBox = new JComboBox<>();
         comboBox.setPreferredSize(new Dimension(300, 45));
         comboBox.setFont(new Font("Poppins", Font.BOLD, 13));
-        comboBox.setForeground(UserDashboardComponents.TEXT_DARK);
+        comboBox.setForeground(DashboardUi.TEXT_DARK);
         comboBox.setBackground(Color.WHITE);
         comboBox.setFocusable(false);
         comboBox.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(new Color(230, 230, 230), 16, 1),
+                new DashboardUi.RoundedLineBorder(new Color(230, 230, 230), 16, 1),
                 BorderFactory.createEmptyBorder(2, 10, 2, 0)
         ));
-        comboBox.setUI(new BasicComboBoxUI() {
-            @Override
-            protected JButton createArrowButton() {
-                JButton button = new JButton();
-                button.setBorderPainted(false);
-                button.setContentAreaFilled(false);
-                button.setFocusPainted(false);
-                button.setPreferredSize(new Dimension(30, 0));
-                return button;
-            }
-        });
+        comboBox.setUI(createComboBoxUI());
         comboBox.setRenderer((list, value, index, isSelected, cellHasFocus) -> {
             JLabel label = (JLabel) new DefaultListCellRenderer()
                     .getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             label.setFont(new Font("Poppins", Font.PLAIN, 13));
             label.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+            if (isSelected) {
+                label.setBackground(new Color(240, 245, 250));
+            } else {
+                label.setBackground(Color.WHITE);
+            }
             if (value instanceof Category) {
                 Category category = (Category) value;
                 label.setText(category.getName() + (category.isVerificationRequired() ? " *butuh dokumen saat klaim" : ""));
@@ -314,9 +421,43 @@ public class AdminFoundReportFormFrame extends JDialog {
         return comboBox;
     }
 
+    private BasicComboBoxUI createComboBoxUI() {
+        return new BasicComboBoxUI() {
+            @Override
+            protected JButton createArrowButton() {
+                JButton button = new JButton() {
+                    @Override
+                    protected void paintComponent(Graphics graphics) {
+                        super.paintComponent(graphics);
+                        Graphics2D g2 = (Graphics2D) graphics.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2.setColor(DashboardUi.TEXT_DARK);
+                        int width = getWidth();
+                        int height = getHeight();
+                        int[] xPoints = {width / 2 - 5, width / 2, width / 2 + 5};
+                        int[] yPoints = {height / 2 - 2, height / 2 + 3, height / 2 - 2};
+                        g2.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                        g2.drawPolyline(xPoints, yPoints, 3);
+                        g2.dispose();
+                    }
+                };
+                button.setBorderPainted(false);
+                button.setContentAreaFilled(false);
+                button.setFocusPainted(false);
+                button.setPreferredSize(new Dimension(30, 0));
+                button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                return button;
+            }
+        };
+    }
+
+    // -------------------------------------------------------------------------
+    // Button UI
+    // -------------------------------------------------------------------------
+
     private JButton createPrimaryButton(String text) {
         JButton button = createBaseButton(text);
-        button.setBackground(UserDashboardComponents.PRIMARY);
+        button.setBackground(DashboardUi.PRIMARY);
         button.setForeground(Color.WHITE);
         return button;
     }
@@ -324,9 +465,9 @@ public class AdminFoundReportFormFrame extends JDialog {
     private JButton createSecondaryButton(String text) {
         JButton button = createBaseButton(text);
         button.setBackground(Color.WHITE);
-        button.setForeground(UserDashboardComponents.TEXT_DARK);
+        button.setForeground(DashboardUi.TEXT_DARK);
         button.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(new Color(220, 220, 220), 20, 1),
+                new DashboardUi.RoundedLineBorder(new Color(220, 220, 220), 20, 1),
                 BorderFactory.createEmptyBorder(8, 20, 8, 20)
         ));
         return button;
@@ -343,6 +484,10 @@ public class AdminFoundReportFormFrame extends JDialog {
         button.setBorder(BorderFactory.createEmptyBorder(8, 24, 8, 24));
         return button;
     }
+
+    // -------------------------------------------------------------------------
+    // Actions
+    // -------------------------------------------------------------------------
 
     private void choosePhoto() {
         FileDialog fileDialog = new FileDialog(this, "Pilih Foto Barang", FileDialog.LOAD);
@@ -382,20 +527,30 @@ public class AdminFoundReportFormFrame extends JDialog {
         Category category = (Category) categoryComboBox.getSelectedItem();
 
         if (itemName.isEmpty() || itemDescription.isEmpty() || foundLocation.isEmpty()
-                || reportDescription.isEmpty() || category == null || selectedPhotoFile == null) {
+                || reportDescription.isEmpty() || category == null) {
             AppDialog.warning(this, "Data Belum Lengkap", "Semua Input Wajib Diisi Sebelum Menyimpan Barang Temuan.");
             return;
         }
 
-        String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        int selectedIndex = lostReportComboBox.getSelectedIndex();
+        LostReport matched = selectedIndex > 0 ? pendingLostReports.get(selectedIndex - 1) : null;
         String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         try {
-            Item item = new Item(itemId, itemName, itemDescription, category, foundLocation);
-            item.setStatus(ItemStatus.DITEMUKAN);
-            itemManager.addItem(item);
+            Item item;
+            if (matched != null) {
+                item = matched.getItem();
+            } else {
+                String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                item = new Item(itemId, itemName, itemDescription, category, foundLocation);
+                item.setStatus(ItemStatus.DITEMUKAN);
+                itemManager.addItem(item);
+            }
 
             FoundReport report = new FoundReport(reportId, user, item, reportDescription, foundLocation);
+            if (matched != null) {
+                report.setMatchedLostReport(matched);
+            }
             if (selectedPhotoFile != null) {
                 report.setPhotoPath(selectedPhotoFile.getAbsolutePath());
             }
@@ -412,6 +567,10 @@ public class AdminFoundReportFormFrame extends JDialog {
             AppDialog.error(this, "Terjadi Kesalahan", "Gagal menyimpan barang temuan: " + exception.getMessage());
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Data Helpers
+    // -------------------------------------------------------------------------
 
     private Admin currentAdmin() {
         return user instanceof Admin ? (Admin) user : null;
@@ -436,6 +595,10 @@ public class AdminFoundReportFormFrame extends JDialog {
         }
         return categories;
     }
+
+    // -------------------------------------------------------------------------
+    // Style Helpers
+    // -------------------------------------------------------------------------
 
     private void styleScrollPane(JScrollPane scrollPane) {
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -483,6 +646,10 @@ public class AdminFoundReportFormFrame extends JDialog {
         });
     }
 
+    // -------------------------------------------------------------------------
+    // Validation Helpers
+    // -------------------------------------------------------------------------
+
     private boolean isSupportedImage(File file) {
         if (file == null) {
             return false;
@@ -490,6 +657,10 @@ public class AdminFoundReportFormFrame extends JDialog {
         String name = file.getName().toLowerCase();
         return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png");
     }
+
+    // -------------------------------------------------------------------------
+    // Custom Components
+    // -------------------------------------------------------------------------
 
     private static class LimitedDocumentFilter extends DocumentFilter {
         private final int limit;
@@ -569,6 +740,12 @@ public class AdminFoundReportFormFrame extends JDialog {
             repaint();
         }
 
+        void clearImage() {
+            this.image = null;
+            this.hovered = false;
+            repaint();
+        }
+
         @Override
         protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
@@ -599,7 +776,7 @@ public class AdminFoundReportFormFrame extends JDialog {
             int cx = width / 2;
             int cy = blockY + 30;
 
-            g2.setColor(UserDashboardComponents.PRIMARY_DARK);
+            g2.setColor(DashboardUi.PRIMARY_DARK);
             g2.setStroke(new BasicStroke(4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             g2.drawLine(cx - 20, cy + 8, cx - 20, cy + 20);
             g2.drawLine(cx - 20, cy + 20, cx + 20, cy + 20);
@@ -609,11 +786,11 @@ public class AdminFoundReportFormFrame extends JDialog {
             g2.drawLine(cx + 10, cy - 8, cx, cy - 18);
 
             g2.setFont(new Font("Poppins", Font.BOLD, 14));
-            g2.setColor(UserDashboardComponents.TEXT_DARK);
+            g2.setColor(DashboardUi.TEXT_DARK);
             int titleWidth = g2.getFontMetrics().stringWidth(title);
             g2.drawString(title, (width - titleWidth) / 2, blockY + 80);
 
-            g2.setColor(UserDashboardComponents.PRIMARY);
+            g2.setColor(DashboardUi.PRIMARY);
             int buttonWidth = 160;
             int buttonHeight = 36;
             int buttonX = (width - buttonWidth) / 2;
