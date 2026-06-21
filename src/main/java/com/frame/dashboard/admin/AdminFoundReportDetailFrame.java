@@ -1,12 +1,20 @@
 package com.frame.dashboard.admin;
 
 import com.enumeration.ItemStatus;
+import com.enumeration.ReportStatus;
+import com.frame.AppDialog;
+import com.enumeration.ReportStatus;
+import com.frame.AppDialog;
 import com.frame.dashboard.shared.ReportDetailFrame;
 import com.frame.dashboard.shared.DashboardUi;
+import com.managers.ClaimManager;
 import com.managers.ReportManager;
+import com.model.Admin;
 import com.model.FoundReport;
 import com.model.Item;
 import com.model.LostReport;
+import com.model.User;
+import com.service.AuthService;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -32,17 +40,23 @@ public class AdminFoundReportDetailFrame extends JDialog {
     private static final Dimension DEFAULT_FRAME_SIZE = new Dimension(700, 640);
     private static final Dimension MINIMUM_FRAME_SIZE = new Dimension(600, 520);
     private static final Color DETAIL_COLOR = new Color(44, 94, 173);
+    private static final Color ACCEPT_COLOR = new Color(22, 163, 74);
+    private static final Color REJECT_COLOR = new Color(220, 38, 38);
 
     private final FoundReport report;
+    private final ReportManager reportManager;
+    private final ClaimManager claimManager;
     private final Runnable onUpdated;
 
     // -------------------------------------------------------------------------
     // Frame Setup
     // -------------------------------------------------------------------------
 
-    public AdminFoundReportDetailFrame(FoundReport report, ReportManager reportManager, Runnable onUpdated) {
+    public AdminFoundReportDetailFrame(FoundReport report, ReportManager reportManager, ClaimManager claimManager, Runnable onUpdated) {
         super((java.awt.Frame) null, "Detail Barang Ditemukan", true);
         this.report = report;
+        this.reportManager = reportManager;
+        this.claimManager = claimManager;
         this.onUpdated = onUpdated;
         Dimension frameSize = responsiveFrameSize();
         setMinimumSize(MINIMUM_FRAME_SIZE);
@@ -207,6 +221,12 @@ public class AdminFoundReportDetailFrame extends JDialog {
         gbc.insets = new Insets(14, 0, 0, 0);
         card.add(createInfoGrid(), gbc);
 
+        if (report.getStatus() == ReportStatus.DITOLAK) {
+            gbc.gridy = 2;
+            gbc.insets = new Insets(18, 0, 0, 0);
+            card.add(createReasonBox(), gbc);
+        }
+
         return card;
     }
 
@@ -229,8 +249,10 @@ public class AdminFoundReportDetailFrame extends JDialog {
         addInfoCell(grid, gbc, 1, 1, "Kategori", item == null || item.getCategory() == null ? "-" : titleCase(item.getCategory().getName()));
         addInfoCell(grid, gbc, 0, 2, "Lokasi Ditemukan", titleCase(report.getFoundLocation()));
         addInfoCell(grid, gbc, 1, 2, "Tanggal", DashboardUi.date(report));
-        addInfoCell(grid, gbc, 0, 3, "Status Klaim", claimStatus());
-        addInfoCell(grid, gbc, 1, 3, "Match Laporan Hilang", matchedReport(report.getMatchedLostReport()));
+        addInfoCell(grid, gbc, 0, 3, "Status Laporan", titleCase(report.getStatus().name()));
+        addInfoCell(grid, gbc, 1, 3, "Status Klaim", claimStatus());
+        addInfoCell(grid, gbc, 0, 4, "Match Laporan Hilang", matchedReport(report.getMatchedLostReport()));
+        addInfoCell(grid, gbc, 1, 4, "Diklaim Oleh", getClaimedBy(report));
         return grid;
     }
 
@@ -270,6 +292,22 @@ public class AdminFoundReportDetailFrame extends JDialog {
         return area;
     }
 
+    private JPanel createReasonBox() {
+        DashboardUi.RoundedPanel box = new DashboardUi.RoundedPanel(new Color(255, 241, 242), 16);
+        box.setLayout(new GridBagLayout());
+        box.setBorder(BorderFactory.createCompoundBorder(
+                new DashboardUi.RoundedLineBorder(new Color(254, 205, 211), 16, 1),
+                BorderFactory.createEmptyBorder(14, 16, 14, 16)
+        ));
+        GridBagConstraints gbc = DashboardUi.contentConstraints();
+        gbc.gridy = 0;
+        box.add(DashboardUi.label("Alasan Ditolak", 12, Font.BOLD, new Color(190, 18, 60)), gbc);
+        gbc.gridy = 1;
+        gbc.insets = new Insets(8, 0, 0, 0);
+        box.add(createValueText(safe(report.getRejectionReason())), gbc);
+        return box;
+    }
+
     // -------------------------------------------------------------------------
     // Actions UI
     // -------------------------------------------------------------------------
@@ -282,11 +320,30 @@ public class AdminFoundReportDetailFrame extends JDialog {
         gbc.gridy = 0;
         gbc.weightx = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(0, 0, 0, 0);
+        gbc.insets = new Insets(0, 0, 0, 10);
 
         JButton detailButton = createButton("Lihat Detail Barang", DETAIL_COLOR);
         detailButton.addActionListener(event -> new ReportDetailFrame(report).setVisible(true));
         panel.add(detailButton, gbc);
+
+        if (report.getStatus() == ReportStatus.PENDING) {
+            gbc.gridx = 1;
+            JButton acceptButton = createButton("Terima", ACCEPT_COLOR);
+            acceptButton.addActionListener(event -> acceptReport());
+            panel.add(acceptButton, gbc);
+
+            gbc.gridx = 2;
+            gbc.insets = new Insets(0, 0, 0, 0);
+            JButton rejectButton = createButton("Tolak", REJECT_COLOR);
+            rejectButton.addActionListener(event -> rejectReport());
+            panel.add(rejectButton, gbc);
+        } else if (report.getStatus() == ReportStatus.DITOLAK) {
+            gbc.gridx = 1;
+            gbc.insets = new Insets(0, 0, 0, 0);
+            JButton deleteButton = createButton("Hapus", REJECT_COLOR);
+            deleteButton.addActionListener(event -> deleteReport());
+            panel.add(deleteButton, gbc);
+        }
 
         return panel;
     }
@@ -326,6 +383,42 @@ public class AdminFoundReportDetailFrame extends JDialog {
         dispose();
     }
 
+    private void acceptReport() {
+        boolean confirmed = AppDialog.confirm(this, "Konfirmasi Terima", "Terima Laporan Barang Ditemukan Ini?", "Terima", "Batal");
+        if (!confirmed) return;
+        reportManager.validateReport(report.getReportId(), ReportStatus.VALID, currentAdmin(), null);
+        AppDialog.success(this, "Status Diperbarui", "Laporan Barang Ditemukan Berhasil Diterima.");
+        notifyUpdated();
+    }
+
+    private void rejectReport() {
+        String reason = AppDialog.promptText(this, "Alasan Penolakan", "Masukkan Alasan Penolakan Yang Akan Dilihat Oleh Security Dan User.", "Lanjut", "Batal");
+        if (reason == null) return;
+        reason = reason.trim();
+        if (reason.isBlank()) {
+            AppDialog.warning(this, "Alasan Wajib Diisi", "Alasan Penolakan Tidak Boleh Kosong.");
+            return;
+        }
+        boolean confirmed = AppDialog.confirm(this, "Konfirmasi Tolak", "Tolak Laporan Barang Ditemukan Ini?", "Tolak", "Batal");
+        if (!confirmed) return;
+        reportManager.validateReport(report.getReportId(), ReportStatus.DITOLAK, currentAdmin(), reason);
+        AppDialog.success(this, "Status Diperbarui", "Laporan Barang Ditemukan Berhasil Ditolak.");
+        notifyUpdated();
+    }
+
+    private void deleteReport() {
+        boolean confirmed = AppDialog.confirm(this, "Konfirmasi Hapus", "Hapus Laporan Ini Secara Permanen?", "Hapus", "Batal");
+        if (!confirmed) return;
+        reportManager.deleteReport(report.getReportId());
+        AppDialog.success(this, "Berhasil", "Laporan berhasil dihapus.");
+        notifyUpdated();
+    }
+
+    private Admin currentAdmin() {
+        User user = AuthService.getCurrentUser();
+        return user instanceof Admin ? (Admin) user : null;
+    }
+
     private String matchedReport(LostReport lostReport) {
         if (lostReport == null) {
             return "Belum Cocok";
@@ -338,6 +431,17 @@ public class AdminFoundReportDetailFrame extends JDialog {
         return report.getItem() != null && report.getItem().getStatus() == ItemStatus.DIKLAIM
                 ? "Sudah Diklaim"
                 : "Belum Diklaim";
+    }
+
+    private String getClaimedBy(FoundReport report) {
+        if (claimManager != null && report.getItem() != null) {
+            for (com.model.Claim claim : claimManager.getClaims()) {
+                if (claim.getItem().getItemID().equals(report.getItem().getItemID()) && claim.getStatus() == com.enumeration.ClaimStatus.VALID) {
+                    return claim.getUser().getName() + " (" + claim.getClaimId() + ")";
+                }
+            }
+        }
+        return "-";
     }
 
     // -------------------------------------------------------------------------

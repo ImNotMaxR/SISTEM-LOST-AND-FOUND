@@ -259,11 +259,13 @@ public class UserReportsPanel extends JPanel {
             actions.add(createEditReportButton(report));
         }
 
-        actions.add(createDeleteReportButton(report));
+        if (report.getStatus() == ReportStatus.PENDING || report.getStatus() == ReportStatus.DITOLAK) {
+            actions.add(createDeleteReportButton(report));
+        }
         return actions;
     }
 
-    private JButton createEditReportButton(LostReport report) {
+    private JButton createEditReportButton(Report report) {
         JButton button = UserDashboardComponents.iconButton(
                 UserDashboardComponents.ActionIconType.EDIT,
                 "Edit laporan",
@@ -329,10 +331,30 @@ public class UserReportsPanel extends JPanel {
             statusColor = UserDashboardComponents.PRIMARY_DARK;
         }
 
-        return new UserDashboardComponents.ReportCard(report, statusText, statusColor);
+        return new UserDashboardComponents.ReportCard(
+                report, 
+                statusText, 
+                statusColor,
+                createFoundReportActionButtons(report)
+        );
     }
 
-    private JButton createDeleteReportButton(LostReport report) {
+    private JPanel createFoundReportActionButtons(FoundReport report) {
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        actions.setOpaque(false);
+
+        if (canEditReport(report)) {
+            actions.add(createEditReportButton(report));
+        }
+
+        if (report.getStatus() == ReportStatus.PENDING || report.getStatus() == ReportStatus.DITOLAK) {
+            actions.add(createDeleteReportButton(report));
+        }
+
+        return actions;
+    }
+
+    private JButton createDeleteReportButton(Report report) {
         JButton button = UserDashboardComponents.iconButton(
                 UserDashboardComponents.ActionIconType.DELETE,
                 "Hapus laporan",
@@ -344,15 +366,17 @@ public class UserReportsPanel extends JPanel {
         return button;
     }
 
-    private boolean canEditReport(LostReport report) {
+    private boolean canEditReport(Report report) {
         return report != null
                 && report.getStatus() == ReportStatus.PENDING
                 && report.isEditable();
     }
 
-    private void openEditReportDialog(LostReport report) {
-        if (!canEditReport(report)) {
-            AppDialog.warning(this, "Tidak Dapat Diedit", "Laporan hanya dapat diedit saat status pending dan masih dalam batas waktu edit.");
+    private void openEditReportDialog(Report report) {
+        try {
+            report.validateCanEdit();
+        } catch (Exception e) {
+            AppDialog.warning(this, "Tidak Dapat Diedit", e.getMessage());
             return;
         }
 
@@ -361,17 +385,24 @@ public class UserReportsPanel extends JPanel {
         dialog.setVisible(true);
     }
 
-    private void deleteReport(LostReport report) {
+    private void deleteReport(Report report) {
         if (report == null) {
             return;
         }
 
-        // Laporan yang barangnya sudah ditemukan atau dikembalikan TIDAK BOLEH dihapus oleh user.
-        // Supaya log historis ditemukan sama klaim tetep ada karena penting plus tidak perlu nambah method lagi juga buat validasi jadi yang bisa hapus hanya admin nya saja.
-        if (report.getItem().getStatus() == com.enumeration.ItemStatus.DITEMUKAN || 
-            report.getItem().getStatus() == com.enumeration.ItemStatus.DIKLAIM) {
-            AppDialog.error(this, "Tidak Dapat Dihapus", "Laporan Tidak Dapat Dihapus Karena Barang Sudah Ditemukan Atau Dikembalikan.\nData Ini Disimpan Sebagai Bukti Historis.");
-            return;
+        if (report instanceof FoundReport) {
+            if (report.getStatus() == com.enumeration.ReportStatus.VALID) {
+                AppDialog.error(this, "Tidak Dapat Dihapus", "Laporan Temuan yang sudah divalidasi tidak dapat dihapus.");
+                return;
+            }
+        } else {
+            // Laporan yang barangnya sudah ditemukan atau dikembalikan TIDAK BOLEH dihapus oleh user.
+            // Supaya log historis ditemukan sama klaim tetep ada karena penting plus tidak perlu nambah method lagi juga buat validasi jadi yang bisa hapus hanya admin nya saja.
+            if (report.getItem().getStatus() == com.enumeration.ItemStatus.DITEMUKAN || 
+                report.getItem().getStatus() == com.enumeration.ItemStatus.DIKLAIM) {
+                AppDialog.error(this, "Tidak Dapat Dihapus", "Laporan Tidak Dapat Dihapus Karena Barang Sudah Ditemukan Atau Dikembalikan.\nData Ini Disimpan Sebagai Bukti Historis.");
+                return;
+            }
         }
 
         boolean confirmed = AppDialog.confirm(

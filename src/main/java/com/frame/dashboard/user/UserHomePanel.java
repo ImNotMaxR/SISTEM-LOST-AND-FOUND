@@ -114,7 +114,12 @@ public class UserHomePanel extends JPanel {
 
     private JPanel createRecentLostReportsGrid(ReportManager reportManager) {
         JPanel grid = UserDashboardComponents.cardGrid();
-        ArrayList<Report> reports = reportManager.getValidReports();
+        ArrayList<Report> reports = new ArrayList<>();
+        for (Report r : reportManager.getValidReports()) {
+            if (r instanceof LostReport) {
+                reports.add(r);
+            }
+        }
 
         if (reports.isEmpty()) {
             grid.add(UserDashboardComponents.emptyState(EMPTY_LOST_REPORT_MESSAGE));

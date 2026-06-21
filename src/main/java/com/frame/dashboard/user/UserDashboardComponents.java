@@ -121,18 +121,6 @@ public final class UserDashboardComponents {
 
         SwingUtilities.invokeLater(() -> {
             resetScrollPanes(scrollPanes);
-
-            javax.swing.Timer timer = new javax.swing.Timer(40, null);
-            final int[] runCount = {0};
-            timer.addActionListener(event -> {
-                resetScrollPanes(scrollPanes);
-                runCount[0]++;
-                if (runCount[0] >= 5) {
-                    timer.stop();
-                }
-            });
-            timer.setRepeats(true);
-            timer.start();
         });
     }
 
@@ -664,6 +652,7 @@ public final class UserDashboardComponents {
                 int y = insets.top;
                 int column = 0;
                 int rowHeight = 0;
+                int totalHeight = insets.top;
 
                 for (Component component : parent.getComponents()) {
                     if (!component.isVisible()) {
@@ -679,11 +668,24 @@ public final class UserDashboardComponents {
                     if (column >= columns) {
                         column = 0;
                         x = insets.left;
-                        y += rowHeight + verticalGap;
+                        totalHeight += rowHeight + verticalGap;
+                        y = totalHeight;
                         rowHeight = 0;
                     } else {
                         x += cardWidth + horizontalGap;
                     }
+                }
+                
+                if (column > 0) {
+                    totalHeight += rowHeight + verticalGap;
+                }
+                totalHeight -= verticalGap;
+                totalHeight += insets.bottom;
+
+                if (parent.getHeight() > 0 && parent.getHeight() != totalHeight) {
+                    SwingUtilities.invokeLater(() -> {
+                        parent.revalidate();
+                    });
                 }
             }
         }
@@ -697,18 +699,32 @@ public final class UserDashboardComponents {
 
             int availableWidth = Math.max(1, width - insets.left - insets.right);
             int columns = calculateColumnCount(availableWidth, componentCount);
-            int rows = (int) Math.ceil(componentCount / (double) columns);
-            int maxHeight = 0;
-            for (Component component : parent.getComponents()) {
-                if (component.isVisible()) {
-                    maxHeight = Math.max(maxHeight, component.getPreferredSize().height);
-                }
-            }
 
             int cardWidth = Math.max(1, (availableWidth - (horizontalGap * (columns - 1))) / columns);
+            
+            int currentColumn = 0;
+            int currentRowHeight = 0;
+            int totalHeight = insets.top;
+
+            for (Component component : parent.getComponents()) {
+                if (!component.isVisible()) continue;
+                int cardHeight = component.getPreferredSize().height;
+                currentRowHeight = Math.max(currentRowHeight, cardHeight);
+                currentColumn++;
+                if (currentColumn >= columns) {
+                    currentColumn = 0;
+                    totalHeight += currentRowHeight + verticalGap;
+                    currentRowHeight = 0;
+                }
+            }
+            if (currentColumn > 0) {
+                totalHeight += currentRowHeight + verticalGap;
+            }
+            totalHeight -= verticalGap;
+            totalHeight += insets.bottom;
+
             int preferredWidth = insets.left + insets.right + (columns * cardWidth) + ((columns - 1) * horizontalGap);
-            int preferredHeight = insets.top + insets.bottom + (rows * maxHeight) + ((rows - 1) * verticalGap);
-            return new Dimension(preferredWidth, preferredHeight);
+            return new Dimension(preferredWidth, Math.max(totalHeight, 0));
         }
 
         private int calculateColumnCount(int availableWidth, int componentCount) {
@@ -1128,6 +1144,17 @@ public final class UserDashboardComponents {
             g2.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
             if (type == ActionIconType.EDIT) {
+                try {
+                    java.net.URL imgUrl = getClass().getResource("/assets/PNG/64x64/icon_pencil.png");
+                    if (imgUrl != null) {
+                        Image img = new ImageIcon(imgUrl).getImage();
+                        g2.drawImage(img, 0, 0, SIZE, SIZE, null);
+                        g2.dispose();
+                        return;
+                    }
+                } catch (Exception e) {
+                }
+
                 g2.drawLine(4, 13, 13, 4);
                 g2.drawLine(11, 3, 15, 7);
                 g2.drawLine(3, 14, 7, 15);

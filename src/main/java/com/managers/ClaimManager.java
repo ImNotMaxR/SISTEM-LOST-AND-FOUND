@@ -10,6 +10,7 @@ import com.model.VerificationDocument;
 import com.enumeration.ClaimStatus;
 import com.enumeration.ItemStatus;
 import com.interfaces.Managerable;
+import com.model.Category;
 import java.io.File;
 import java.sql.*;
 import java.util.ArrayList;
@@ -86,7 +87,7 @@ public class ClaimManager implements Managerable{
         com.model.Category category = null;
         String catId = rs.getString("category_id");
         if (catId != null) {
-            category = new com.model.Category(catId, rs.getString("category_name"), rs.getBoolean("request_verification"));
+            category = new Category(catId, rs.getString("category_name"));
         }
  
         Item item = new Item(rs.getString("item_id"), rs.getString("item_name"), rs.getString("item_desc"), category, rs.getString("item_location"));
@@ -166,8 +167,8 @@ public class ClaimManager implements Managerable{
  
         // Validasi dokumen jika kategori butuh verifikasi
         if (!claim.validate()) {
-            if (claim.getItem().getCategory() != null && claim.getItem().getCategory().isVerificationRequired()
-                    && claim.getDocuments().isEmpty()) {
+            if (claim.getItem().getCategory() != null 
+                    && (claim.getDocuments() == null || claim.getDocuments().isEmpty())) {
                 lastErrorMessage = "Kategori \"" + claim.getItem().getCategory().getName() + "\" membutuhkan dokumen verifikasi sebelum klaim diajukan.";
             } else {
                 lastErrorMessage = "Data klaim tidak lolos validasi. Silakan periksa status barang dan dokumen pendukung.";

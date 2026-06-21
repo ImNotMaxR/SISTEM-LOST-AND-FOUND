@@ -6,6 +6,7 @@ import com.managers.ReportManager;
 import com.model.Claim;
 import com.model.FoundReport;
 import com.model.Item;
+import com.model.LostReport;
 import com.model.Report;
 import com.model.User;
 import com.service.AuthService;
@@ -279,7 +280,7 @@ public class ReportDetailFrame extends JDialog {
         GridBagConstraints gbc = DashboardUi.contentConstraints();
 
         gbc.gridy = 0;
-        panel.add(createStatusPill(getReportItemStatus(report)), gbc);
+        panel.add(createStatusPill(getReportStatus(report)), gbc);
         gbc.gridy = 1;
         gbc.insets = new Insets(14, 0, 20, 0);
         panel.add(createText("Semua user dapat melihat status dan klaim untuk transparansi pengelolaan barang kampus.", 12, Font.PLAIN, DashboardUi.TEXT_MUTED), gbc);
@@ -321,11 +322,14 @@ public class ReportDetailFrame extends JDialog {
             panel.add(editButton, gbc);
         }
 
+        boolean isLostReport = report instanceof LostReport;
         boolean isFoundReport = report instanceof FoundReport;
         boolean isValid = report != null && report.getStatus() == com.enumeration.ReportStatus.VALID;
         boolean hasMatch = isFoundReport && ((FoundReport) report).hasMatch();
         boolean canClaim = currentUser != null && !(currentUser instanceof com.model.Security) && !(currentUser instanceof com.model.Admin);
-        if (isFoundReport && isValid && !hasMatch && canClaim) {
+        boolean isItemFound = report != null && report.getItem() != null && report.getItem().getStatus() == com.enumeration.ItemStatus.DITEMUKAN;
+
+        if ((isFoundReport && isValid && !hasMatch && canClaim) || (isLostReport && isOwner && isItemFound && canClaim)) {
             JButton claimButton = createActionButton(hasSubmittedClaim ? "Pengajuan Sudah Dilakukan" : "Klaim Barang", true);
             claimButton.setEnabled(!hasSubmittedClaim);
             claimButton.addActionListener(event -> handleClaim(report, currentUser, claimManager, claimButton));
@@ -485,6 +489,9 @@ public class ReportDetailFrame extends JDialog {
 
     private String getReportStatus(Report report) {
         if (report == null || report.getStatus() == null) return "-";
+        if (report.getStatus() == com.enumeration.ReportStatus.VALID && report.getItem() != null && report.getItem().getStatus() != null) {
+            return titleCase(report.getItem().getStatus().name());
+        }
         return titleCase(report.getStatus().name());
     }
 
@@ -507,7 +514,7 @@ public class ReportDetailFrame extends JDialog {
     }
 
     private boolean requiresVerificationDocument(Report report) {
-        return report != null && report.getItem() != null && report.getItem().getCategory() != null && report.getItem().getCategory().isVerificationRequired();
+        return report != null && report.getItem() != null && report.getItem().getCategory() != null;
     }
 
     private String titleCase(String value) {

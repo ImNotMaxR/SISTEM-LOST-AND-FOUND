@@ -57,7 +57,7 @@ public class ItemManager implements Managerable{
         Category category = null;
         String categoryId = rs.getString("category_id");
         if (categoryId != null) {
-            category = new Category(categoryId, rs.getString("category_name"), rs.getBoolean("request_verification"));
+            category = new Category(categoryId, rs.getString("category_name"));
         }
         
         Item item = new Item(itemID, name, description, category, location);

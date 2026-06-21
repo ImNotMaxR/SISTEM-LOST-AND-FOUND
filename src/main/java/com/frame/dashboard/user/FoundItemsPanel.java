@@ -105,7 +105,7 @@ public class FoundItemsPanel extends JPanel {
         ArrayList<FoundReport> filteredReports = new ArrayList<>();
         
         for (FoundReport report : allFoundReports) {
-            if (report.isValid()) {
+            if (report.isValid() && report.getMatchedLostReport() == null) {
                 if (keyword.isEmpty() || report.getItem().getName().toLowerCase().contains(keyword.toLowerCase())) {
                     filteredReports.add(report);
                 }

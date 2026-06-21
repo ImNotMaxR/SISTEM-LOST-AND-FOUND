@@ -293,18 +293,25 @@ public class AdminLostReportDetailFrame extends JDialog {
         detailButton.addActionListener(event -> new ReportDetailFrame(report).setVisible(true));
         panel.add(detailButton, gbc);
 
-        gbc.gridx = 1;
-        JButton acceptButton = createButton("Terima", ACCEPT_COLOR);
-        acceptButton.setEnabled(report.getStatus() != ReportStatus.VALID);
-        acceptButton.addActionListener(event -> acceptReport());
-        panel.add(acceptButton, gbc);
+        if (report.getStatus() == ReportStatus.PENDING) {
+            gbc.gridx = 1;
+            JButton acceptButton = createButton("Terima", ACCEPT_COLOR);
+            acceptButton.addActionListener(event -> acceptReport());
+            panel.add(acceptButton, gbc);
 
-        gbc.gridx = 2;
-        gbc.insets = new Insets(0, 0, 0, 0);
-        JButton rejectButton = createButton("Tolak", REJECT_COLOR);
-        rejectButton.setEnabled(report.getStatus() != ReportStatus.DITOLAK);
-        rejectButton.addActionListener(event -> rejectReport());
-        panel.add(rejectButton, gbc);
+            gbc.gridx = 2;
+            gbc.insets = new Insets(0, 0, 0, 0);
+            JButton rejectButton = createButton("Tolak", REJECT_COLOR);
+            rejectButton.addActionListener(event -> rejectReport());
+            panel.add(rejectButton, gbc);
+        } else if (report.getStatus() == ReportStatus.DITOLAK) {
+            gbc.gridx = 1;
+            gbc.insets = new Insets(0, 0, 0, 0);
+            JButton deleteButton = createButton("Hapus", REJECT_COLOR);
+            deleteButton.addActionListener(event -> deleteReport());
+            panel.add(deleteButton, gbc);
+        }
+
         return panel;
     }
 
@@ -358,6 +365,14 @@ public class AdminLostReportDetailFrame extends JDialog {
         if (!confirmed) return;
         reportManager.validateReport(report.getReportId(), ReportStatus.DITOLAK, currentAdmin(), reason);
         AppDialog.success(this, "Status Diperbarui", "Laporan Barang Hilang Berhasil Ditolak.");
+        notifyUpdated();
+    }
+
+    private void deleteReport() {
+        boolean confirmed = AppDialog.confirm(this, "Konfirmasi Hapus", "Hapus Laporan Ini Secara Permanen?", "Hapus", "Batal");
+        if (!confirmed) return;
+        reportManager.deleteReport(report.getReportId());
+        AppDialog.success(this, "Berhasil", "Laporan berhasil dihapus.");
         notifyUpdated();
     }
 

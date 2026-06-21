@@ -565,9 +565,13 @@ public class AdminClaimDetailFrame extends JDialog {
 
     private static class EvidencePhotoPanel extends JPanel {
         private final File file;
+        private Image image;
 
         EvidencePhotoPanel(File file) {
             this.file = file;
+            if (file != null && file.exists()) {
+                this.image = new ImageIcon(file.getAbsolutePath()).getImage();
+            }
             setPreferredSize(new Dimension(240, 180));
             setMinimumSize(new Dimension(220, 160));
             setOpaque(false);
@@ -582,20 +586,17 @@ public class AdminClaimDetailFrame extends JDialog {
             g2.setColor(Color.WHITE);
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
 
-            if (file != null && file.exists()) {
-                ImageIcon icon = new ImageIcon(file.getAbsolutePath());
-                Image image = icon.getImage();
+            if (image != null) {
                 int imageWidth = image.getWidth(this);
                 int imageHeight = image.getHeight(this);
                 if (imageWidth > 0 && imageHeight > 0) {
-                    g2.setClip(new java.awt.geom.RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 16, 16));
+                    g2.clip(new java.awt.geom.RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 16, 16));
                     double scale = Math.min((double) getWidth() / imageWidth, (double) getHeight() / imageHeight);
                     int drawWidth = (int) Math.round(imageWidth * scale);
                     int drawHeight = (int) Math.round(imageHeight * scale);
                     int x = (getWidth() - drawWidth) / 2;
                     int y = (getHeight() - drawHeight) / 2;
                     g2.drawImage(image, x, y, drawWidth, drawHeight, this);
-                    g2.setClip(null);
                 }
             } else {
                 g2.setPaint(new java.awt.GradientPaint(0, 0, new Color(224, 242, 254), getWidth(), getHeight(), new Color(59, 130, 246)));
@@ -608,9 +609,13 @@ public class AdminClaimDetailFrame extends JDialog {
                 g2.drawString(text, x, y);
             }
 
-            g2.setColor(new Color(226, 232, 240));
-            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 16, 16);
             g2.dispose();
+
+            Graphics2D borderG2 = (Graphics2D) graphics.create();
+            borderG2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            borderG2.setColor(new Color(226, 232, 240));
+            borderG2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 16, 16);
+            borderG2.dispose();
         }
     }
 }

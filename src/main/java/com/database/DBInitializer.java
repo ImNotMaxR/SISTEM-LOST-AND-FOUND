@@ -16,7 +16,7 @@ public class DBInitializer {
         System.out.println("Database siap digunakan.");
     }
     
-    //Buat Table Table database nya tapi belom beres nanti dulu satu satu pusing gua
+    //Buat Table untuk database nanti dari dbconnection "sistemlostfound" menyesuaikan dengan class model masing-masing.
     public void createTables() {
         Connection conn = dbConnection.getConnection();
         try {
@@ -82,8 +82,7 @@ public class DBInitializer {
             st.executeUpdate(
                 "CREATE TABLE IF NOT EXISTS categories (" +
                 "category_id          VARCHAR(50)  PRIMARY KEY, " +
-                "name                 VARCHAR(100) NOT NULL, " +
-                "request_verification BOOLEAN      NOT NULL DEFAULT FALSE)"
+                "name                 VARCHAR(100) NOT NULL)"
             );
  
             // Tabel items
@@ -163,6 +162,7 @@ public class DBInitializer {
         }
     }
     
+    //Buat data dummy akun dan pengguna buat login.
     public void insertDataDummy() {
         Connection conn = dbConnection.getConnection();
         try {
@@ -206,42 +206,13 @@ public class DBInitializer {
             st.executeUpdate("INSERT INTO users VALUES ('USR008','Siti Aminah','siti.staff','password123','STAFF')");
             st.executeUpdate("INSERT INTO staff VALUES ('USR008','STF001','Tata Usaha')");
  
-            // ---- KATEGORI ----
-            st.executeUpdate("INSERT INTO categories VALUES ('CAT001','Elektronik',false)");
-            st.executeUpdate("INSERT INTO categories VALUES ('CAT002','Dompet / Tas',false)");
-            st.executeUpdate("INSERT INTO categories VALUES ('CAT003','Kunci Kendaraan',true)");
-            st.executeUpdate("INSERT INTO categories VALUES ('CAT004','Kartu Identitas',false)");
-            st.executeUpdate("INSERT INTO categories VALUES ('CAT005','Pakaian',false)");
-            st.executeUpdate("INSERT INTO categories VALUES ('CAT006','Lainnya',false)");
- 
-            // ---- ITEM & REPORT CONTOH ----
-            // Item 1: laptop hilang milik Rico, LostReport status PENDING
-            st.executeUpdate(
-                "INSERT INTO items VALUES " +
-                "('ITM001','Laptop ASUS VivoBook','Laptop abu-abu, ada stiker di cover','CAT001','DICARI','Lab FIF Lt.2',NOW())"
-            );
-            st.executeUpdate(
-                "INSERT INTO reports VALUES " +
-                "('RPT001','USR004','ITM001','LOST','Laptop hilang setelah kuliah DPBO'," +
-                "'PENDING',NOW(),DATE_ADD(NOW(), INTERVAL 30 MINUTE),NULL,NULL,'Lab Komputer FIF Lt.2',NULL,NULL)"
-            );
- 
-            // Item 2: kunci motor ditemukan Budi Security, FoundReport status VALID
-            st.executeUpdate(
-                "INSERT INTO items VALUES " +
-                "('ITM002','Kunci Motor Honda Beat','Kunci dengan gantungan merah','CAT003','DITEMUKAN','Parkiran Gedung A',NOW())"
-            );
-            st.executeUpdate(
-                "INSERT INTO reports VALUES " +
-                "('RPT002','USR002','ITM002','FOUND','Ditemukan di parkiran Gedung A pagi hari'," +
-                "'VALID',NOW(),DATE_ADD(NOW(), INTERVAL 30 MINUTE),NULL,NULL,NULL,'Parkiran Gedung A',NULL)"
-            );
- 
-            // StorageRecord untuk kunci motor
-            st.executeUpdate(
-                "INSERT INTO storage_records VALUES " +
-                "('SRD001','ITM002','USR002','Pos Keamanan Gedung A',NOW(),false,NULL)"
-            );
+            // kategori
+            st.executeUpdate("INSERT INTO categories VALUES ('CAT001','Elektronik')");
+            st.executeUpdate("INSERT INTO categories VALUES ('CAT002','Dompet / Tas')");
+            st.executeUpdate("INSERT INTO categories VALUES ('CAT003','Kunci Kendaraan')");
+            st.executeUpdate("INSERT INTO categories VALUES ('CAT004','Kartu Identitas')");
+            st.executeUpdate("INSERT INTO categories VALUES ('CAT005','Pakaian')");
+            st.executeUpdate("INSERT INTO categories VALUES ('CAT006','Lainnya')");
  
             System.out.println("Data dummy berhasil dimasukkan.");
         } catch (SQLException e) {

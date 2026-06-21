@@ -469,7 +469,9 @@ public class UserProfilePanel extends JPanel {
                 }
             }
         };
-        field.setPreferredSize(new Dimension(0, 42));
+        field.setPreferredSize(new Dimension(0, 44));
+        field.setMinimumSize(new Dimension(0, 44));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         field.setFont(new Font("Poppins", Font.PLAIN, 13));
         field.setForeground(UserDashboardComponents.TEXT_DARK);
         field.setBackground(new Color(248, 250, 252));
@@ -500,7 +502,9 @@ public class UserProfilePanel extends JPanel {
                 }
             }
         };
-        field.setPreferredSize(new Dimension(0, 42));
+        field.setPreferredSize(new Dimension(0, 44));
+        field.setMinimumSize(new Dimension(0, 44));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         field.setFont(new Font("Poppins", Font.PLAIN, 13));
         field.setForeground(UserDashboardComponents.TEXT_DARK);
         field.setBackground(new Color(248, 250, 252));
@@ -531,7 +535,9 @@ public class UserProfilePanel extends JPanel {
                 super.paintComponent(graphics);
             }
         };
-        btn.setPreferredSize(new Dimension(0, 42));
+        btn.setPreferredSize(new Dimension(0, 44));
+        btn.setMinimumSize(new Dimension(0, 44));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         btn.setFont(new Font("Poppins", Font.BOLD, 13));
         btn.setForeground(Color.WHITE);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));

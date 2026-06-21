@@ -116,8 +116,7 @@ public class AppController {
  
         System.out.println("Pilih kategori:");
         for (int i = 0; i < categories.size(); i++) {
-            System.out.println((i + 1) + ". " + categories.get(i).getName()
-                    + (categories.get(i).isVerificationRequired() ? " *butuh dokumen saat klaim" : ""));
+            System.out.println((i + 1) + ". " + categories.get(i).getName() + " *butuh dokumen saat klaim");
         }
         System.out.print("Nomor kategori: ");
         int pilihKat;
@@ -288,11 +287,8 @@ public class AppController {
         System.out.println("Barang yang bisa diklaim:");
         for (int i = 0; i < bisaDiklaim.size(); i++) {
             Item item = bisaDiklaim.get(i);
-            System.out.println((i + 1) + ". " + item.getName()
-                    + " | Kategori: " + (item.getCategory() != null ? item.getCategory().getName() : "-")
-                    + " | Status: " + item.getStatus()
-                    + (item.getCategory() != null && item.getCategory().isVerificationRequired()
-                        ? " *butuh dokumen" : ""));
+            System.out.println((i + 1) + ". " + item.getName());
+            System.out.println("Kategori  : " + (item.getCategory() != null ? item.getCategory().getName() : "-") + " (Wajib Bawa Dokumen)");
         }
  
         System.out.print("Pilih nomor barang: ");
@@ -309,7 +305,7 @@ public class AppController {
         Claim claim = new Claim(claimId, user, itemDiklaim, relatedReportId);
  
         // Jika kategori butuh verifikasi, minta dokumen
-        if (itemDiklaim.getCategory() != null && itemDiklaim.getCategory().isVerificationRequired()) {
+        if (itemDiklaim.getCategory() != null) {
             System.out.println("Kategori ini membutuhkan dokumen verifikasi.");
             System.out.print("Tipe dokumen (contoh: STNK, KTP, KTM): ");
             String tipeDoc = MissionUtil.getUserInput();
@@ -708,7 +704,7 @@ public class AppController {
             PreparedStatement ps = conn.prepareStatement("SELECT * FROM categories");
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                list.add(new Category(rs.getString("category_id"), rs.getString("name"), rs.getBoolean("request_verification")));
+                list.add(new Category(rs.getString("category_id"), rs.getString("name")));
             }
         } catch (SQLException e) {
             System.out.println("Gagal load kategori: " + e.getMessage());
@@ -785,7 +781,7 @@ public class AppController {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 Category cat = rs.getString("category_id") != null
-                    ? new Category(rs.getString("category_id"), rs.getString("cat_name"), rs.getBoolean("request_verification"))
+                    ? new Category(rs.getString("category_id"), rs.getString("cat_name"))
                     : null;
                 Item item = new Item(rs.getString("item_id"), rs.getString("item_name"), rs.getString("item_desc"), cat, rs.getString("item_location"));
                 item.setStatus(ItemStatus.valueOf(rs.getString("item_status")));
@@ -815,7 +811,7 @@ public class AppController {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 Category cat = rs.getString("category_id") != null
-                    ? new Category(rs.getString("category_id"), rs.getString("cat_name"), rs.getBoolean("request_verification"))
+                    ? new Category(rs.getString("category_id"), rs.getString("cat_name"))
                     : null;
                 Item item = new Item(rs.getString("item_id"), rs.getString("item_name"), rs.getString("item_desc"), cat, rs.getString("item_location"));
                 item.setStatus(ItemStatus.valueOf(rs.getString("item_status")));

@@ -207,7 +207,9 @@ public class SecurityFoundReportPanel extends JDialog {
         pendingLostReports = new java.util.ArrayList<>();
         if (reportManager != null) {
             for (com.model.LostReport lr : reportManager.getLostReports()) {
-                if (lr.getStatus() == com.enumeration.ReportStatus.PENDING) {
+                if (lr.getStatus() == com.enumeration.ReportStatus.VALID &&
+                    lr.getItem() != null && 
+                    lr.getItem().getStatus() == com.enumeration.ItemStatus.DICARI) {
                     pendingLostReports.add(lr);
                 }
             }
@@ -562,8 +564,7 @@ public class SecurityFoundReportPanel extends JDialog {
             }
             if (value instanceof Category) {
                 Category category = (Category) value;
-                label.setText(category.getName()
-                        + (category.isVerificationRequired() ? " *butuh dokumen saat klaim" : ""));
+                label.setText(category.getName());
             }
             return label;
         });
@@ -702,8 +703,7 @@ public class SecurityFoundReportPanel extends JDialog {
             while (resultSet.next()) {
                 categories.add(new Category(
                         resultSet.getString("category_id"),
-                        resultSet.getString("name"),
-                        resultSet.getBoolean("request_verification")
+                        resultSet.getString("name")
                 ));
             }
         } catch (SQLException exception) {

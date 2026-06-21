@@ -447,8 +447,7 @@ public class LostReportPanel extends JDialog {
             }
             if (value instanceof Category) {
                 Category category = (Category) value;
-                label.setText(category.getName()
-                        + (category.isVerificationRequired() ? " *butuh dokumen saat klaim" : ""));
+                label.setText(category.getName());
             }
             return label;
         });
@@ -535,6 +534,13 @@ public class LostReportPanel extends JDialog {
             return;
         }
 
+        if (selectedPhotoFile == null) {
+            boolean confirm = AppDialog.confirm(this, "Foto Belum Dipilih", "Anda belum menyertakan foto barang. Lanjutkan pembuatan laporan tanpa foto?", "Lanjut", "Batal");
+            if (!confirm) {
+                return;
+            }
+        }
+
         String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
@@ -570,8 +576,7 @@ public class LostReportPanel extends JDialog {
             while (resultSet.next()) {
                 categories.add(new Category(
                         resultSet.getString("category_id"),
-                        resultSet.getString("name"),
-                        resultSet.getBoolean("request_verification")
+                        resultSet.getString("name")
                 ));
             }
         } catch (SQLException exception) {

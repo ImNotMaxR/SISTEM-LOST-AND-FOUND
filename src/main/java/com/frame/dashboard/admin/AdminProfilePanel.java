@@ -392,6 +392,8 @@ public class AdminProfilePanel extends JPanel {
 
     private void styleField(JTextField field) {
         field.setPreferredSize(new Dimension(0, 44));
+        field.setMinimumSize(new Dimension(0, 44));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         field.setFont(new Font("Poppins", Font.PLAIN, 13));
         field.setForeground(DashboardUi.TEXT_DARK);
         field.setBackground(new Color(248, 250, 252));
@@ -430,6 +432,8 @@ public class AdminProfilePanel extends JPanel {
             }
         };
         button.setPreferredSize(new Dimension(0, 44));
+        button.setMinimumSize(new Dimension(0, 44));
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         button.setFont(new Font("Poppins", Font.BOLD, 13));
         button.setForeground(Color.WHITE);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));

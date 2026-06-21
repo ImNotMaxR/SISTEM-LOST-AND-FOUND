@@ -57,6 +57,10 @@ public abstract class Report {
         return editableUntil;
     }
     
+    public void setEditableUntil(LocalDateTime editableUntil) {
+        this.editableUntil = editableUntil;
+    }
+    
     //coba dulu aja
     public String getPhotoPath() {
         return photoPath;
@@ -98,6 +102,15 @@ public abstract class Report {
     
     public boolean isEditable() {
         return LocalDateTime.now().isBefore(editableUntil);
+    }
+    
+    public void validateCanEdit() throws Exception {
+        if (this.status != ReportStatus.PENDING) {
+            throw new Exception("Laporan hanya dapat diedit saat status masih pending.");
+        }
+        if (!isEditable()) {
+            throw new Exception("Batas waktu edit laporan telah habis.");
+        }
     }
     
     public boolean isValid() {

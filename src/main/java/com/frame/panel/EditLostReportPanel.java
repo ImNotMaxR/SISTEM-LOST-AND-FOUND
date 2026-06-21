@@ -63,7 +63,6 @@ import javax.swing.text.DocumentFilter;
 public class EditLostReportPanel extends JDialog {
 
     private static final String TITLE = "Edit Laporan";
-    private static final String SUBTITLE = "Ubah Data Laporan Barang Hilang Yang Ingin Anda Perbarui.";
     private static final Dimension MINIMUM_FRAME_SIZE = new Dimension(900, 650);
 
     private final Report existingReport;
@@ -131,7 +130,10 @@ public class EditLostReportPanel extends JDialog {
         // Header Panel
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setOpaque(false);
-        headerPanel.add(UserDashboardComponents.section(TITLE, SUBTITLE), BorderLayout.WEST);
+        String subtitle = existingReport instanceof com.model.FoundReport 
+            ? "Ubah Data Laporan Barang Ditemukan Yang Ingin Anda Perbarui."
+            : "Ubah Data Laporan Barang Hilang Yang Ingin Anda Perbarui.";
+        headerPanel.add(UserDashboardComponents.section(TITLE, subtitle), BorderLayout.WEST);
         
         root.add(headerPanel, BorderLayout.NORTH);
 
@@ -225,8 +227,9 @@ public class EditLostReportPanel extends JDialog {
         itemDescriptionArea = createTextArea("Ciri-Ciri Barang, Warna, Merek, Tanda Khusus", 300);
         addField(panel, gbc, 1, "Deskripsi barang", createTextAreaScroll(itemDescriptionArea), 1.0);
 
+        String locLabel = existingReport instanceof com.model.FoundReport ? "Lokasi ditemukan" : "Lokasi hilang";
         lostLocationField = createTextField("Contoh: Lab Komputer FIF Lt.2", 100);
-        addField(panel, gbc, 2, "Lokasi hilang", lostLocationField, 0.0);
+        addField(panel, gbc, 2, locLabel, lostLocationField, 0.0);
 
         reportDescriptionArea = createTextArea("Kronologi singkat kehilangan", 500);
         addField(panel, gbc, 3, "Deskripsi laporan", createTextAreaScroll(reportDescriptionArea), 1.0);
@@ -465,8 +468,7 @@ public class EditLostReportPanel extends JDialog {
             }
             if (value instanceof Category) {
                 Category category = (Category) value;
-                label.setText(category.getName()
-                        + (category.isVerificationRequired() ? " *butuh dokumen saat klaim" : ""));
+                label.setText(category.getName());
             }
             return label;
         });
@@ -596,8 +598,7 @@ public class EditLostReportPanel extends JDialog {
             while (resultSet.next()) {
                 categories.add(new Category(
                         resultSet.getString("category_id"),
-                        resultSet.getString("name"),
-                        resultSet.getBoolean("request_verification")
+                        resultSet.getString("name")
                 ));
             }
         } catch (SQLException exception) {

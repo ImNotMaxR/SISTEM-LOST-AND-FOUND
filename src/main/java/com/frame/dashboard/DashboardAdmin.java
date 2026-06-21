@@ -160,7 +160,7 @@ public class DashboardAdmin extends JFrame {
     private void registerPages() {
         pageContainer.add(DashboardUi.scroll(new AdminHomePanel(reportManager, claimManager)), PAGE_DASHBOARD);
         pageContainer.add(DashboardUi.scroll(new AdminLostReportsPanel(reportManager)), PAGE_LOST_REPORTS);
-        pageContainer.add(DashboardUi.scroll(new AdminFoundReportsPanel(reportManager)), PAGE_FOUND_REPORTS);
+        pageContainer.add(DashboardUi.scroll(new AdminFoundReportsPanel(reportManager, claimManager)), PAGE_FOUND_REPORTS);
         pageContainer.add(DashboardUi.scroll(new AdminClaimsPanel(claimManager)), PAGE_CLAIMS);
         pageContainer.add(new AdminProfilePanel(currentUser), PAGE_PROFILE);
     }
@@ -405,22 +405,7 @@ public class DashboardAdmin extends JFrame {
     private void stabilizeVisiblePage() {
         javax.swing.SwingUtilities.invokeLater(() -> {
             stabilizeVisiblePageNow();
-            startPageStabilizationTimer();
         });
-    }
-
-    private void startPageStabilizationTimer() {
-        Timer timer = new Timer(PAGE_STABILIZE_DELAY_MS, null);
-        final int[] runCount = {0};
-        timer.addActionListener(event -> {
-            stabilizeVisiblePageNow();
-            runCount[0]++;
-            if (runCount[0] >= PAGE_STABILIZE_REPEATS) {
-                timer.stop();
-            }
-        });
-        timer.setRepeats(true);
-        timer.start();
     }
 
     private void stabilizeVisiblePageNow() {

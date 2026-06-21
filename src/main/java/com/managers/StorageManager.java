@@ -49,7 +49,7 @@ public class StorageManager implements Managerable {
             while (rs.next()) {
                 Category cat = null;
                 if (rs.getString("category_id") != null) {
-                    cat = new Category(rs.getString("category_id"), rs.getString("category_name"), rs.getBoolean("request_verification"));
+                    cat = new Category(rs.getString("category_id"), rs.getString("category_name"));
                 }
                 Item item = new Item(rs.getString("item_id"), rs.getString("item_name"), rs.getString("item_desc"), cat, rs.getString("item_location"));
                 item.setStatus(ItemStatus.valueOf(rs.getString("item_status")));

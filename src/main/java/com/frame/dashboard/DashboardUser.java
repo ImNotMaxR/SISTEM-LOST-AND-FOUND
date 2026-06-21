@@ -442,18 +442,6 @@ public class DashboardUser extends JFrame {
     private void stabilizeVisiblePage() {
         javax.swing.SwingUtilities.invokeLater(() -> {
             stabilizeVisiblePageNow();
-
-            javax.swing.Timer timer = new javax.swing.Timer(60, null);
-            final int[] runCount = {0};
-            timer.addActionListener(event -> {
-                stabilizeVisiblePageNow();
-                runCount[0]++;
-                if (runCount[0] >= 12) {
-                    timer.stop();
-                }
-            });
-            timer.setRepeats(true);
-            timer.start();
         });
     }
 

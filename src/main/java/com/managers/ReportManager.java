@@ -49,7 +49,7 @@ public class ReportManager implements Managerable{
     private void loadAllReportsFromDB() {
         reports.clear();
         reportMap.clear();
-        String sql = "SELECT r.report_id, r.type, r.description, r.status, r.date, " + "r.editable_until, r.photo_path, r.rejection_reason, r.lost_location, r.found_location, " + "r.matched_lost_report_id, " + "u.user_id, u.name AS user_name, u.username, u.password, u.role, " + "i.item_id, i.name AS item_name, i.description AS item_desc, " + "i.status AS item_status, i.location AS item_location, i.date AS item_date, " + "c.category_id, c.name AS category_name, c.request_verification " + "FROM reports r " + "JOIN users u ON r.user_id = u.user_id " + "JOIN items i ON r.item_id = i.item_id " + "LEFT JOIN categories c ON i.category_id = c.category_id";
+        String sql = "SELECT r.report_id, r.type, r.description, r.status, r.date, " + "r.editable_until, r.photo_path, r.rejection_reason, r.lost_location, r.found_location, " + "r.matched_lost_report_id, " + "u.user_id, u.name AS user_name, u.username, u.password, u.role, " + "i.item_id, i.name AS item_name, i.description AS item_desc, " + "i.status AS item_status, i.location AS item_location, i.date AS item_date, " + "c.category_id, c.name AS category_name " + "FROM reports r " + "JOIN users u ON r.user_id = u.user_id " + "JOIN items i ON r.item_id = i.item_id " + "LEFT JOIN categories c ON i.category_id = c.category_id";
         
         try {
             Connection conn = dbConnection.getConnection();
@@ -99,7 +99,7 @@ public class ReportManager implements Managerable{
         Category category = null;
         String catId = rs.getString("category_id");
         if (catId != null) {
-            category = new Category(catId, rs.getString("category_name"), rs.getBoolean("request_verification"));
+            category = new Category(catId, rs.getString("category_name"));
         }
  
         Item item = new Item(itemId, itemName, itemDesc, category, itemLoc);
@@ -125,6 +125,14 @@ public class ReportManager implements Managerable{
             report = fr;
         }
  
+        if (report != null && rs.getTimestamp("editable_until") != null) {
+            report.setEditableUntil(rs.getTimestamp("editable_until").toLocalDateTime());
+        }
+
+        if (report != null && report.getItem() != null) {
+            report.getItem().setStatus(ItemStatus.valueOf(itemStatus));
+        }
+
         return report;
     }
     
@@ -298,9 +306,9 @@ public class ReportManager implements Managerable{
                 fr.setMatchedLostReport(matched);
                 updateMatchedReportInDB(fr.getReportId(), matched != null ? matched.getReportId() : null);
             }
-            if (fr.hasMatch()) {
-                updateItemStatusInDB(fr.getItem().getItemID(), ItemStatus.DITEMUKAN);
-            }
+            // Langsung set ke DITEMUKAN sesuai logic found report
+            updateItemStatusInDB(fr.getItem().getItemID(), ItemStatus.DITEMUKAN);
+            fr.getItem().setStatus(ItemStatus.DITEMUKAN);
         }
  
         updateReportStatusInDB(reportId, newStatus, report.getRejectionReason());
