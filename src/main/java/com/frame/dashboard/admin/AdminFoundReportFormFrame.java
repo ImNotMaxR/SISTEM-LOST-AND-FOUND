@@ -515,47 +515,17 @@ public class AdminFoundReportFormFrame extends JDialog {
     }
 
     private void submitFoundReport() {
-        if (user == null) {
-            AppDialog.error(this, "Gagal Menyimpan", "Data admin tidak ditemukan. Silakan login ulang.");
-            return;
-        }
-
         String itemName = itemNameField.getText().trim();
         String itemDescription = itemDescriptionArea.getText().trim();
         String foundLocation = foundLocationField.getText().trim();
         String reportDescription = reportDescriptionArea.getText().trim();
         Category category = (Category) categoryComboBox.getSelectedItem();
 
-        if (itemName.isEmpty() || itemDescription.isEmpty() || foundLocation.isEmpty()
-                || reportDescription.isEmpty() || category == null) {
-            AppDialog.warning(this, "Data Belum Lengkap", "Semua Input Wajib Diisi Sebelum Menyimpan Barang Temuan.");
-            return;
-        }
-
         int selectedIndex = lostReportComboBox.getSelectedIndex();
         LostReport matched = selectedIndex > 0 ? pendingLostReports.get(selectedIndex - 1) : null;
-        String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         try {
-            Item item;
-            if (matched != null) {
-                item = matched.getItem();
-            } else {
-                String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-                item = new Item(itemId, itemName, itemDescription, category, foundLocation);
-                item.setStatus(ItemStatus.DITEMUKAN);
-                itemManager.addItem(item);
-            }
-
-            FoundReport report = new FoundReport(reportId, user, item, reportDescription, foundLocation);
-            if (matched != null) {
-                report.setMatchedLostReport(matched);
-            }
-            if (selectedPhotoFile != null) {
-                report.setPhotoPath(selectedPhotoFile.getAbsolutePath());
-            }
-            reportManager.addReport(report);
-            reportManager.validateReport(reportId, ReportStatus.VALID, currentAdmin(), null);
+            reportManager.createFoundReportByAdmin(user, itemName, itemDescription, foundLocation, reportDescription, category, matched, selectedPhotoFile, itemManager);
 
             if (onReportSaved != null) {
                 onReportSaved.run();
@@ -563,6 +533,8 @@ public class AdminFoundReportFormFrame extends JDialog {
 
             AppDialog.success(this, "Barang Temuan Disimpan", "Barang temuan berhasil ditambahkan.");
             dispose();
+        } catch (com.exception.ValidationException e) {
+            AppDialog.warning(this, "Data Belum Lengkap", e.getMessage());
         } catch (Exception exception) {
             AppDialog.error(this, "Terjadi Kesalahan", "Gagal menyimpan barang temuan: " + exception.getMessage());
         }

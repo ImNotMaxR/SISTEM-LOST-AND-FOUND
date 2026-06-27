@@ -378,6 +378,8 @@ public class LoginFrame extends JFrame {
         try {
             User user = AuthService.login(credentials.username, credentials.password);
             handleLoginResult(user);
+        } catch (com.exception.ValidationException e) {
+            AppDialog.error(rootPane, "Login Gagal", e.getMessage());
         } finally {
             setLoginLoading(false);
         }
@@ -396,7 +398,6 @@ public class LoginFrame extends JFrame {
 
     private void handleLoginResult(User user) {
         if (user == null) {
-            AppDialog.error(rootPane, "Login Gagal", AuthService.getLoginError());
             return;
         }
 

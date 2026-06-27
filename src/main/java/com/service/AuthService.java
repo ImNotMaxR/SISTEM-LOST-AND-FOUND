@@ -1,5 +1,7 @@
 package com.service;
 
+import com.exception.ValidationException;
+
 import com.database.DBConnection;
 import com.enumeration.Role;
 import com.model.Admin;
@@ -34,7 +36,7 @@ public class AuthService {
  
     // Query DB, cocokkan username dan password
     // Buat object sesuai role menggunakan metode dynamic binding.
-    public static User login(String username, String password) {
+    public static User login(String username, String password) throws ValidationException {
         String sql =
             "SELECT u.user_id, u.name, u.username, u.password, u.role, " +
             "m.nim, m.fakultas, m.jurusan, m.kelas, " +
@@ -59,8 +61,7 @@ public class AuthService {
             if (rs.next()) {
                 String storedPassword = rs.getString("password");
                 if (!storedPassword.equals(password)) {
-                    loginError = "Password Anda Salah";
-                    return null;
+                    throw new ValidationException("Password Anda Salah");
                 }
  
                 User user = buildUserFromResultSet(rs);
@@ -71,13 +72,12 @@ public class AuthService {
                 }
                 return user;
             } else {
-                loginError = "Username Anda Tidak Ditemukan.";
-                return null;
+                throw new ValidationException("Username Anda Tidak Ditemukan.");
             }
  
         } catch (SQLException e) {
             System.out.println("Gagal Login: " + e.getMessage());
-            return null;
+            throw new ValidationException("Terjadi kesalahan sistem saat proses login: " + e.getMessage());
         }
     }
  

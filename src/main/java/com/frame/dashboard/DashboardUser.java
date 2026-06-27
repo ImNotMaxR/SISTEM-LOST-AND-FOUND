@@ -14,7 +14,9 @@ import com.frame.dashboard.user.UserProfilePanel;
 import com.frame.dashboard.user.UserReportsPanel;
 import com.managers.ClaimManager;
 import com.managers.ReportManager;
+import com.model.Dosen;
 import com.model.Mahasiswa;
+import com.model.Staff;
 import com.model.User;
 import com.service.AuthService;
 import java.awt.BorderLayout;
@@ -481,11 +483,11 @@ public class DashboardUser extends JFrame {
         if (currentUser instanceof Mahasiswa) {
             Mahasiswa m = (Mahasiswa) currentUser;
             return m.getNim() != null && !m.getNim().isBlank() ? "NIM " + m.getNim() : "MAHASISWA";
-        } else if (currentUser instanceof com.model.Dosen) {
-            com.model.Dosen d = (com.model.Dosen) currentUser;
+        } else if (currentUser instanceof Dosen) {
+            Dosen d = (Dosen) currentUser;
             return d.getNip() != null && !d.getNip().isBlank() ? "NIP " + d.getNip() : "DOSEN";
-        } else if (currentUser instanceof com.model.Staff) {
-            com.model.Staff s = (com.model.Staff) currentUser;
+        } else if (currentUser instanceof Staff) {
+            Staff s = (Staff) currentUser;
             return s.getStaffID() != null && !s.getStaffID().isBlank() ? "ID: " + s.getStaffID() : "STAFF";
         }
 

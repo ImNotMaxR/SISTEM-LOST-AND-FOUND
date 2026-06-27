@@ -1,6 +1,7 @@
 package com.frame.dashboard.admin;
 
 import com.enumeration.ClaimStatus;
+import com.exception.ValidationException;
 import com.frame.AppDialog;
 import com.frame.dashboard.shared.ReportDetailFrame;
 import com.frame.dashboard.shared.DashboardUi;
@@ -464,9 +465,13 @@ public class AdminClaimDetailFrame extends JDialog {
         if (!confirmed) {
             return;
         }
-        claimManager.processClaim(claim.getClaimId(), ClaimStatus.VALID, currentAdmin());
-        AppDialog.success(this, "Klaim Diterima", "Pengajuan klaim berhasil diterima.");
-        notifyUpdated();
+        try {
+            claimManager.processClaim(claim.getClaimId(), ClaimStatus.VALID, currentAdmin());
+            AppDialog.success(this, "Klaim Diterima", "Pengajuan klaim berhasil diterima.");
+            notifyUpdated();
+        } catch (ValidationException e) {
+            AppDialog.error(this, "Gagal Menerima Klaim", e.getMessage());
+        }
     }
 
     private void rejectClaim() {
@@ -483,9 +488,13 @@ public class AdminClaimDetailFrame extends JDialog {
         if (!confirmed) {
             return;
         }
-        claimManager.processClaim(claim.getClaimId(), ClaimStatus.DITOLAK, currentAdmin());
-        AppDialog.success(this, "Klaim Ditolak", "Pengajuan klaim berhasil ditolak.");
-        notifyUpdated();
+        try {
+            claimManager.processClaim(claim.getClaimId(), ClaimStatus.DITOLAK, currentAdmin());
+            AppDialog.success(this, "Klaim Ditolak", "Pengajuan klaim berhasil ditolak.");
+            notifyUpdated();
+        } catch (ValidationException e) {
+            AppDialog.error(this, "Gagal Menolak Klaim", e.getMessage());
+        }
     }
 
     private void openItemDetail() {

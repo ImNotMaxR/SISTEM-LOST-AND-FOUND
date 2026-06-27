@@ -59,6 +59,10 @@ public class Claim implements Verifiable{
         this.status = status;
     }
 
+    public void setDateClaim(LocalDateTime dateClaim) {
+        this.dateClaim = dateClaim;
+    }
+
     public void addDocument(VerificationDocument doc) {
         if (doc == null) {
             System.out.println("Dokumen tidak boleh null.");

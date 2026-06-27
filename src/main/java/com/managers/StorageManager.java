@@ -36,7 +36,7 @@ public class StorageManager implements Managerable {
         recordMap.clear();
         String sql = "SELECT sr.record_id, sr.storage_location, sr.date_stored, sr.is_released, sr.date_released, "
                    + "i.item_id, i.name AS item_name, i.description AS item_desc, i.status AS item_status, "
-                   + "i.location AS item_location, c.category_id, c.name AS category_name, c.request_verification, "
+                   + "i.location AS item_location, c.category_id, c.name AS category_name "
                    + "u.user_id, u.name AS user_name "
                    + "FROM storage_records sr "
                    + "JOIN items i ON sr.item_id = i.item_id "
@@ -96,10 +96,6 @@ public class StorageManager implements Managerable {
     @Override
     public Object findById(String id) {
         return recordMap.get(id);
-    }
-
-    public ArrayList<?> getAll() {
-        return records;
     }
 
     public ArrayList<StorageRecord> getStorageRecords() {

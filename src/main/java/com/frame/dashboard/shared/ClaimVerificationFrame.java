@@ -315,16 +315,16 @@ public class ClaimVerificationFrame extends JDialog {
                 description
         ));
 
-        boolean saved = claimManager.saveClaim(claim);
-        if (!saved) {
-            AppDialog.error(this, "Klaim Gagal", claimManager.getLastErrorMessage());
-            return;
+        try {
+            claimManager.saveClaim(claim);
+            if (onSaved != null) {
+                onSaved.run();
+            }
+            AppDialog.success(this, "Klaim Berhasil", "Permintaan klaim Anda telah diajukan dan menunggu persetujuan.");
+            dispose();
+        } catch (com.exception.ValidationException e) {
+            AppDialog.error(this, "Klaim Gagal", e.getMessage());
         }
-        if (onSaved != null) {
-            onSaved.run();
-        }
-        AppDialog.success(this, "Klaim Berhasil", "Permintaan klaim Anda telah diajukan dan menunggu persetujuan.");
-        dispose();
     }
 
     // -------------------------------------------------------------------------

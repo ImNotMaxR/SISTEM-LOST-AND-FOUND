@@ -670,7 +670,12 @@ public class AppController {
         String keputusan = MissionUtil.getUserInput();
  
         ClaimStatus newStatus = keputusan.equals("1") ? ClaimStatus.VALID : ClaimStatus.DITOLAK;
-        claimManager.processClaim(target.getClaimId(), newStatus, admin);
+        try {
+            claimManager.processClaim(target.getClaimId(), newStatus, admin);
+            System.out.println("Klaim berhasil diproses.");
+        } catch (com.exception.ValidationException e) {
+            System.out.println("Gagal proses klaim: " + e.getMessage());
+        }
     }
  
     private void lihatSemuaUser() {

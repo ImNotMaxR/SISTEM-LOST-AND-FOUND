@@ -634,11 +634,6 @@ public class SecurityFoundReportPanel extends JDialog {
     }
 
     private void submitFoundReport() {
-        if (user == null) {
-            AppDialog.error(this, "Gagal Membuat Laporan", "Data user tidak ditemukan. Silakan login ulang.");
-            return;
-        }
-
         String itemName = itemNameField.getText().trim();
         String itemDescription = itemDescriptionArea.getText().trim();
         String foundLocation = foundLocationField.getText().trim();
@@ -646,40 +641,12 @@ public class SecurityFoundReportPanel extends JDialog {
         String reportDescription = reportDescriptionArea.getText().trim();
         Category category = (Category) categoryComboBox.getSelectedItem();
 
-        if (itemName.isEmpty() || itemDescription.isEmpty() || foundLocation.isEmpty() || storageLocation.isEmpty()
-                || reportDescription.isEmpty() || category == null) {
-            AppDialog.warning(this, "Data Belum Lengkap", "Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
-            return;
-        }
-
         int selectedIndex = lostReportComboBox.getSelectedIndex();
         com.model.LostReport matched = (selectedIndex > 0) ? pendingLostReports.get(selectedIndex - 1) : null;
 
-        String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        String recordId = "STR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-
         try {
-            Item item;
-            if (matched != null) {
-                item = matched.getItem();
-            } else {
-                String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-                item = new Item(itemId, itemName, itemDescription, category, foundLocation);
-                itemManager.addItem(item);
-            }
-
-            FoundReport report = new FoundReport(reportId, user, item, reportDescription, foundLocation);
-            if (matched != null) {
-                report.setMatchedLostReport(matched);
-            }
-            if (selectedPhotoFile != null) {
-                report.setPhotoPath(selectedPhotoFile.getAbsolutePath());
-            }
-            reportManager.addReport(report);
-            
-            StorageRecord storageRecord = new StorageRecord(recordId, item, (com.model.Security) user, storageLocation);
             StorageManager storageManager = new StorageManager();
-            storageManager.saveStorageRecordToDB(storageRecord);
+            reportManager.createFoundReport(user, itemName, itemDescription, foundLocation, storageLocation, reportDescription, category, matched, selectedPhotoFile, itemManager, storageManager);
 
             if (onReportSaved != null) {
                 onReportSaved.run();
@@ -687,6 +654,8 @@ public class SecurityFoundReportPanel extends JDialog {
 
             AppDialog.success(this, "Laporan Disimpan", "Laporan Barang Hilang Berhasil Dibuat.");
             dispose();
+        } catch (com.exception.ValidationException e) {
+            AppDialog.warning(this, "Data Tidak Valid", e.getMessage());
         } catch (Exception e) {
             AppDialog.error(this, "Terjadi Kesalahan", "Gagal menyimpan laporan: " + e.getMessage());
         }

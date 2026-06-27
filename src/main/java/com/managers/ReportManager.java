@@ -15,6 +15,8 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.UUID;
+import com.exception.ValidationException;
 
 public class ReportManager implements Managerable{
     private ArrayList<Report> reports;
@@ -253,8 +255,8 @@ public class ReportManager implements Managerable{
                 ps.setNull(4, java.sql.Types.VARCHAR);
             }
             ps.setString(5, report.getReportId());
+
             int rows = ps.executeUpdate();
-            
             if (rows > 0) {
                 reportMap.put(report.getReportId(), report);
                 return true;
@@ -263,6 +265,137 @@ public class ReportManager implements Managerable{
         } catch (SQLException e) {
             System.out.println("Gagal update laporan: " + e.getMessage());
             return false;
+        }
+    }
+
+    public void createLostReport(User user, String itemName, String itemDescription, String lostLocation, String reportDescription, Category category, java.io.File photoFile, ItemManager itemManager) throws ValidationException {
+        if (user == null) {
+            throw new ValidationException("Data user tidak ditemukan. Silakan login ulang.");
+        }
+        if (itemName == null || itemName.trim().isEmpty() || itemDescription == null || itemDescription.trim().isEmpty() || lostLocation == null || lostLocation.trim().isEmpty() || reportDescription == null || reportDescription.trim().isEmpty() || category == null) {
+            throw new ValidationException("Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
+        }
+
+        String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        Item item = new Item(itemId, itemName, itemDescription, category, lostLocation);
+        itemManager.addItem(item);
+
+        LostReport report = new LostReport(reportId, user, item, reportDescription, lostLocation);
+        if (photoFile != null) {
+            report.addEvidence(photoFile.getAbsolutePath());
+        }
+        addReport(report);
+    }
+
+    public void createFoundReport(User user, String itemName, String itemDescription, String foundLocation, String storageLocation, String reportDescription, Category category, com.model.LostReport matched, java.io.File photoFile, ItemManager itemManager, StorageManager storageManager) throws ValidationException {
+        if (user == null) {
+            throw new ValidationException("Data user tidak ditemukan. Silakan login ulang.");
+        }
+        if (itemName == null || itemName.trim().isEmpty() || itemDescription == null || itemDescription.trim().isEmpty() || foundLocation == null || foundLocation.trim().isEmpty() || storageLocation == null || storageLocation.trim().isEmpty() || reportDescription == null || reportDescription.trim().isEmpty() || category == null) {
+            throw new ValidationException("Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
+        }
+
+        String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String recordId = "STR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        Item item;
+        if (matched != null) {
+            item = matched.getItem();
+        } else {
+            String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            item = new Item(itemId, itemName, itemDescription, category, foundLocation);
+            itemManager.addItem(item);
+        }
+
+        FoundReport report = new FoundReport(reportId, user, item, reportDescription, foundLocation);
+        if (matched != null) {
+            report.setMatchedLostReport(matched);
+        }
+        if (photoFile != null) {
+            report.setPhotoPath(photoFile.getAbsolutePath());
+        }
+        addReport(report);
+
+        com.model.StorageRecord storageRecord = new com.model.StorageRecord(recordId, item, (com.model.Security) user, storageLocation);
+        storageManager.saveStorageRecordToDB(storageRecord);
+    }
+
+    public void createFoundReportByAdmin(User user, String itemName, String itemDescription, String foundLocation, String reportDescription, Category category, com.model.LostReport matched, java.io.File photoFile, ItemManager itemManager) throws ValidationException {
+        if (user == null) {
+            throw new ValidationException("Data user tidak ditemukan. Silakan login ulang.");
+        }
+        if (itemName == null || itemName.trim().isEmpty() || itemDescription == null || itemDescription.trim().isEmpty() || foundLocation == null || foundLocation.trim().isEmpty() || reportDescription == null || reportDescription.trim().isEmpty() || category == null) {
+            throw new ValidationException("Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
+        }
+
+        String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        Item item;
+        if (matched != null) {
+            item = matched.getItem();
+        } else {
+            String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            item = new Item(itemId, itemName, itemDescription, category, foundLocation);
+            item.setStatus(com.enumeration.ItemStatus.DITEMUKAN);
+            itemManager.addItem(item);
+        }
+
+        FoundReport report = new FoundReport(reportId, user, item, reportDescription, foundLocation);
+        if (matched != null) {
+            report.setMatchedLostReport(matched);
+        }
+        if (photoFile != null) {
+            report.setPhotoPath(photoFile.getAbsolutePath());
+        }
+        addReport(report);
+        validateReport(reportId, com.enumeration.ReportStatus.VALID, (com.model.Admin) user, null);
+    }
+
+    public void editLostReport(LostReport report, String itemName, String itemDesc, String lostLocation, String reportDesc, Category category, java.io.File photoFile, ItemManager itemManager) throws ValidationException {
+        if (itemName == null || itemName.trim().isEmpty() || itemDesc == null || itemDesc.trim().isEmpty() || lostLocation == null || lostLocation.trim().isEmpty() || reportDesc == null || reportDesc.trim().isEmpty() || category == null) {
+            throw new ValidationException("Semua Input Wajib Diisi Sebelum Memperbarui Laporan.");
+        }
+
+        Item item = report.getItem();
+        item.setName(itemName);
+        item.setDescription(itemDesc);
+        item.setCategory(category);
+        item.setLocation(lostLocation);
+        itemManager.updateItem(item);
+
+        report.setDescription(reportDesc);
+        report.setLostLocation(lostLocation);
+        if (photoFile != null) {
+            report.setPhotoPath(photoFile.getAbsolutePath());
+        }
+        boolean success = updateReport(report);
+        if (!success) {
+            throw new ValidationException("Gagal mengupdate laporan ke database.");
+        }
+    }
+
+    public void editFoundReport(FoundReport report, String itemName, String itemDesc, String foundLocation, String reportDesc, Category category, java.io.File photoFile, ItemManager itemManager) throws ValidationException {
+        if (itemName == null || itemName.trim().isEmpty() || itemDesc == null || itemDesc.trim().isEmpty() || foundLocation == null || foundLocation.trim().isEmpty() || reportDesc == null || reportDesc.trim().isEmpty() || category == null) {
+            throw new ValidationException("Semua Input Wajib Diisi Sebelum Memperbarui Laporan.");
+        }
+
+        Item item = report.getItem();
+        item.setName(itemName);
+        item.setDescription(itemDesc);
+        item.setCategory(category);
+        item.setLocation(foundLocation);
+        itemManager.updateItem(item);
+
+        report.setDescription(reportDesc);
+        report.setFoundLocation(foundLocation);
+        if (photoFile != null) {
+            report.setPhotoPath(photoFile.getAbsolutePath());
+        }
+        boolean success = updateReport(report);
+        if (!success) {
+            throw new ValidationException("Gagal mengupdate laporan ke database.");
         }
     }
     

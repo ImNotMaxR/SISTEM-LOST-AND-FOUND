@@ -1,13 +1,18 @@
 package com.frame.dashboard.shared;
 
+import com.enumeration.ItemStatus;
+import com.enumeration.ReportStatus;
+import com.exception.ValidationException;
 import com.frame.AppDialog;
 import com.managers.ClaimManager;
 import com.managers.ReportManager;
+import com.model.Admin;
 import com.model.Claim;
 import com.model.FoundReport;
 import com.model.Item;
 import com.model.LostReport;
 import com.model.Report;
+import com.model.Security;
 import com.model.User;
 import com.service.AuthService;
 import java.awt.BorderLayout;
@@ -324,10 +329,10 @@ public class ReportDetailFrame extends JDialog {
 
         boolean isLostReport = report instanceof LostReport;
         boolean isFoundReport = report instanceof FoundReport;
-        boolean isValid = report != null && report.getStatus() == com.enumeration.ReportStatus.VALID;
+        boolean isValid = report != null && report.getStatus() == ReportStatus.VALID;
         boolean hasMatch = isFoundReport && ((FoundReport) report).hasMatch();
-        boolean canClaim = currentUser != null && !(currentUser instanceof com.model.Security) && !(currentUser instanceof com.model.Admin);
-        boolean isItemFound = report != null && report.getItem() != null && report.getItem().getStatus() == com.enumeration.ItemStatus.DITEMUKAN;
+        boolean canClaim = currentUser != null && !(currentUser instanceof Security) && !(currentUser instanceof Admin);
+        boolean isItemFound = report != null && report.getItem() != null && report.getItem().getStatus() == ItemStatus.DITEMUKAN;
 
         if ((isFoundReport && isValid && !hasMatch && canClaim) || (isLostReport && isOwner && isItemFound && canClaim)) {
             JButton claimButton = createActionButton(hasSubmittedClaim ? "Pengajuan Sudah Dilakukan" : "Klaim Barang", true);
@@ -371,14 +376,14 @@ public class ReportDetailFrame extends JDialog {
         boolean confirm = AppDialog.confirm(this, "Konfirmasi Klaim", "Apakah Anda yakin ingin mengklaim barang ini?", "Ya, Klaim", "Batal");
         if (!confirm) return;
         Claim claim = new Claim("CLM-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase(), currentUser, report.getItem(), report.getReportId());
-        boolean saved = claimManager.saveClaim(claim);
-        if (!saved) {
-            AppDialog.error(this, "Klaim Gagal", claimManager.getLastErrorMessage());
-            return;
+        try {
+            claimManager.saveClaim(claim);
+            claimButton.setText("Pengajuan Sudah Dilakukan");
+            claimButton.setEnabled(false);
+            AppDialog.success(this, "Klaim Berhasil", "Permintaan klaim Anda telah diajukan dan menunggu persetujuan.");
+        } catch (ValidationException e) {
+            AppDialog.error(this, "Klaim Gagal", e.getMessage());
         }
-        claimButton.setText("Pengajuan Sudah Dilakukan");
-        claimButton.setEnabled(false);
-        AppDialog.success(this, "Klaim Berhasil", "Permintaan klaim Anda telah diajukan dan menunggu persetujuan.");
     }
 
     private JPanel createStatusPill(String status) {
