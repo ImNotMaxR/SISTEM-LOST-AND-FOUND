@@ -116,8 +116,7 @@ public class AppController {
  
         System.out.println("Pilih kategori:");
         for (int i = 0; i < categories.size(); i++) {
-            System.out.println((i + 1) + ". " + categories.get(i).getName()
-                    + (categories.get(i).isVerificationRequired() ? " *butuh dokumen saat klaim" : ""));
+            System.out.println((i + 1) + ". " + categories.get(i).getName() + " *butuh dokumen saat klaim");
         }
         System.out.print("Nomor kategori: ");
         int pilihKat;
@@ -288,11 +287,8 @@ public class AppController {
         System.out.println("Barang yang bisa diklaim:");
         for (int i = 0; i < bisaDiklaim.size(); i++) {
             Item item = bisaDiklaim.get(i);
-            System.out.println((i + 1) + ". " + item.getName()
-                    + " | Kategori: " + (item.getCategory() != null ? item.getCategory().getName() : "-")
-                    + " | Status: " + item.getStatus()
-                    + (item.getCategory() != null && item.getCategory().isVerificationRequired()
-                        ? " *butuh dokumen" : ""));
+            System.out.println((i + 1) + ". " + item.getName());
+            System.out.println("Kategori  : " + (item.getCategory() != null ? item.getCategory().getName() : "-") + " (Wajib Bawa Dokumen)");
         }
  
         System.out.print("Pilih nomor barang: ");
@@ -309,7 +305,7 @@ public class AppController {
         Claim claim = new Claim(claimId, user, itemDiklaim, relatedReportId);
  
         // Jika kategori butuh verifikasi, minta dokumen
-        if (itemDiklaim.getCategory() != null && itemDiklaim.getCategory().isVerificationRequired()) {
+        if (itemDiklaim.getCategory() != null) {
             System.out.println("Kategori ini membutuhkan dokumen verifikasi.");
             System.out.print("Tipe dokumen (contoh: STNK, KTP, KTM): ");
             String tipeDoc = MissionUtil.getUserInput();
@@ -351,24 +347,42 @@ public class AppController {
     private void editProfil(User user) {
         System.out.println("\n--- Edit Profil ---");
         System.out.println("Username saat ini : " + user.getUsername());
- 
-        System.out.print("Password lama untuk konfirmasi: ");
-        String oldPass = MissionUtil.getUserInput();
- 
-        if (!user.checkPassword(oldPass)) {
-            System.out.println("Password salah. Profil tidak diubah.");
-            return;
+        
+        System.out.println("1. Edit Username");
+        System.out.println("2. Ganti Password");
+        System.out.println("0. Batal");
+        System.out.print("Pilih: ");
+        String pilihan = MissionUtil.getUserInput();
+        
+        if (pilihan.equals("1")) {
+            System.out.print("Password lama untuk konfirmasi: ");
+            String oldPass = MissionUtil.getUserInput();
+            System.out.print("Username baru: ");
+            String newUsername = MissionUtil.getUserInput();
+            
+            try {
+                userManager.editUser(user, oldPass, newUsername);
+                System.out.println("Username berhasil diubah!");
+            } catch (Exception e) {
+                System.out.println("Gagal merubah username: " + e.getMessage());
+            }
+        } else if (pilihan.equals("2")) {
+            System.out.print("Password lama untuk konfirmasi: ");
+            String oldPass = MissionUtil.getUserInput();
+            System.out.print("Password baru: ");
+            String newPassword = MissionUtil.getUserInput();
+            System.out.print("Konfirmasi password baru: ");
+            String confirmPassword = MissionUtil.getUserInput();
+            
+            try {
+                userManager.editUser(user, oldPass, newPassword, confirmPassword);
+                System.out.println("Password berhasil diubah!");
+            } catch (Exception e) {
+                System.out.println("Gagal merubah password: " + e.getMessage());
+            }
+        } else {
+            System.out.println("Batal mengubah profil.");
         }
- 
-        System.out.print("Username baru (Enter untuk skip): ");
-        String newUsername = MissionUtil.getUserInput();
-        if (newUsername.isEmpty()) newUsername = user.getUsername();
- 
-        System.out.print("Password baru (Enter untuk skip): ");
-        String newPassword = MissionUtil.getUserInput();
-        if (newPassword.isEmpty()) newPassword = user.getPassword();
- 
-        userManager.editUser(user, user.getUserId(), newUsername, newPassword);
     }
  
     // ================================================================
@@ -674,7 +688,12 @@ public class AppController {
         String keputusan = MissionUtil.getUserInput();
  
         ClaimStatus newStatus = keputusan.equals("1") ? ClaimStatus.VALID : ClaimStatus.DITOLAK;
-        claimManager.processClaim(target.getClaimId(), newStatus, admin);
+        try {
+            claimManager.processClaim(target.getClaimId(), newStatus, admin);
+            System.out.println("Klaim berhasil diproses.");
+        } catch (com.exception.ValidationException e) {
+            System.out.println("Gagal proses klaim: " + e.getMessage());
+        }
     }
  
     private void lihatSemuaUser() {
@@ -708,7 +727,7 @@ public class AppController {
             PreparedStatement ps = conn.prepareStatement("SELECT * FROM categories");
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                list.add(new Category(rs.getString("category_id"), rs.getString("name"), rs.getBoolean("request_verification")));
+                list.add(new Category(rs.getString("category_id"), rs.getString("name")));
             }
         } catch (SQLException e) {
             System.out.println("Gagal load kategori: " + e.getMessage());
@@ -785,7 +804,7 @@ public class AppController {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 Category cat = rs.getString("category_id") != null
-                    ? new Category(rs.getString("category_id"), rs.getString("cat_name"), rs.getBoolean("request_verification"))
+                    ? new Category(rs.getString("category_id"), rs.getString("cat_name"))
                     : null;
                 Item item = new Item(rs.getString("item_id"), rs.getString("item_name"), rs.getString("item_desc"), cat, rs.getString("item_location"));
                 item.setStatus(ItemStatus.valueOf(rs.getString("item_status")));
@@ -815,7 +834,7 @@ public class AppController {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 Category cat = rs.getString("category_id") != null
-                    ? new Category(rs.getString("category_id"), rs.getString("cat_name"), rs.getBoolean("request_verification"))
+                    ? new Category(rs.getString("category_id"), rs.getString("cat_name"))
                     : null;
                 Item item = new Item(rs.getString("item_id"), rs.getString("item_name"), rs.getString("item_desc"), cat, rs.getString("item_location"));
                 item.setStatus(ItemStatus.valueOf(rs.getString("item_status")));

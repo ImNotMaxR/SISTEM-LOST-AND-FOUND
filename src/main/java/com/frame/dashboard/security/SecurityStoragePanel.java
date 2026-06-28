@@ -1,196 +1,276 @@
 package com.frame.dashboard.security;
 
+import com.frame.dashboard.admin.AdminDashboardComponents;
 import com.frame.dashboard.user.UserDashboardComponents;
 import com.frame.dashboard.user.WrapLayout;
 import com.managers.StorageManager;
-import com.managers.ClaimManager;
-import com.model.Claim;
-import com.enumeration.ClaimStatus;
+import com.model.Category;
+import com.model.Item;
 import com.model.StorageRecord;
-import com.enumeration.ItemStatus;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Cursor;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import javax.swing.BorderFactory;
+import javax.swing.JPanel;
+import javax.swing.JTable;
+import javax.swing.JTextField;
 
 public class SecurityStoragePanel extends JPanel {
+
+    private static final String EMPTY_VALUE = "-";
+    private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+
     private final StorageManager storageManager;
-    private final ClaimManager claimManager;
     private final String securityId;
-    private JPanel contentPanel;
-    private JScrollPane scrollPane;
+    private JPanel tableContainer;
+    private JTextField searchField;
+    private String currentFilter = "Semua";
 
     public SecurityStoragePanel(String securityId) {
         this.storageManager = new StorageManager();
-        this.claimManager = new ClaimManager();
         this.securityId = securityId;
-        initComponents();
-        loadStorageRecords();
+        setLayout(new GridBagLayout());
+        setOpaque(true);
+        setBackground(UserDashboardComponents.SURFACE);
+        setBorder(BorderFactory.createEmptyBorder(44, 42, 48, 42));
+        buildContent();
     }
 
-    private void initComponents() {
-        setLayout(new BorderLayout());
-        setBackground(UserDashboardComponents.SURFACE);
+    private void buildContent() {
+        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
 
-        // Header
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(UserDashboardComponents.SURFACE);
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(24, 32, 24, 32));
+        gbc.gridy = 0;
+        add(UserDashboardComponents.section(
+                "Storage Record",
+                "Pantau Barang Yang Masih Disimpan Atau Sudah Diambil Dari Gudang."
+        ), gbc);
 
-        JLabel titleLabel = UserDashboardComponents.label("Storage Record", 28, Font.BOLD, UserDashboardComponents.TEXT_DARK);
-        JLabel subtitleLabel = UserDashboardComponents.label("Kelola barang-barang yang ada di gudang penyimpanan.", 14, Font.PLAIN, UserDashboardComponents.TEXT_MUTED);
+        gbc.gridy = 1;
+        gbc.insets = new Insets(24, 0, 0, 0);
+        add(createFilterSearchPanel(), gbc);
 
-        JPanel titleWrapper = new JPanel(new GridLayout(2, 1, 0, 4));
-        titleWrapper.setBackground(UserDashboardComponents.SURFACE);
-        titleWrapper.add(titleLabel);
-        titleWrapper.add(subtitleLabel);
+        tableContainer = new JPanel(new GridBagLayout());
+        tableContainer.setOpaque(false);
+        gbc.gridy = 2;
+        gbc.insets = new Insets(22, 0, 0, 0);
+        add(tableContainer, gbc);
 
-        headerPanel.add(titleWrapper, BorderLayout.WEST);
+        gbc.gridy = 3;
+        gbc.weighty = 1;
+        add(createSpacer(), gbc);
 
-        add(headerPanel, BorderLayout.NORTH);
+        refreshTable();
+    }
 
-        // Content
-        contentPanel = new JPanel(new WrapLayout(WrapLayout.LEFT, 24, 24));
-        contentPanel.setBackground(UserDashboardComponents.SURFACE);
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 32, 32, 32));
+    private JPanel createFilterSearchPanel() {
+        JPanel pillsPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 10, 8));
+        pillsPanel.setOpaque(false);
 
-        scrollPane = new JScrollPane(contentPanel);
-        scrollPane.setBorder(null);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        String[] filters = {"Semua", "Belum Diambil", "Sudah Diambil"};
+        UserDashboardComponents.FilterPill[] pills = new UserDashboardComponents.FilterPill[filters.length];
+        for (int i = 0; i < filters.length; i++) {
+            String filter = filters[i];
+            UserDashboardComponents.FilterPill pill = new UserDashboardComponents.FilterPill(filter, filter.equals(currentFilter));
+            pills[i] = pill;
+            pill.addActionListener(event -> {
+                for (UserDashboardComponents.FilterPill other : pills) {
+                    other.setActive(false);
+                }
+                pill.setActive(true);
+                currentFilter = filter;
+                refreshTable();
+            });
+            pillsPanel.add(pill);
+        }
 
-        add(scrollPane, BorderLayout.CENTER);
+        searchField = new UserDashboardComponents.SearchField("Cari record storage...");
+        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent event) { refreshTable(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent event) { refreshTable(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent event) { refreshTable(); }
+        });
+
+        JPanel searchWrapper = new JPanel(new GridBagLayout());
+        searchWrapper.setOpaque(false);
+        GridBagConstraints searchGbc = new GridBagConstraints();
+        searchGbc.gridx = 0;
+        searchGbc.gridy = 0;
+        searchGbc.weightx = 1;
+        searchGbc.fill = GridBagConstraints.HORIZONTAL;
+        searchWrapper.add(searchField, searchGbc);
+
+        return UserDashboardComponents.responsiveActionRow(pillsPanel, searchWrapper);
     }
 
     public void loadStorageRecords() {
-        contentPanel.removeAll();
-        ArrayList<StorageRecord> records = storageManager.getStorageRecordsBySecurity(securityId);
-
-        if (records.isEmpty()) {
-            JLabel emptyLabel = UserDashboardComponents.label("Belum ada barang di storage Anda.", 16, Font.ITALIC, UserDashboardComponents.TEXT_MUTED);
-            emptyLabel.setHorizontalAlignment(SwingConstants.CENTER);
-            contentPanel.add(emptyLabel);
-        } else {
-            for (StorageRecord record : records) {
-                contentPanel.add(createStorageCard(record));
-            }
-        }
-
-        contentPanel.revalidate();
-        contentPanel.repaint();
+        storageManager.reload();
+        refreshTable();
     }
 
-    private JPanel createStorageCard(StorageRecord record) {
-        UserDashboardComponents.RoundedPanel card = new UserDashboardComponents.RoundedPanel(Color.WHITE, 20);
-        card.setLayout(new BorderLayout());
-        card.setPreferredSize(new Dimension(320, 240));
-        card.setBorder(BorderFactory.createCompoundBorder(
-                new UserDashboardComponents.RoundedLineBorder(UserDashboardComponents.BORDER, 20, 1),
-                BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        ));
+    private void refreshTable() {
+        if (tableContainer == null) {
+            return;
+        }
 
-        // Top: Status
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setOpaque(false);
-        
-        JLabel statusLabel = new JLabel(record.isReleased() ? "SUDAH DIAMBIL" : "MASIH DISIMPAN");
-        statusLabel.setFont(new Font("Poppins", Font.BOLD, 12));
-        statusLabel.setForeground(record.isReleased() ? new Color(16, 185, 129) : new Color(245, 158, 11)); // Green vs Amber
-        topPanel.add(statusLabel, BorderLayout.WEST);
+        ArrayList<StorageRecord> records = getFilteredRecords();
+        JTable table = AdminDashboardComponents.table(
+                new String[]{"Record Id", "Barang", "Kategori", "Lokasi Storage", "Tanggal Masuk", "Tanggal Diambil", "Status"},
+                createRows(records)
+        );
+        table.putClientProperty("records", records);
+        installTableInteraction(table);
 
-        // Center: Details
-        JPanel centerPanel = new JPanel(new GridBagLayout());
-        centerPanel.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.WEST;
-
+        tableContainer.removeAll();
+        GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
         gbc.gridy = 0;
-        gbc.insets = new Insets(12, 0, 4, 0);
-        centerPanel.add(UserDashboardComponents.label(record.getItem().getName(), 18, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        tableContainer.add(AdminDashboardComponents.tableSection("Daftar Storage Record", table), gbc);
+        tableContainer.revalidate();
+        tableContainer.repaint();
+    }
 
-        gbc.gridy = 1;
-        gbc.insets = new Insets(0, 0, 12, 0);
-        centerPanel.add(UserDashboardComponents.label("Lokasi: " + record.getStorageLocation(), 13, Font.PLAIN, UserDashboardComponents.TEXT_MUTED), gbc);
+    private void installTableInteraction(JTable table) {
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent event) {
+                updateTableCursor(table, event);
+            }
 
-        gbc.gridy = 2;
-        gbc.insets = new Insets(0, 0, 4, 0);
-        centerPanel.add(UserDashboardComponents.label("ID Record: " + record.getRecordId(), 12, Font.PLAIN, UserDashboardComponents.TEXT_MUTED), gbc);
-        
-        gbc.gridy = 3;
-        centerPanel.add(UserDashboardComponents.label("Tgl Masuk: " + record.getDateStored().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")), 12, Font.PLAIN, UserDashboardComponents.TEXT_MUTED), gbc);
+            @Override
+            public void mouseExited(MouseEvent event) {
+                table.putClientProperty("hoverRow", -1);
+                table.setCursor(Cursor.getDefaultCursor());
+                table.repaint();
+            }
 
-        if (record.isReleased() || record.getItem().getStatus() == ItemStatus.DIKLAIM) {
-            String ownerName = "Unknown";
-            for (Object obj : claimManager.getAll()) {
-                Claim c = (Claim) obj;
-                if (c.getItem().getItemID().equals(record.getItem().getItemID()) && c.getStatus() == ClaimStatus.VALID) {
-                    ownerName = c.getUser().getName();
-                    break;
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                if (event.getClickCount() < 1 || table.getSelectedRow() < 0) {
+                    return;
+                }
+                int modelRow = table.convertRowIndexToModel(table.getSelectedRow());
+                @SuppressWarnings("unchecked")
+                ArrayList<StorageRecord> records = (ArrayList<StorageRecord>) table.getClientProperty("records");
+                if (modelRow >= 0 && modelRow < records.size()) {
+                    openDetail(records.get(modelRow));
+                    table.clearSelection();
                 }
             }
-            gbc.gridy = 4;
-            centerPanel.add(UserDashboardComponents.label("Pemilik: " + ownerName, 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
-        }
-
-        // Bottom: Action Button
-        JPanel bottomPanel = new JPanel(new GridLayout(1, 2, 10, 0));
-        bottomPanel.setOpaque(false);
-        bottomPanel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0));
-
-        JButton btnRelease = new JButton("Release Item");
-        btnRelease.setFont(new Font("Poppins", Font.BOLD, 13));
-        btnRelease.setFocusPainted(false);
-        btnRelease.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-        if (record.isReleased()) {
-            btnRelease.setEnabled(false);
-            btnRelease.setText("Sudah Diambil");
-        } else if (record.getItem().getStatus() != ItemStatus.DIKLAIM) {
-            btnRelease.setEnabled(false);
-            btnRelease.setToolTipText("Belum berstatus DIKLAIM. Menunggu validasi admin.");
-        } else {
-            btnRelease.setBackground(UserDashboardComponents.PRIMARY);
-            btnRelease.setForeground(Color.WHITE);
-            btnRelease.addActionListener(e -> releaseItemAction(record));
-        }
-
-        JButton btnDelete = new JButton("Delete Record");
-        btnDelete.setFont(new Font("Poppins", Font.BOLD, 13));
-        btnDelete.setFocusPainted(false);
-        btnDelete.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnDelete.setBackground(new Color(239, 68, 68)); // Red-500
-        btnDelete.setForeground(Color.WHITE);
-        btnDelete.addActionListener(e -> deleteRecordAction(record));
-
-        bottomPanel.add(btnRelease);
-        bottomPanel.add(btnDelete);
-
-        card.add(topPanel, BorderLayout.NORTH);
-        card.add(centerPanel, BorderLayout.CENTER);
-        card.add(bottomPanel, BorderLayout.SOUTH);
-
-        return card;
+        });
+        table.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent event) {
+                updateTableCursor(table, event);
+            }
+        });
     }
 
-    private void releaseItemAction(StorageRecord record) {
-        int confirm = JOptionPane.showConfirmDialog(this, "Apakah Anda yakin ingin melakukan release pada barang " + record.getItem().getName() + "?", "Konfirmasi Release", JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
-            storageManager.updateStorageReleasedDB(record.getRecordId());
-            JOptionPane.showMessageDialog(this, "Item berhasil direlease.");
-            loadStorageRecords();
-        }
+    private void updateTableCursor(JTable table, MouseEvent event) {
+        int row = table.rowAtPoint(event.getPoint());
+        table.putClientProperty("hoverRow", row);
+        table.setCursor(row >= 0 ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : Cursor.getDefaultCursor());
+        table.repaint();
     }
 
-    private void deleteRecordAction(StorageRecord record) {
-        int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin menghapus record ini dari storage? Item tidak akan hilang dari sistem, hanya data penyimpanannya.", "Hapus Storage Record", JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
-            storageManager.delete(record.getRecordId());
-            JOptionPane.showMessageDialog(this, "Record berhasil dihapus.");
-            loadStorageRecords();
+    private ArrayList<StorageRecord> getFilteredRecords() {
+        ArrayList<StorageRecord> result = new ArrayList<>();
+        String keyword = searchField == null ? "" : searchField.getText().trim().toLowerCase();
+        for (StorageRecord record : storageManager.getStorageRecordsBySecurity(securityId)) {
+            if (!matchesFilter(record) || !matchesSearch(record, keyword)) {
+                continue;
+            }
+            result.add(record);
         }
+        return result;
+    }
+
+    private boolean matchesFilter(StorageRecord record) {
+        if ("Belum Diambil".equals(currentFilter)) {
+            return !record.isReleased();
+        }
+        if ("Sudah Diambil".equals(currentFilter)) {
+            return record.isReleased();
+        }
+        return true;
+    }
+
+    private boolean matchesSearch(StorageRecord record, String keyword) {
+        if (keyword.isBlank()) {
+            return true;
+        }
+        Item item = record.getItem();
+        Category category = item == null ? null : item.getCategory();
+        return contains(record.getRecordId(), keyword)
+                || contains(record.getStorageLocation(), keyword)
+                || (item != null && contains(item.getName(), keyword))
+                || (item != null && contains(item.getStatus().name(), keyword))
+                || (category != null && contains(category.getName(), keyword));
+    }
+
+    private Object[][] createRows(ArrayList<StorageRecord> records) {
+        if (records.isEmpty()) {
+            return new Object[][]{{"Belum Ada Record", EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE, EMPTY_VALUE}};
+        }
+
+        Object[][] rows = new Object[records.size()][7];
+        for (int i = 0; i < records.size(); i++) {
+            StorageRecord record = records.get(i);
+            Item item = record.getItem();
+            rows[i][0] = safe(record.getRecordId());
+            rows[i][1] = item == null ? EMPTY_VALUE : titleCase(item.getName());
+            rows[i][2] = item == null || item.getCategory() == null ? EMPTY_VALUE : titleCase(item.getCategory().getName());
+            rows[i][3] = titleCase(record.getStorageLocation());
+            rows[i][4] = record.getDateStored() == null ? EMPTY_VALUE : record.getDateStored().format(DATE_TIME_FORMAT);
+            rows[i][5] = record.getDateReleased() == null ? EMPTY_VALUE : record.getDateReleased().format(DATE_TIME_FORMAT);
+            rows[i][6] = record.isReleased() ? "Sudah Diambil" : "Belum Diambil";
+        }
+        return rows;
+    }
+
+    private void openDetail(StorageRecord record) {
+        new SecurityStorageDetailFrame(record, storageManager, this::loadStorageRecords).setVisible(true);
+    }
+
+    private JPanel createSpacer() {
+        JPanel panel = new JPanel();
+        panel.setOpaque(false);
+        return panel;
+    }
+
+    private boolean contains(String value, String keyword) {
+        return value != null && value.toLowerCase().contains(keyword);
+    }
+
+    private String safe(String value) {
+        return value == null || value.isBlank() ? EMPTY_VALUE : value.trim();
+    }
+
+    private String titleCase(String value) {
+        String safeValue = safe(value);
+        if (EMPTY_VALUE.equals(safeValue)) {
+            return safeValue;
+        }
+        String normalized = safeValue.replace('_', ' ').toLowerCase();
+        StringBuilder result = new StringBuilder(normalized.length());
+        boolean capitalizeNext = true;
+        for (int i = 0; i < normalized.length(); i++) {
+            char character = normalized.charAt(i);
+            if (Character.isWhitespace(character) || character == '-') {
+                result.append(character);
+                capitalizeNext = true;
+            } else if (capitalizeNext) {
+                result.append(Character.toUpperCase(character));
+                capitalizeNext = false;
+            } else {
+                result.append(character);
+            }
+        }
+        return result.toString();
     }
 }

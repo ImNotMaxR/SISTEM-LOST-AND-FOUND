@@ -10,6 +10,7 @@ import com.model.VerificationDocument;
 import com.enumeration.ClaimStatus;
 import com.enumeration.ItemStatus;
 import com.interfaces.Managerable;
+import com.model.Category;
 import java.io.File;
 import java.sql.*;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ public class ClaimManager implements Managerable{
     private ArrayList<Claim> claims;
     private HashMap<String, Claim> claimMap;
     private DBConnection dbConnection;
+    private String lastErrorMessage;
 
     public ClaimManager() {
         this.claims = new ArrayList<>();
@@ -26,11 +28,15 @@ public class ClaimManager implements Managerable{
         this.dbConnection = DBConnection.getInstance();
         loadAllClaimsFromDB();
     }
+
+    public void refreshClaimsFromDatabase() {
+        loadAllClaimsFromDB();
+    }
     
     private void loadAllClaimsFromDB() {
         claims.clear();
         claimMap.clear();
-        String sql = "SELECT c.claim_id, c.status, c.date_claim, c.related_report_id, " + "u.user_id, u.name AS user_name, u.username, u.password, u.role, " + "i.item_id, i.name AS item_name, i.description AS item_desc, " + "i.status AS item_status, i.location AS item_location, " + "cat.category_id, cat.name AS category_name, cat.request_verification " + "FROM claims c " + "JOIN users u ON c.user_id = u.user_id " + "JOIN items i ON c.item_id = i.item_id " + "LEFT JOIN categories cat ON i.category_id = cat.category_id";
+        String sql = "SELECT c.claim_id, c.status, c.date_claim, c.related_report_id, " + "u.user_id, u.name AS user_name, u.username, u.password, u.role, " + "i.item_id, i.name AS item_name, i.description AS item_desc, " + "i.status AS item_status, i.location AS item_location, " + "cat.category_id, cat.name AS category_name " + "FROM claims c " + "JOIN users u ON c.user_id = u.user_id " + "JOIN items i ON c.item_id = i.item_id " + "LEFT JOIN categories cat ON i.category_id = cat.category_id";
  
         try {
             Connection conn = dbConnection.getConnection();
@@ -81,7 +87,7 @@ public class ClaimManager implements Managerable{
         com.model.Category category = null;
         String catId = rs.getString("category_id");
         if (catId != null) {
-            category = new com.model.Category(catId, rs.getString("category_name"), rs.getBoolean("request_verification"));
+            category = new Category(catId, rs.getString("category_name"));
         }
  
         Item item = new Item(rs.getString("item_id"), rs.getString("item_name"), rs.getString("item_desc"), category, rs.getString("item_location"));
@@ -92,6 +98,10 @@ public class ClaimManager implements Managerable{
 
         Claim claim = new Claim(claimId, user, item, reportId);
         claim.setStatus(ClaimStatus.valueOf(statusStr));
+        java.sql.Timestamp claimDate = rs.getTimestamp("date_claim");
+        if (claimDate != null) {
+            claim.setDateClaim(claimDate.toLocalDateTime());
+        }
         return claim;
     }
     
@@ -126,23 +136,41 @@ public class ClaimManager implements Managerable{
         return claimMap.getOrDefault(id, null);
     }
 
+    public String getLastErrorMessage() {
+        return lastErrorMessage == null || lastErrorMessage.isBlank() ? "Pengajuan klaim belum tersimpan." : lastErrorMessage;
+    }
+
     public void addClaim(Claim claim) {
+        try {
+            saveClaim(claim);
+        } catch (com.exception.ValidationException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void saveClaim(Claim claim) throws com.exception.ValidationException {
+        if (claim == null || claim.getItem() == null || claim.getUser() == null) {
+            throw new com.exception.ValidationException("Data klaim tidak lengkap. Silakan login ulang dan coba lagi.");
+        }
+
         // Validasi item harus DITEMUKAN
         if (claim.getItem().getStatus() != ItemStatus.DITEMUKAN) {
-            System.out.println("Error: Item " + claim.getItem().getName() + " tidak berstatus DITEMUKAN. Tidak bisa diklaim.");
-            return;
+            throw new com.exception.ValidationException("Barang \"" + claim.getItem().getName() + "\" tidak berstatus DITEMUKAN, sehingga belum bisa diklaim.");
         }
  
         // Validasi tidak ada klaim aktif untuk item yang sama
         if (hasActiveClaim(claim.getItem().getItemID())) {
-            System.out.println("Error: Item '" + claim.getItem().getName() + "' sudah memiliki klaim yang sedang diproses.");
-            return;
+            throw new com.exception.ValidationException("Barang \"" + claim.getItem().getName() + "\" sudah memiliki klaim yang sedang diproses.");
         }
  
         // Validasi dokumen jika kategori butuh verifikasi
         if (!claim.validate()) {
-            System.out.println("Error: Klaim tidak lolos valid");
-            return;
+            if (claim.getItem().getCategory() != null 
+                    && (claim.getDocuments() == null || claim.getDocuments().isEmpty())) {
+                throw new com.exception.ValidationException("Kategori \"" + claim.getItem().getCategory().getName() + "\" membutuhkan dokumen verifikasi sebelum klaim diajukan.");
+            } else {
+                throw new com.exception.ValidationException("Data klaim tidak lolos validasi. Silakan periksa status barang dan dokumen pendukung.");
+            }
         }
  
         String sql = "INSERT INTO claims (claim_id, user_id, item_id, status, date_claim, related_report_id) " + "VALUES (?, ?, ?, ?, ?, ?)";
@@ -166,7 +194,7 @@ public class ClaimManager implements Managerable{
             claimMap.put(claim.getClaimId(), claim);
             System.out.println("Klaim dengan ID: " + claim.getClaimId() + " berhasil diajukan.");
         } catch (SQLException e) {
-            System.out.println("Gagal simpan klaim: " + e.getMessage());
+            throw new com.exception.ValidationException("Gagal menyimpan klaim ke database: " + e.getMessage());
         }
     }
     
@@ -204,16 +232,14 @@ public class ClaimManager implements Managerable{
         }
     }
 
-    public void processClaim(String claimId, ClaimStatus newStatus, Admin admin) {
+    public void processClaim(String claimId, ClaimStatus newStatus, Admin admin) throws com.exception.ValidationException {
         Claim claim = claimMap.get(claimId);
         if (claim == null) {
-            System.out.println("Data Klaim tidak ditemukan.");
-            return;
+            throw new com.exception.ValidationException("Data Klaim tidak ditemukan.");
         }
  
         if (claim.getStatus() != ClaimStatus.PENDING) {
-            System.out.println("Data Klaim ini sudah diproses sebelumnya dengan status: " + claim.getStatus());
-            return;
+            throw new com.exception.ValidationException("Data Klaim ini sudah diproses sebelumnya dengan status: " + claim.getStatus());
         }
  
         claim.updateStatus(newStatus);
@@ -264,6 +290,39 @@ public class ClaimManager implements Managerable{
         return false;
     }
 
+    public boolean hasActiveClaimByUserForItem(String userId, String itemId) {
+        return hasActiveClaimByUserForReportOrItem(userId, null, itemId);
+    }
+
+    public boolean hasActiveClaimByUserForReportOrItem(String userId, String reportId, String itemId) {
+        if (userId == null || itemId == null) {
+            return false;
+        }
+
+        String sql = "SELECT COUNT(*) AS total FROM claims "
+                + "WHERE user_id = ? "
+                + "AND (item_id = ? OR related_report_id = ?) "
+                + "AND UPPER(status) IN (?, ?)";
+
+        try {
+            Connection conn = dbConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, userId);
+            ps.setString(2, itemId);
+            ps.setString(3, reportId);
+            ps.setString(4, ClaimStatus.PENDING.name());
+            ps.setString(5, ClaimStatus.VALID.name());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("total") > 0;
+            }
+        } catch (SQLException e) {
+            System.out.println("Gagal cek klaim aktif user: " + e.getMessage());
+        }
+
+        return false;
+    }
+
     public ArrayList<Claim> getClaims() {
         return claims;
     }
@@ -284,5 +343,9 @@ public class ClaimManager implements Managerable{
             }
         }
         return result;
+    }
+    
+    public void reload() {
+        loadAllClaimsFromDB();
     }
 }

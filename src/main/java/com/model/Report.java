@@ -14,6 +14,7 @@ public abstract class Report {
     protected LocalDateTime editableUntil;
     //Gatau Coba Aja Kalau ada file Poto untuk Khusus semua report
     protected String photoPath;
+    protected String rejectionReason;
     private static final int EDITABLE_DURATION_MINUTES = 30;
 
     public Report(String reportID, User user, Item item, String description) {
@@ -25,6 +26,7 @@ public abstract class Report {
         this.date          = LocalDateTime.now();
         this.editableUntil = LocalDateTime.now().plusMinutes(EDITABLE_DURATION_MINUTES);
         this.photoPath     = null;
+        this.rejectionReason = null;
     }
 
     public String getReportId() {
@@ -55,6 +57,10 @@ public abstract class Report {
         return editableUntil;
     }
     
+    public void setEditableUntil(LocalDateTime editableUntil) {
+        this.editableUntil = editableUntil;
+    }
+    
     //coba dulu aja
     public String getPhotoPath() {
         return photoPath;
@@ -62,6 +68,14 @@ public abstract class Report {
     
     public void setPhotoPath(String photoPath) {
         this.photoPath = photoPath;
+    }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
     }
 
     public void setDescription(String description) {
@@ -88,6 +102,15 @@ public abstract class Report {
     
     public boolean isEditable() {
         return LocalDateTime.now().isBefore(editableUntil);
+    }
+    
+    public void validateCanEdit() throws Exception {
+        if (this.status != ReportStatus.PENDING) {
+            throw new Exception("Laporan hanya dapat diedit saat status masih pending.");
+        }
+        if (!isEditable()) {
+            throw new Exception("Batas waktu edit laporan telah habis.");
+        }
     }
     
     public boolean isValid() {

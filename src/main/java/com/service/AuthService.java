@@ -1,5 +1,7 @@
 package com.service;
 
+import com.exception.ValidationException;
+
 import com.database.DBConnection;
 import com.enumeration.Role;
 import com.model.Admin;
@@ -33,8 +35,8 @@ public class AuthService {
     }
  
     // Query DB, cocokkan username dan password
-    // Bangun object sesuai role, dynamic binding terjadi di sini
-    public static User login(String username, String password) {
+    // Buat object sesuai role menggunakan metode dynamic binding.
+    public static User login(String username, String password) throws ValidationException {
         String sql =
             "SELECT u.user_id, u.name, u.username, u.password, u.role, " +
             "m.nim, m.fakultas, m.jurusan, m.kelas, " +
@@ -59,8 +61,7 @@ public class AuthService {
             if (rs.next()) {
                 String storedPassword = rs.getString("password");
                 if (!storedPassword.equals(password)) {
-                    loginError = "Password Anda Salah";
-                    return null;
+                    throw new ValidationException("Password Anda Salah");
                 }
  
                 User user = buildUserFromResultSet(rs);
@@ -71,40 +72,39 @@ public class AuthService {
                 }
                 return user;
             } else {
-                loginError = "Username Anda Tidak Ditemukan.";
-                return null;
+                throw new ValidationException("Username Anda Tidak Ditemukan.");
             }
  
         } catch (SQLException e) {
             System.out.println("Gagal Login: " + e.getMessage());
-            return null;
+            throw new ValidationException("Terjadi kesalahan sistem saat proses login: " + e.getMessage());
         }
     }
  
-    // Dynamic binding: return type User, actual object Mahasiswa/Dosen/dll
+    // Dynamic binding return type User, object Mahasiswa/Dosen/dll
     private static User buildUserFromResultSet(ResultSet rs) throws SQLException {
         String userId   = rs.getString("user_id");
         String name     = rs.getString("name");
-        String uname    = rs.getString("username");
+        String username    = rs.getString("username");
         String password = rs.getString("password");
         Role role       = Role.valueOf(rs.getString("role"));
  
         switch (role) {
             case MAHASISWA:
-                return new Mahasiswa(userId, name, uname, password,
+                return new Mahasiswa(userId, name, username, password,
                         rs.getString("nim"), rs.getString("fakultas"),
                         rs.getString("jurusan"), rs.getString("kelas"));
             case DOSEN:
-                return new Dosen(userId, name, uname, password,
+                return new Dosen(userId, name, username, password,
                         rs.getString("nip"), rs.getString("bidang"));
             case STAFF:
-                return new Staff(userId, name, uname, password,
+                return new Staff(userId, name, username, password,
                         rs.getString("staff_id"), rs.getString("staff_bagian"));
             case ADMIN:
-                return new Admin(userId, name, uname, password,
+                return new Admin(userId, name, username, password,
                         rs.getString("admin_id"));
             case SECURITY:
-                return new Security(userId, name, uname, password,
+                return new Security(userId, name, username, password,
                         rs.getString("security_id"), rs.getString("security_bagian"));
             default:
                 return null;

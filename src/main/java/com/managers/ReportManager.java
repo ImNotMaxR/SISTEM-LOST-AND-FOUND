@@ -15,6 +15,8 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.UUID;
+import com.exception.ValidationException;
 
 public class ReportManager implements Managerable{
     private ArrayList<Report> reports;
@@ -25,13 +27,31 @@ public class ReportManager implements Managerable{
         this.reports = new ArrayList<>();
         this.reportMap = new HashMap<>();
         this.dbConnection = DBConnection.getInstance();
+        ensureRejectionReasonColumn();
         loadAllReportsFromDB();
+    }
+
+    private void ensureRejectionReasonColumn() {
+        try {
+            Connection conn = dbConnection.getConnection();
+            DatabaseMetaData metaData = conn.getMetaData();
+            try (ResultSet columns = metaData.getColumns(null, null, "reports", "rejection_reason")) {
+                if (columns.next()) {
+                    return;
+                }
+            }
+            try (Statement statement = conn.createStatement()) {
+                statement.executeUpdate("ALTER TABLE reports ADD COLUMN rejection_reason TEXT NULL");
+            }
+        } catch (SQLException exception) {
+            System.out.println("Kolom rejection_reason tidak dapat dipastikan: " + exception.getMessage());
+        }
     }
     
     private void loadAllReportsFromDB() {
         reports.clear();
         reportMap.clear();
-        String sql = "SELECT r.report_id, r.type, r.description, r.status, r.date, " + "r.editable_until, r.photo_path, r.lost_location, r.found_location, " + "r.matched_lost_report_id, " + "u.user_id, u.name AS user_name, u.username, u.password, u.role, " + "i.item_id, i.name AS item_name, i.description AS item_desc, " + "i.status AS item_status, i.location AS item_location, i.date AS item_date, " + "c.category_id, c.name AS category_name, c.request_verification " + "FROM reports r " + "JOIN users u ON r.user_id = u.user_id " + "JOIN items i ON r.item_id = i.item_id " + "LEFT JOIN categories c ON i.category_id = c.category_id";
+        String sql = "SELECT r.report_id, r.type, r.description, r.status, r.date, " + "r.editable_until, r.photo_path, r.rejection_reason, r.lost_location, r.found_location, " + "r.matched_lost_report_id, " + "u.user_id, u.name AS user_name, u.username, u.password, u.role, " + "i.item_id, i.name AS item_name, i.description AS item_desc, " + "i.status AS item_status, i.location AS item_location, i.date AS item_date, " + "c.category_id, c.name AS category_name " + "FROM reports r " + "JOIN users u ON r.user_id = u.user_id " + "JOIN items i ON r.item_id = i.item_id " + "LEFT JOIN categories c ON i.category_id = c.category_id";
         
         try {
             Connection conn = dbConnection.getConnection();
@@ -62,6 +82,7 @@ public class ReportManager implements Managerable{
         String statusStr = rs.getString("status");
         LocalDateTime date = rs.getTimestamp("date") != null? rs.getTimestamp("date").toLocalDateTime() : LocalDateTime.now();
         String photoPath = rs.getString("photo_path");
+        String rejectionReason = rs.getString("rejection_reason");
  
         // Full user object diambil dari UserManager jika dibutuhkan detail lengkap
         String userId = rs.getString("user_id");
@@ -80,7 +101,7 @@ public class ReportManager implements Managerable{
         Category category = null;
         String catId = rs.getString("category_id");
         if (catId != null) {
-            category = new Category(catId, rs.getString("category_name"), rs.getBoolean("request_verification"));
+            category = new Category(catId, rs.getString("category_name"));
         }
  
         Item item = new Item(itemId, itemName, itemDesc, category, itemLoc);
@@ -95,15 +116,25 @@ public class ReportManager implements Managerable{
             LostReport lr = new LostReport(reportId, user, item, desc, lostLocation);
             lr.setStatus(ReportStatus.valueOf(statusStr));
             if (photoPath != null) lr.setPhotoPath(photoPath);
+            lr.setRejectionReason(rejectionReason);
             report = lr;
         } else if ("FOUND".equals(type)) {
             String foundLocation = rs.getString("found_location");
             FoundReport fr = new FoundReport(reportId, user, item, desc, foundLocation);
             fr.setStatus(ReportStatus.valueOf(statusStr));
             if (photoPath != null) fr.setPhotoPath(photoPath);
+            fr.setRejectionReason(rejectionReason);
             report = fr;
         }
  
+        if (report != null && rs.getTimestamp("editable_until") != null) {
+            report.setEditableUntil(rs.getTimestamp("editable_until").toLocalDateTime());
+        }
+
+        if (report != null && report.getItem() != null) {
+            report.getItem().setStatus(ItemStatus.valueOf(itemStatus));
+        }
+
         return report;
     }
     
@@ -175,7 +206,10 @@ public class ReportManager implements Managerable{
         String lostLoc  = (report instanceof LostReport) ? ((LostReport) report).getLostLocation() : null;
         String foundLoc = (report instanceof FoundReport) ? ((FoundReport) report).getFoundLocation() : null;
         
-        String sql = "INSERT INTO reports (report_id, user_id, item_id, type, description, status, date, editable_until, photo_path, lost_location, found_location) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String matchedLostReportId = report instanceof FoundReport && ((FoundReport) report).getMatchedLostReport() != null
+                ? ((FoundReport) report).getMatchedLostReport().getReportId()
+                : null;
+        String sql = "INSERT INTO reports (report_id, user_id, item_id, type, description, status, date, editable_until, photo_path, rejection_reason, lost_location, found_location, matched_lost_report_id) " + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try {
             Connection conn = dbConnection.getConnection();
             PreparedStatement ps = conn.prepareStatement(sql);
@@ -188,8 +222,10 @@ public class ReportManager implements Managerable{
             ps.setTimestamp(7, java.sql.Timestamp.valueOf(report.getDate()));
             ps.setTimestamp(8, java.sql.Timestamp.valueOf(report.getEditableUntil()));
             ps.setString(9, report.getPhotoPath());
-            ps.setString(10, lostLoc);
-            ps.setString(11, foundLoc);
+            ps.setString(10, report.getRejectionReason());
+            ps.setString(11, lostLoc);
+            ps.setString(12, foundLoc);
+            ps.setString(13, matchedLostReportId);
             ps.executeUpdate();
  
             report.submitReport();
@@ -219,8 +255,8 @@ public class ReportManager implements Managerable{
                 ps.setNull(4, java.sql.Types.VARCHAR);
             }
             ps.setString(5, report.getReportId());
+
             int rows = ps.executeUpdate();
-            
             if (rows > 0) {
                 reportMap.put(report.getReportId(), report);
                 return true;
@@ -229,6 +265,137 @@ public class ReportManager implements Managerable{
         } catch (SQLException e) {
             System.out.println("Gagal update laporan: " + e.getMessage());
             return false;
+        }
+    }
+
+    public void createLostReport(User user, String itemName, String itemDescription, String lostLocation, String reportDescription, Category category, java.io.File photoFile, ItemManager itemManager) throws ValidationException {
+        if (user == null) {
+            throw new ValidationException("Data user tidak ditemukan. Silakan login ulang.");
+        }
+        if (itemName == null || itemName.trim().isEmpty() || itemDescription == null || itemDescription.trim().isEmpty() || lostLocation == null || lostLocation.trim().isEmpty() || reportDescription == null || reportDescription.trim().isEmpty() || category == null) {
+            throw new ValidationException("Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
+        }
+
+        String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        Item item = new Item(itemId, itemName, itemDescription, category, lostLocation);
+        itemManager.addItem(item);
+
+        LostReport report = new LostReport(reportId, user, item, reportDescription, lostLocation);
+        if (photoFile != null) {
+            report.addEvidence(photoFile.getAbsolutePath());
+        }
+        addReport(report);
+    }
+
+    public void createFoundReport(User user, String itemName, String itemDescription, String foundLocation, String storageLocation, String reportDescription, Category category, com.model.LostReport matched, java.io.File photoFile, ItemManager itemManager, StorageManager storageManager) throws ValidationException {
+        if (user == null) {
+            throw new ValidationException("Data user tidak ditemukan. Silakan login ulang.");
+        }
+        if (itemName == null || itemName.trim().isEmpty() || itemDescription == null || itemDescription.trim().isEmpty() || foundLocation == null || foundLocation.trim().isEmpty() || storageLocation == null || storageLocation.trim().isEmpty() || reportDescription == null || reportDescription.trim().isEmpty() || category == null) {
+            throw new ValidationException("Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
+        }
+
+        String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String recordId = "STR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        Item item;
+        if (matched != null) {
+            item = matched.getItem();
+        } else {
+            String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            item = new Item(itemId, itemName, itemDescription, category, foundLocation);
+            itemManager.addItem(item);
+        }
+
+        FoundReport report = new FoundReport(reportId, user, item, reportDescription, foundLocation);
+        if (matched != null) {
+            report.setMatchedLostReport(matched);
+        }
+        if (photoFile != null) {
+            report.setPhotoPath(photoFile.getAbsolutePath());
+        }
+        addReport(report);
+
+        com.model.StorageRecord storageRecord = new com.model.StorageRecord(recordId, item, (com.model.Security) user, storageLocation);
+        storageManager.saveStorageRecordToDB(storageRecord);
+    }
+
+    public void createFoundReportByAdmin(User user, String itemName, String itemDescription, String foundLocation, String reportDescription, Category category, com.model.LostReport matched, java.io.File photoFile, ItemManager itemManager) throws ValidationException {
+        if (user == null) {
+            throw new ValidationException("Data user tidak ditemukan. Silakan login ulang.");
+        }
+        if (itemName == null || itemName.trim().isEmpty() || itemDescription == null || itemDescription.trim().isEmpty() || foundLocation == null || foundLocation.trim().isEmpty() || reportDescription == null || reportDescription.trim().isEmpty() || category == null) {
+            throw new ValidationException("Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
+        }
+
+        String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        Item item;
+        if (matched != null) {
+            item = matched.getItem();
+        } else {
+            String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            item = new Item(itemId, itemName, itemDescription, category, foundLocation);
+            item.setStatus(com.enumeration.ItemStatus.DITEMUKAN);
+            itemManager.addItem(item);
+        }
+
+        FoundReport report = new FoundReport(reportId, user, item, reportDescription, foundLocation);
+        if (matched != null) {
+            report.setMatchedLostReport(matched);
+        }
+        if (photoFile != null) {
+            report.setPhotoPath(photoFile.getAbsolutePath());
+        }
+        addReport(report);
+        validateReport(reportId, com.enumeration.ReportStatus.VALID, (com.model.Admin) user, null);
+    }
+
+    public void editLostReport(LostReport report, String itemName, String itemDesc, String lostLocation, String reportDesc, Category category, java.io.File photoFile, ItemManager itemManager) throws ValidationException {
+        if (itemName == null || itemName.trim().isEmpty() || itemDesc == null || itemDesc.trim().isEmpty() || lostLocation == null || lostLocation.trim().isEmpty() || reportDesc == null || reportDesc.trim().isEmpty() || category == null) {
+            throw new ValidationException("Semua Input Wajib Diisi Sebelum Memperbarui Laporan.");
+        }
+
+        Item item = report.getItem();
+        item.setName(itemName);
+        item.setDescription(itemDesc);
+        item.setCategory(category);
+        item.setLocation(lostLocation);
+        itemManager.updateItem(item);
+
+        report.setDescription(reportDesc);
+        report.setLostLocation(lostLocation);
+        if (photoFile != null) {
+            report.setPhotoPath(photoFile.getAbsolutePath());
+        }
+        boolean success = updateReport(report);
+        if (!success) {
+            throw new ValidationException("Gagal mengupdate laporan ke database.");
+        }
+    }
+
+    public void editFoundReport(FoundReport report, String itemName, String itemDesc, String foundLocation, String reportDesc, Category category, java.io.File photoFile, ItemManager itemManager) throws ValidationException {
+        if (itemName == null || itemName.trim().isEmpty() || itemDesc == null || itemDesc.trim().isEmpty() || foundLocation == null || foundLocation.trim().isEmpty() || reportDesc == null || reportDesc.trim().isEmpty() || category == null) {
+            throw new ValidationException("Semua Input Wajib Diisi Sebelum Memperbarui Laporan.");
+        }
+
+        Item item = report.getItem();
+        item.setName(itemName);
+        item.setDescription(itemDesc);
+        item.setCategory(category);
+        item.setLocation(foundLocation);
+        itemManager.updateItem(item);
+
+        report.setDescription(reportDesc);
+        report.setFoundLocation(foundLocation);
+        if (photoFile != null) {
+            report.setPhotoPath(photoFile.getAbsolutePath());
+        }
+        boolean success = updateReport(report);
+        if (!success) {
+            throw new ValidationException("Gagal mengupdate laporan ke database.");
         }
     }
     
@@ -251,6 +418,10 @@ public class ReportManager implements Managerable{
     }
     
     public void validateReport(String reportId, ReportStatus newStatus, com.model.Admin admin) {
+        validateReport(reportId, newStatus, admin, null);
+    }
+
+    public void validateReport(String reportId, ReportStatus newStatus, com.model.Admin admin, String rejectionReason) {
         Report report = reportMap.get(reportId);
         if (report == null) {
             System.out.println("Laporan tidak ditemukan.");
@@ -258,6 +429,7 @@ public class ReportManager implements Managerable{
         }
  
         report.setStatus(newStatus);
+        report.setRejectionReason(newStatus == ReportStatus.DITOLAK ? rejectionReason : null);
  
         // Jika FoundReport VALID, cocokkan item jika belum dicocokkan
         if (report instanceof FoundReport && newStatus == ReportStatus.VALID) {
@@ -267,13 +439,15 @@ public class ReportManager implements Managerable{
                 fr.setMatchedLostReport(matched);
                 updateMatchedReportInDB(fr.getReportId(), matched != null ? matched.getReportId() : null);
             }
-            if (fr.hasMatch()) {
-                updateItemStatusInDB(fr.getItem().getItemID(), ItemStatus.DITEMUKAN);
-            }
+            // Langsung set ke DITEMUKAN sesuai logic found report
+            updateItemStatusInDB(fr.getItem().getItemID(), ItemStatus.DITEMUKAN);
+            fr.getItem().setStatus(ItemStatus.DITEMUKAN);
         }
  
-        updateReportStatusInDB(reportId, newStatus);
-        admin.validateReport(reportId);
+        updateReportStatusInDB(reportId, newStatus, report.getRejectionReason());
+        if (admin != null) {
+            admin.validateReport(reportId);
+        }
     }
     
     private LostReport findMatchingLostReport(FoundReport foundReport) {
@@ -305,13 +479,14 @@ public class ReportManager implements Managerable{
         }
     }
     
-    private void updateReportStatusInDB(String reportId, ReportStatus status) {
-        String sql = "UPDATE reports SET status = ? WHERE report_id = ?";
+    private void updateReportStatusInDB(String reportId, ReportStatus status, String rejectionReason) {
+        String sql = "UPDATE reports SET status = ?, rejection_reason = ? WHERE report_id = ?";
         try {
             Connection conn = dbConnection.getConnection();
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, status.name());
-            ps.setString(2, reportId);
+            ps.setString(2, rejectionReason);
+            ps.setString(3, reportId);
             ps.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Gagal update status laporan" + e.getMessage());

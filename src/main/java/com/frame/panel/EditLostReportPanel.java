@@ -63,7 +63,6 @@ import javax.swing.text.DocumentFilter;
 public class EditLostReportPanel extends JDialog {
 
     private static final String TITLE = "Edit Laporan";
-    private static final String SUBTITLE = "Ubah data laporan barang hilang yang ingin anda perbarui.";
     private static final Dimension MINIMUM_FRAME_SIZE = new Dimension(900, 650);
 
     private final Report existingReport;
@@ -131,7 +130,10 @@ public class EditLostReportPanel extends JDialog {
         // Header Panel
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setOpaque(false);
-        headerPanel.add(UserDashboardComponents.section(TITLE, SUBTITLE), BorderLayout.WEST);
+        String subtitle = existingReport instanceof com.model.FoundReport 
+            ? "Ubah Data Laporan Barang Ditemukan Yang Ingin Anda Perbarui."
+            : "Ubah Data Laporan Barang Hilang Yang Ingin Anda Perbarui.";
+        headerPanel.add(UserDashboardComponents.section(TITLE, subtitle), BorderLayout.WEST);
         
         root.add(headerPanel, BorderLayout.NORTH);
 
@@ -148,7 +150,36 @@ public class EditLostReportPanel extends JDialog {
         gbc.gridx = 0;
         gbc.weightx = 0.45;
         gbc.insets = new Insets(0, 0, 0, 15);
-        contentPanel.add(createFormPanel(), gbc);
+
+        JScrollPane formScroll = new JScrollPane(createFormPanel());
+        formScroll.setBorder(BorderFactory.createEmptyBorder());
+        formScroll.setOpaque(false);
+        formScroll.getViewport().setOpaque(false);
+        formScroll.getVerticalScrollBar().setUnitIncrement(16);
+        formScroll.getVerticalScrollBar().setPreferredSize(new Dimension(8, 0));
+        formScroll.getVerticalScrollBar().setOpaque(false);
+        formScroll.getVerticalScrollBar().setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
+            @Override
+            protected void paintTrack(Graphics g, javax.swing.JComponent c, Rectangle trackBounds) {}
+            @Override
+            protected void paintThumb(Graphics g, javax.swing.JComponent c, Rectangle thumbBounds) {
+                if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) return;
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(200, 200, 200));
+                g2.fillRoundRect(thumbBounds.x + 2, thumbBounds.y + 2, thumbBounds.width - 4, thumbBounds.height - 4, 4, 4);
+                g2.dispose();
+            }
+            @Override
+            protected JButton createDecreaseButton(int orientation) { return createZeroButton(); }
+            @Override
+            protected JButton createIncreaseButton(int orientation) { return createZeroButton(); }
+            private JButton createZeroButton() {
+                JButton btn = new JButton(); btn.setPreferredSize(new Dimension(0, 0)); return btn;
+            }
+        });
+
+        contentPanel.add(formScroll, gbc);
 
         // Right Column: Photo
         gbc.gridx = 1;
@@ -193,11 +224,12 @@ public class EditLostReportPanel extends JDialog {
         itemNameField = createTextField("Contoh: Tumbler Tuku", 50);
         addField(panel, gbc, 0, "Nama barang*", itemNameField, 0.0);
 
-        itemDescriptionArea = createTextArea("Ciri-ciri barang, warna, merek, tanda khusus", 300);
+        itemDescriptionArea = createTextArea("Ciri-Ciri Barang, Warna, Merek, Tanda Khusus", 300);
         addField(panel, gbc, 1, "Deskripsi barang", createTextAreaScroll(itemDescriptionArea), 1.0);
 
+        String locLabel = existingReport instanceof com.model.FoundReport ? "Lokasi ditemukan" : "Lokasi hilang";
         lostLocationField = createTextField("Contoh: Lab Komputer FIF Lt.2", 100);
-        addField(panel, gbc, 2, "Lokasi hilang", lostLocationField, 0.0);
+        addField(panel, gbc, 2, locLabel, lostLocationField, 0.0);
 
         reportDescriptionArea = createTextArea("Kronologi singkat kehilangan", 500);
         addField(panel, gbc, 3, "Deskripsi laporan", createTextAreaScroll(reportDescriptionArea), 1.0);
@@ -208,7 +240,7 @@ public class EditLostReportPanel extends JDialog {
         gbc.gridy = 10;
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 0, 0, 0);
+        gbc.insets = new Insets(12, 0, 0, 0);
         JLabel noteLabel = new JLabel("*Mohon tidak membuat laporan palsu.");
         noteLabel.setFont(new Font("Poppins", Font.PLAIN, 11));
         noteLabel.setForeground(new Color(150, 150, 150));
@@ -221,7 +253,7 @@ public class EditLostReportPanel extends JDialog {
         gbc.gridy = row * 2;
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(row == 0 ? 0 : 12, 0, 4, 0);
+        gbc.insets = new Insets(row == 0 ? 0 : 20, 0, 6, 0);
         JLabel titleLabel = UserDashboardComponents.label(label, 13, Font.BOLD, UserDashboardComponents.TEXT_DARK);
         panel.add(titleLabel, gbc);
 
@@ -253,7 +285,7 @@ public class EditLostReportPanel extends JDialog {
                 }
             }
         };
-        field.setPreferredSize(new Dimension(300, 38));
+        field.setPreferredSize(new Dimension(300, 45));
         field.setFont(new Font("Poppins", Font.PLAIN, 13));
         field.setForeground(UserDashboardComponents.TEXT_DARK);
         field.setBackground(Color.WHITE);
@@ -285,7 +317,7 @@ public class EditLostReportPanel extends JDialog {
     }
 
     private JTextArea createTextArea(String placeholder, int limit) {
-        JTextArea area = new JTextArea(3, 20) {
+        JTextArea area = new JTextArea(5, 20) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
@@ -377,7 +409,7 @@ public class EditLostReportPanel extends JDialog {
                 new UserDashboardComponents.RoundedLineBorder(new Color(230, 230, 230), 16, 1),
                 BorderFactory.createEmptyBorder(2, 2, 2, 2)
         ));
-        wrapper.setPreferredSize(new Dimension(300, 75));
+        wrapper.setPreferredSize(new Dimension(300, 110));
         wrapper.add(scrollPane, BorderLayout.CENTER);
         
         return wrapper;
@@ -385,7 +417,7 @@ public class EditLostReportPanel extends JDialog {
 
     private JComboBox<Category> createCategoryComboBox() {
         JComboBox<Category> comboBox = new JComboBox<>();
-        comboBox.setPreferredSize(new Dimension(300, 38));
+        comboBox.setPreferredSize(new Dimension(300, 45));
         comboBox.setFont(new Font("Poppins", Font.BOLD, 13));
         comboBox.setForeground(UserDashboardComponents.TEXT_DARK);
         comboBox.setBackground(Color.WHITE);
@@ -436,8 +468,7 @@ public class EditLostReportPanel extends JDialog {
             }
             if (value instanceof Category) {
                 Category category = (Category) value;
-                label.setText(category.getName()
-                        + (category.isVerificationRequired() ? " *butuh dokumen saat klaim" : ""));
+                label.setText(category.getName());
             }
             return label;
         });
@@ -515,7 +546,7 @@ public class EditLostReportPanel extends JDialog {
 
         if (itemName.isEmpty() || itemDescription.isEmpty() || lostLocation.isEmpty()
                 || reportDescription.isEmpty() || category == null) {
-            AppDialog.warning(this, "Data Belum Lengkap", "Semua input wajib diisi sebelum menyimpan laporan.");
+            AppDialog.warning(this, "Data Belum Lengkap", "Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
             return;
         }
 
@@ -541,13 +572,13 @@ public class EditLostReportPanel extends JDialog {
             boolean reportUpdated = reportManager.updateReport(existingReport);
 
             if (itemUpdated && reportUpdated) {
-                AppDialog.success(this, "Berhasil", "Laporan Anda telah berhasil diperbarui!");
+                AppDialog.success(this, "Berhasil", "Laporan Anda Telah Berhasil Diperbarui!");
                 if (onReportSaved != null) {
                     onReportSaved.run();
                 }
                 dispose();
             } else {
-                AppDialog.error(this, "Gagal", "Gagal memperbarui laporan. Silakan coba lagi.");
+                AppDialog.error(this, "Gagal", "Gagal Memperbarui Laporan. Silakan Coba Lagi.");
             }
 
         } catch (Exception e) {
@@ -567,8 +598,7 @@ public class EditLostReportPanel extends JDialog {
             while (resultSet.next()) {
                 categories.add(new Category(
                         resultSet.getString("category_id"),
-                        resultSet.getString("name"),
-                        resultSet.getBoolean("request_verification")
+                        resultSet.getString("name")
                 ));
             }
         } catch (SQLException exception) {

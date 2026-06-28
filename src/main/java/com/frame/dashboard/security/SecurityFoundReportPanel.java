@@ -64,7 +64,7 @@ import javax.swing.text.DocumentFilter;
 public class SecurityFoundReportPanel extends JDialog {
 
     private static final String TITLE = "Buat Laporan Barang Ditemukan";
-    private static final String SUBTITLE = "Isi data barang yang anda temukan beserta lokasi simpannya.";
+    private static final String SUBTITLE = "Isi Data Barang Yang Anda Temukan Beserta Lokasi Simpannya.";
     private static final Dimension MINIMUM_FRAME_SIZE = new Dimension(900, 650);
 
     private final User user;
@@ -207,7 +207,9 @@ public class SecurityFoundReportPanel extends JDialog {
         pendingLostReports = new java.util.ArrayList<>();
         if (reportManager != null) {
             for (com.model.LostReport lr : reportManager.getLostReports()) {
-                if (lr.getStatus() == com.enumeration.ReportStatus.PENDING) {
+                if (lr.getStatus() == com.enumeration.ReportStatus.VALID &&
+                    lr.getItem() != null && 
+                    lr.getItem().getStatus() == com.enumeration.ItemStatus.DICARI) {
                     pendingLostReports.add(lr);
                 }
             }
@@ -275,12 +277,14 @@ public class SecurityFoundReportPanel extends JDialog {
                 itemNameField.setEnabled(false);
                 itemDescriptionArea.setEnabled(false);
                 categoryComboBox.setEnabled(false);
+                applyMatchedPhoto(lr);
             } else {
                 itemNameField.setText("");
                 itemDescriptionArea.setText("");
                 itemNameField.setEnabled(true);
                 itemDescriptionArea.setEnabled(true);
                 categoryComboBox.setEnabled(true);
+                clearSelectedPhoto();
             }
         });
         
@@ -289,7 +293,7 @@ public class SecurityFoundReportPanel extends JDialog {
         itemNameField = createTextField("Contoh: Tumbler Tuku", 50);
         addField(panel, gbc, 1, "Nama barang*", itemNameField, 0.0);
 
-        itemDescriptionArea = createTextArea("Ciri-ciri barang, warna, merek, tanda khusus", 300);
+        itemDescriptionArea = createTextArea("Ciri-Ciri Barang, Warna, Merek, Tanda Khusus", 300);
         addField(panel, gbc, 2, "Deskripsi barang", createTextAreaScroll(itemDescriptionArea), 1.0);
 
         foundLocationField = createTextField("Contoh: Lab Komputer FIF Lt.2", 100);
@@ -334,6 +338,31 @@ public class SecurityFoundReportPanel extends JDialog {
     private JPanel createPhotoPanel() {
         photoPreviewPanel = new PhotoPreviewPanel(this::choosePhoto);
         return photoPreviewPanel;
+    }
+
+    private void applyMatchedPhoto(com.model.LostReport report) {
+        if (report == null || report.getPhotoPath() == null || report.getPhotoPath().isBlank()) {
+            clearSelectedPhoto();
+            return;
+        }
+
+        File photoFile = new File(report.getPhotoPath());
+        if (!photoFile.exists() || !isSupportedImage(photoFile)) {
+            clearSelectedPhoto();
+            return;
+        }
+
+        selectedPhotoFile = photoFile;
+        if (photoPreviewPanel != null) {
+            photoPreviewPanel.setImageFile(photoFile);
+        }
+    }
+
+    private void clearSelectedPhoto() {
+        selectedPhotoFile = null;
+        if (photoPreviewPanel != null) {
+            photoPreviewPanel.clearImage();
+        }
     }
 
     private JTextField createTextField(String placeholder, int limit) {
@@ -535,8 +564,7 @@ public class SecurityFoundReportPanel extends JDialog {
             }
             if (value instanceof Category) {
                 Category category = (Category) value;
-                label.setText(category.getName()
-                        + (category.isVerificationRequired() ? " *butuh dokumen saat klaim" : ""));
+                label.setText(category.getName());
             }
             return label;
         });
@@ -606,11 +634,6 @@ public class SecurityFoundReportPanel extends JDialog {
     }
 
     private void submitFoundReport() {
-        if (user == null) {
-            AppDialog.error(this, "Gagal Membuat Laporan", "Data user tidak ditemukan. Silakan login ulang.");
-            return;
-        }
-
         String itemName = itemNameField.getText().trim();
         String itemDescription = itemDescriptionArea.getText().trim();
         String foundLocation = foundLocationField.getText().trim();
@@ -618,47 +641,21 @@ public class SecurityFoundReportPanel extends JDialog {
         String reportDescription = reportDescriptionArea.getText().trim();
         Category category = (Category) categoryComboBox.getSelectedItem();
 
-        if (itemName.isEmpty() || itemDescription.isEmpty() || foundLocation.isEmpty() || storageLocation.isEmpty()
-                || reportDescription.isEmpty() || category == null) {
-            AppDialog.warning(this, "Data Belum Lengkap", "Semua input wajib diisi sebelum menyimpan laporan.");
-            return;
-        }
-
         int selectedIndex = lostReportComboBox.getSelectedIndex();
         com.model.LostReport matched = (selectedIndex > 0) ? pendingLostReports.get(selectedIndex - 1) : null;
 
-        String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        String recordId = "STR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-
         try {
-            Item item;
-            if (matched != null) {
-                item = matched.getItem();
-            } else {
-                String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-                item = new Item(itemId, itemName, itemDescription, category, foundLocation);
-                itemManager.addItem(item);
-            }
-
-            FoundReport report = new FoundReport(reportId, user, item, reportDescription, foundLocation);
-            if (matched != null) {
-                report.setMatchedLostReport(matched);
-            }
-            if (selectedPhotoFile != null) {
-                report.setPhotoPath(selectedPhotoFile.getAbsolutePath());
-            }
-            reportManager.addReport(report);
-            
-            StorageRecord storageRecord = new StorageRecord(recordId, item, (com.model.Security) user, storageLocation);
             StorageManager storageManager = new StorageManager();
-            storageManager.saveStorageRecordToDB(storageRecord);
+            reportManager.createFoundReport(user, itemName, itemDescription, foundLocation, storageLocation, reportDescription, category, matched, selectedPhotoFile, itemManager, storageManager);
 
             if (onReportSaved != null) {
                 onReportSaved.run();
             }
 
-            AppDialog.success(this, "Laporan Disimpan", "Laporan barang hilang berhasil dibuat.");
+            AppDialog.success(this, "Laporan Disimpan", "Laporan Barang Hilang Berhasil Dibuat.");
             dispose();
+        } catch (com.exception.ValidationException e) {
+            AppDialog.warning(this, "Data Tidak Valid", e.getMessage());
         } catch (Exception e) {
             AppDialog.error(this, "Terjadi Kesalahan", "Gagal menyimpan laporan: " + e.getMessage());
         }
@@ -675,8 +672,7 @@ public class SecurityFoundReportPanel extends JDialog {
             while (resultSet.next()) {
                 categories.add(new Category(
                         resultSet.getString("category_id"),
-                        resultSet.getString("name"),
-                        resultSet.getBoolean("request_verification")
+                        resultSet.getString("name")
                 ));
             }
         } catch (SQLException exception) {
@@ -752,6 +748,12 @@ public class SecurityFoundReportPanel extends JDialog {
 
         void setImageFile(File file) {
             this.image = new ImageIcon(file.getAbsolutePath()).getImage();
+            repaint();
+        }
+
+        void clearImage() {
+            this.image = null;
+            this.isHovered = false;
             repaint();
         }
 

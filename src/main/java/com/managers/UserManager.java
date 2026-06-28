@@ -134,29 +134,76 @@ public class UserManager implements Managerable{
         }
     }
     
-    public void editUser(User currentUser, String targetUserId, String newUsername, String newPassword){
-        if (!currentUser.getUserId().equals(targetUserId)) {
-            System.out.println("Kamu tidak bisa mengedit akun orang lain.");
-            return;
+    // Method Overloading: Untuk Edit Username
+    public void editUser(User currentUser, String oldPassword, String newUsername) throws Exception {
+        if (!currentUser.checkPassword(oldPassword)) {
+            throw new Exception("Password lama yang Anda masukkan salah.");
         }
-        String sql = "UPDATE users SET username = ?, password = ? WHERE user_id = ?";
+        if (newUsername.length() < 4) {
+            throw new Exception("Username harus memiliki minimal 4 karakter.");
+        }
+        if (newUsername.equals(currentUser.getUsername())) {
+            throw new Exception("Username yang baru anda tulis sama seperti username sebelumnya.");
+        }
+        for (User u : users) {
+            if (!u.getUserId().equals(currentUser.getUserId()) && u.getUsername().equalsIgnoreCase(newUsername)) {
+                throw new Exception("Username sudah digunakan oleh pengguna lain.");
+            }
+        }
+
+        String sql = "UPDATE users SET username = ? WHERE user_id = ?";
         try {
            Connection conn = dbConnection.getConnection();
            PreparedStatement ps = conn.prepareStatement(sql);
            ps.setString(1, newUsername);
-           ps.setString(2, newPassword);
-           ps.setString(3, targetUserId);
+           ps.setString(2, currentUser.getUserId());
            ps.executeUpdate();
            
-           User user = userMap.get(targetUserId);
+           User user = userMap.get(currentUser.getUserId());
             if (user != null) {
                 user.setUsername(newUsername);
+            }
+            System.out.println("Username berhasil diperbarui.");
+        } catch (SQLException e) {
+            System.out.println("Gagal Update Data User: " + e.getMessage());
+            throw new Exception("Terjadi kesalahan sistem saat memperbarui data.");
+        }
+    }
+    
+    // Method Overloading: Untuk Ganti Password
+    public void editUser(User currentUser, String oldPassword, String newPassword, String confirmPassword) throws Exception {
+        if (!currentUser.checkPassword(oldPassword)) {
+            throw new Exception("Password lama yang Anda masukkan salah.");
+        }
+        if (!newPassword.equals(confirmPassword)) {
+            throw new Exception("Password baru dan konfirmasi tidak cocok.");
+        }
+        if (newPassword.length() < 8) {
+            throw new Exception("Password baru minimal harus 8 karakter.");
+        }
+        if (!newPassword.matches(".*[!@#$%^&*(),.?\":{}|<>].*")) {
+            throw new Exception("Password baru harus mengandung minimal 1 karakter spesial.");
+        }
+        if (newPassword.equals(currentUser.getPassword())) {
+            throw new Exception("Password yang baru anda tulis sama seperti password sebelumnya.");
+        }
+
+        String sql = "UPDATE users SET password = ? WHERE user_id = ?";
+        try {
+           Connection conn = dbConnection.getConnection();
+           PreparedStatement ps = conn.prepareStatement(sql);
+           ps.setString(1, newPassword);
+           ps.setString(2, currentUser.getUserId());
+           ps.executeUpdate();
+           
+           User user = userMap.get(currentUser.getUserId());
+            if (user != null) {
                 user.setPassword(newPassword);
             }
-            
-            System.out.println("Akun berhasil diperbarui.");
+            System.out.println("Password berhasil diperbarui.");
         } catch (SQLException e) {
-            System.out.println("Gagal Update Data User" + e.getMessage());
+            System.out.println("Gagal Update Data User: " + e.getMessage());
+            throw new Exception("Terjadi kesalahan sistem saat memperbarui data.");
         }
     }
     

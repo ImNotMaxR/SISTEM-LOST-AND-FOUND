@@ -26,6 +26,8 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 import javax.swing.JTextField;
 import javax.swing.ImageIcon;
 import java.awt.Image;
@@ -33,7 +35,7 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 
 public class UserProfilePanel extends JPanel {
 
-    private static final String TITLE = "Edit profil saya";
+    private static final String TITLE = "Edit Profil Saya";
     private static final String SUBTITLE = "Sistem Informasi Lost & Found Kampus";
 
     private User currentUser;
@@ -63,9 +65,16 @@ public class UserProfilePanel extends JPanel {
 
     private void refreshContent() {
         removeAll();
-        add(UserDashboardComponents.scroll(createContent()), BorderLayout.CENTER);
+        JScrollPane scrollPane = UserDashboardComponents.scroll(createContent());
+        add(scrollPane, BorderLayout.CENTER);
         revalidate();
         repaint();
+
+        SwingUtilities.invokeLater(() -> {
+            scrollPane.revalidate();
+            scrollPane.doLayout();
+            UserDashboardComponents.resetScrollPosition(scrollPane);
+        });
     }
 
     private JPanel createContent() {
@@ -91,7 +100,11 @@ public class UserProfilePanel extends JPanel {
 
         gbc.gridy = 3;
         gbc.weighty = 1;
-        content.add(new JPanel(), gbc);
+        gbc.insets = new Insets(0, 0, 0, 0);
+        gbc.fill = GridBagConstraints.BOTH;
+        JPanel spacer = new JPanel();
+        spacer.setOpaque(false);
+        content.add(spacer, gbc);
 
         return content;
     }
@@ -114,7 +127,8 @@ public class UserProfilePanel extends JPanel {
             }
         };
         blueTop.setOpaque(false);
-        blueTop.setPreferredSize(new Dimension(0, 200));
+        blueTop.setPreferredSize(new Dimension(720, 200));
+        blueTop.setMinimumSize(new Dimension(320, 200));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridy = 0;
@@ -187,7 +201,7 @@ public class UserProfilePanel extends JPanel {
         wgbc.weightx = 1;
         wgbc.insets = new Insets(0, 0, 20, 0);
         
-        JPanel gridPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
+        JPanel gridPanel = UserDashboardComponents.responsiveGrid(160);
         gridPanel.setOpaque(false);
 
         // Create specific stat boxes based on Role
@@ -213,7 +227,7 @@ public class UserProfilePanel extends JPanel {
         whiteBottom.add(gridPanel, wgbc);
 
         wgbc.gridy = 1;
-        JLabel lblNote = new JLabel("Data akademik bersifat tetap dan tidak dapat diubah oleh user.");
+        JLabel lblNote = new JLabel("Data Akademik Bersifat Tetap Dan Tidak Dapat Diubah Oleh User.");
         lblNote.setFont(new Font("Poppins", Font.PLAIN, 12));
         lblNote.setForeground(new Color(150, 150, 150));
         lblNote.setHorizontalAlignment(JLabel.CENTER);
@@ -252,24 +266,9 @@ public class UserProfilePanel extends JPanel {
     }
 
     private JPanel createActionCardsPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setOpaque(false);
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 0.5;
-        gbc.weighty = 1.0;
-
-        // Left Card (Edit Username)
-        gbc.gridx = 0;
-        gbc.insets = new Insets(0, 0, 0, 10);
-        panel.add(createEditUsernameCard(), gbc);
-
-        // Right Card (Ganti Password)
-        gbc.gridx = 1;
-        gbc.insets = new Insets(0, 10, 0, 0);
-        panel.add(createEditPasswordCard(), gbc);
-
+        JPanel panel = UserDashboardComponents.responsiveGrid(360);
+        panel.add(createEditUsernameCard());
+        panel.add(createEditPasswordCard());
         return panel;
     }
 
@@ -290,12 +289,12 @@ public class UserProfilePanel extends JPanel {
         // Header
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 25, 0);
-        card.add(createCardHeader("Edit username", "Konfirmasi password lama sebelum username diganti.", 1), gbc);
+        card.add(createCardHeader("Edit Username", "Konfirmasi Password Lama Sebelum Username Diganti.", 1), gbc);
 
         // Form Fields
         gbc.gridy = 1;
         gbc.insets = new Insets(0, 0, 8, 0);
-        card.add(UserDashboardComponents.label("Username saat ini", 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        card.add(UserDashboardComponents.label("Username Saat Ini", 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
 
         gbc.gridy = 2;
         gbc.insets = new Insets(0, 0, 16, 0);
@@ -307,20 +306,20 @@ public class UserProfilePanel extends JPanel {
 
         gbc.gridy = 3;
         gbc.insets = new Insets(0, 0, 8, 0);
-        card.add(UserDashboardComponents.label("Password lama", 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        card.add(UserDashboardComponents.label("Password Lama", 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
 
         gbc.gridy = 4;
         gbc.insets = new Insets(0, 0, 16, 0);
-        passLamaUserField = createPasswordField("Masukkan password lama");
+        passLamaUserField = createPasswordField("Masukkan Password Lama");
         card.add(passLamaUserField, gbc);
 
         gbc.gridy = 5;
         gbc.insets = new Insets(0, 0, 8, 0);
-        card.add(UserDashboardComponents.label("Username baru", 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        card.add(UserDashboardComponents.label("Username Baru", 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
 
         gbc.gridy = 6;
         gbc.insets = new Insets(0, 0, 25, 0);
-        usernameBaruField = createTextField("Isi username baru");
+        usernameBaruField = createTextField("Isi Username Baru");
         card.add(usernameBaruField, gbc);
 
         // Submit Button
@@ -350,34 +349,34 @@ public class UserProfilePanel extends JPanel {
         // Header
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 25, 0);
-        card.add(createCardHeader("Ganti password", "Gunakan password lama untuk validasi keamanan akun.", 2), gbc);
+        card.add(createCardHeader("Ganti Password", "Gunakan Password Lama Untuk Validasi Keamanan Akun.", 2), gbc);
 
         // Form Fields
         gbc.gridy = 1;
         gbc.insets = new Insets(0, 0, 8, 0);
-        card.add(UserDashboardComponents.label("Password lama", 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        card.add(UserDashboardComponents.label("Password Lama", 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
 
         gbc.gridy = 2;
         gbc.insets = new Insets(0, 0, 16, 0);
-        passLamaPassField = createPasswordField("Masukkan password lama");
+        passLamaPassField = createPasswordField("Masukkan Password Lama");
         card.add(passLamaPassField, gbc);
 
         gbc.gridy = 3;
         gbc.insets = new Insets(0, 0, 8, 0);
-        card.add(UserDashboardComponents.label("Password baru", 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        card.add(UserDashboardComponents.label("Password Baru", 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
 
         gbc.gridy = 4;
         gbc.insets = new Insets(0, 0, 16, 0);
-        passBaruField = createPasswordField("Isi password baru");
+        passBaruField = createPasswordField("Isi Password Baru");
         card.add(passBaruField, gbc);
 
         gbc.gridy = 5;
         gbc.insets = new Insets(0, 0, 8, 0);
-        card.add(UserDashboardComponents.label("Konfirmasi password baru", 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
+        card.add(UserDashboardComponents.label("Konfirmasi Password Baru", 13, Font.BOLD, UserDashboardComponents.TEXT_DARK), gbc);
 
         gbc.gridy = 6;
         gbc.insets = new Insets(0, 0, 25, 0);
-        passBaruConfirmField = createPasswordField("Ulangi password baru");
+        passBaruConfirmField = createPasswordField("Ulangi Password Baru");
         card.add(passBaruConfirmField, gbc);
 
         // Submit Button
@@ -470,7 +469,9 @@ public class UserProfilePanel extends JPanel {
                 }
             }
         };
-        field.setPreferredSize(new Dimension(0, 42));
+        field.setPreferredSize(new Dimension(0, 44));
+        field.setMinimumSize(new Dimension(0, 44));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         field.setFont(new Font("Poppins", Font.PLAIN, 13));
         field.setForeground(UserDashboardComponents.TEXT_DARK);
         field.setBackground(new Color(248, 250, 252));
@@ -501,7 +502,9 @@ public class UserProfilePanel extends JPanel {
                 }
             }
         };
-        field.setPreferredSize(new Dimension(0, 42));
+        field.setPreferredSize(new Dimension(0, 44));
+        field.setMinimumSize(new Dimension(0, 44));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         field.setFont(new Font("Poppins", Font.PLAIN, 13));
         field.setForeground(UserDashboardComponents.TEXT_DARK);
         field.setBackground(new Color(248, 250, 252));
@@ -532,7 +535,9 @@ public class UserProfilePanel extends JPanel {
                 super.paintComponent(graphics);
             }
         };
-        btn.setPreferredSize(new Dimension(0, 42));
+        btn.setPreferredSize(new Dimension(0, 44));
+        btn.setMinimumSize(new Dimension(0, 44));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         btn.setFont(new Font("Poppins", Font.BOLD, 13));
         btn.setForeground(Color.WHITE);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -554,32 +559,23 @@ public class UserProfilePanel extends JPanel {
         String newUsername = usernameBaruField.getText().trim();
 
         if (oldPass.isEmpty() || newUsername.isEmpty()) {
-            AppDialog.warning(this, "Form Tidak Lengkap", "Password lama dan Username baru wajib diisi!");
+            AppDialog.warning(this, "Form Tidak Lengkap", "Password Lama Dan Username Baru Wajib Diisi!");
             return;
         }
 
-        if (!currentUser.checkPassword(oldPass)) {
-            AppDialog.error(this, "Autentikasi Gagal", "Password lama yang Anda masukkan salah.");
-            return;
+        try {
+            userManager.editUser(currentUser, oldPass, newUsername);
+            currentUser.setUsername(newUsername);
+            
+            AppDialog.success(this, "Berhasil", "Username berhasil diubah!");
+            
+            // Clear fields
+            passLamaUserField.setText("");
+            usernameBaruField.setText("");
+            usernameSaatIniField.setText(newUsername);
+        } catch (Exception e) {
+            AppDialog.error(this, "Gagal", e.getMessage());
         }
-
-        if (newUsername.equals(currentUser.getUsername())) {
-            AppDialog.warning(this, "Tidak Ada Perubahan", "Username baru sama dengan yang saat ini.");
-            return;
-        }
-
-        userManager.editUser(currentUser, currentUser.getUserId(), newUsername, currentUser.getPassword());
-        currentUser.setUsername(newUsername);
-        
-        AppDialog.success(this, "Berhasil", "Username berhasil diubah!");
-        
-        // Clear fields
-        passLamaUserField.setText("");
-        usernameBaruField.setText("");
-        usernameSaatIniField.setText(newUsername);
-        
-        // Notifikasi untuk login ulang opsional
-        AppDialog.success(this, "Informasi", "Beberapa perubahan mungkin memerlukan Anda untuk relogin.");
     }
 
     private void updatePassword() {
@@ -588,39 +584,23 @@ public class UserProfilePanel extends JPanel {
         String confirmPass = new String(passBaruConfirmField.getPassword());
 
         if (oldPass.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
-            AppDialog.warning(this, "Form Tidak Lengkap", "Semua kolom password wajib diisi!");
+            AppDialog.warning(this, "Form Tidak Lengkap", "Semua Kolom Password Wajib Diisi!");
             return;
         }
 
-        if (!currentUser.checkPassword(oldPass)) {
-            AppDialog.error(this, "Autentikasi Gagal", "Password lama yang Anda masukkan salah.");
-            return;
-        }
+        try {
+            userManager.editUser(currentUser, oldPass, newPass, confirmPass);
+            currentUser.setPassword(newPass);
 
-        if (!newPass.equals(confirmPass)) {
-            AppDialog.error(this, "Konfirmasi Gagal", "Password baru dan konfirmasinya tidak cocok.");
-            return;
+            AppDialog.success(this, "Berhasil", "Password berhasil diubah secara permanen!");
+            
+            // Clear fields
+            passLamaPassField.setText("");
+            passBaruField.setText("");
+            passBaruConfirmField.setText("");
+        } catch (Exception e) {
+            AppDialog.error(this, "Gagal", e.getMessage());
         }
-
-        // Validate password complexity
-        if (newPass.length() < 8) {
-            AppDialog.warning(this, "Password Lemah", "Password baru minimal harus 8 karakter.");
-            return;
-        }
-        
-        if (!newPass.matches(".*[!@#$%^&*(),.?\":{}|<>].*")) {
-            AppDialog.warning(this, "Password Lemah", "Password baru harus mengandung minimal 1 karakter spesial.");
-            return;
-        }
-
-        userManager.editUser(currentUser, currentUser.getUserId(), currentUser.getUsername(), newPass);
-        currentUser.setPassword(newPass);
-
-        AppDialog.success(this, "Berhasil", "Password berhasil diubah secara permanen!");
-        
-        // Clear fields
-        passLamaPassField.setText("");
-        passBaruField.setText("");
-        passBaruConfirmField.setText("");
     }
 }
+

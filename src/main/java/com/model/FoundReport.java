@@ -44,6 +44,9 @@ public class FoundReport extends Report implements Reportable{
         //Kalau Item FoundReport sama LostReport nya ini Sama status berubah
         if (lostReport != null) {
             this.item.updateStatus(ItemStatus.DITEMUKAN);
+            if (lostReport.getItem() != null) {
+                lostReport.getItem().updateStatus(ItemStatus.DITEMUKAN);
+            }
             System.out.println("Item " + item.getName() + " cocok dengan laporan hilang " + lostReport.getReportId() + ". Status item diubah ke DITEMUKAN.");
         } else {
             this.item.updateStatus(ItemStatus.DICARI);

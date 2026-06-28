@@ -6,7 +6,6 @@ import com.model.FoundReport;
 import com.model.LostReport;
 import com.model.Report;
 import com.model.User;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -25,43 +24,38 @@ public class UserHomePanel extends JPanel {
 
     public UserHomePanel(User user, ReportManager reportManager) {
         configurePanel();
-        add(UserDashboardComponents.scroll(createContent(user, reportManager)), BorderLayout.CENTER);
+        buildContent(user, reportManager);
     }
 
     private void configurePanel() {
-        setLayout(new BorderLayout());
+        setLayout(new GridBagLayout());
         setBackground(UserDashboardComponents.SURFACE);
-        setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+        setBorder(BorderFactory.createEmptyBorder(44, 42, 48, 42));
     }
 
-    private JPanel createContent(User user, ReportManager reportManager) {
-        JPanel content = new JPanel(new GridBagLayout());
-        content.setOpaque(false);
-
+    private void buildContent(User user, ReportManager reportManager) {
         GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
         gbc.gridy = 0;
-        content.add(createHeader(user), gbc);
+        add(createHeader(user), gbc);
 
         gbc.gridy = 1;
         gbc.insets = new Insets(26, 0, 8, 0);
-        content.add(createStatsPanel(user, reportManager), gbc);
+        add(createStatsPanel(user, reportManager), gbc);
 
         gbc.gridy = 2;
         gbc.insets = new Insets(16, 0, 0, 0);
-        content.add(UserDashboardComponents.section(
+        add(UserDashboardComponents.section(
                 LOST_SECTION_TITLE,
-                reportManager.getLostReports().size() + " Laporan Barang Hilang Tercatat di Sistem."
+                reportManager.getLostReports().size() + " Laporan Barang Hilang Tercatat Di Sistem."
         ), gbc);
 
         gbc.gridy = 3;
         gbc.insets = new Insets(12, 0, 0, 0);
-        content.add(createRecentLostReportsGrid(reportManager), gbc);
+        add(createRecentLostReportsGrid(reportManager), gbc);
 
         gbc.gridy = 4;
         gbc.weighty = 1;
-        content.add(new JPanel(), gbc);
-
-        return content;
+        add(createVerticalSpacer(), gbc);
     }
 
     private JPanel createHeader(User user) {
@@ -84,53 +78,48 @@ public class UserHomePanel extends JPanel {
     }
 
     private JPanel createStatsPanel(User user, ReportManager reportManager) {
-        JPanel panel = new JPanel(new GridBagLayout());
+        JPanel panel = UserDashboardComponents.statGrid();
         panel.setOpaque(false);
 
         int totalLostReports = reportManager.getLostReports().size();
         int userReportCount = countUserReports(user, reportManager);
         int foundItemCount = countFoundItems(reportManager);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridy = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(0, 0, 0, 16);
-
-        gbc.gridx = 0;
         panel.add(new UserDashboardComponents.StatCard(
                 "Total Barang Hilang",
                 formatCount(totalLostReports),
                 "Seluruh Laporan Kampus",
                 UserDashboardComponents.PRIMARY_DARK,
                 UserDashboardComponents.PRIMARY
-        ), gbc);
+        ));
 
-        gbc.gridx = 1;
         panel.add(new UserDashboardComponents.StatCard(
                 "Laporan Saya",
                 formatCount(userReportCount),
                 "Pantau Laporan Akun Ini",
                 UserDashboardComponents.PRIMARY_LIGHT,
                 new Color(126, 203, 236)
-        ), gbc);
+        ));
 
-        gbc.gridx = 2;
-        gbc.insets = new Insets(0, 0, 0, 0);
         panel.add(new UserDashboardComponents.StatCard(
                 "Barang Ditemukan",
                 formatCount(foundItemCount),
                 "Menunggu Proses Klaim",
                 UserDashboardComponents.ORANGE,
                 new Color(255, 159, 93)
-        ), gbc);
+        ));
 
         return panel;
     }
 
     private JPanel createRecentLostReportsGrid(ReportManager reportManager) {
         JPanel grid = UserDashboardComponents.cardGrid();
-        ArrayList<Report> reports = reportManager.getValidReports();
+        ArrayList<Report> reports = new ArrayList<>();
+        for (Report r : reportManager.getValidReports()) {
+            if (r instanceof LostReport) {
+                reports.add(r);
+            }
+        }
 
         if (reports.isEmpty()) {
             grid.add(UserDashboardComponents.emptyState(EMPTY_LOST_REPORT_MESSAGE));
@@ -146,6 +135,12 @@ public class UserHomePanel extends JPanel {
         }
 
         return grid;
+    }
+
+    private JPanel createVerticalSpacer() {
+        JPanel panel = new JPanel();
+        panel.setOpaque(false);
+        return panel;
     }
 
     private int countUserReports(User user, ReportManager reportManager) {

@@ -3,8 +3,7 @@ package com.frame.dashboard.user;
 import com.managers.ReportManager;
 import com.model.FoundReport;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Font;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -28,7 +27,9 @@ public class FoundItemsPanel extends JPanel {
     public FoundItemsPanel(ReportManager reportManager) {
         this.reportManager = reportManager;
         configurePanel();
-        add(UserDashboardComponents.scroll(createContent()), BorderLayout.CENTER);
+        JPanel content = createContent();
+        UserDashboardComponents.clearTextFocusOnBackgroundClick(content);
+        add(UserDashboardComponents.scroll(content), BorderLayout.CENTER);
         updateGrid(""); // initial load
     }
 
@@ -45,17 +46,21 @@ public class FoundItemsPanel extends JPanel {
         GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
         gbc.gridy = 0;
         
-        // Header with Section and Search Bar
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
-        headerPanel.add(UserDashboardComponents.section(TITLE, SUBTITLE), BorderLayout.WEST);
-        
         searchField = createSearchBar();
         JPanel searchContainer = new JPanel(new GridBagLayout());
         searchContainer.setOpaque(false);
-        searchContainer.add(searchField);
-        headerPanel.add(searchContainer, BorderLayout.EAST);
-        
+        GridBagConstraints searchGbc = new GridBagConstraints();
+        searchGbc.gridx = 0;
+        searchGbc.gridy = 0;
+        searchGbc.weightx = 1;
+        searchGbc.fill = GridBagConstraints.HORIZONTAL;
+        searchContainer.add(searchField, searchGbc);
+
+        JPanel headerPanel = UserDashboardComponents.responsiveActionRow(
+                UserDashboardComponents.section(TITLE, SUBTITLE),
+                searchContainer
+        );
+
         content.add(headerPanel, gbc);
 
         gbc.gridy = 1;
@@ -71,7 +76,7 @@ public class FoundItemsPanel extends JPanel {
     }
 
     private JTextField createSearchBar() {
-        JTextField textField = new UserDashboardComponents.SearchField("Cari barang...");
+        JTextField textField = new UserDashboardComponents.SearchField("Cari Barang...");
         
         textField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -100,7 +105,7 @@ public class FoundItemsPanel extends JPanel {
         ArrayList<FoundReport> filteredReports = new ArrayList<>();
         
         for (FoundReport report : allFoundReports) {
-            if (report.isValid()) {
+            if (report.isValid() && report.getMatchedLostReport() == null) {
                 if (keyword.isEmpty() || report.getItem().getName().toLowerCase().contains(keyword.toLowerCase())) {
                     filteredReports.add(report);
                 }

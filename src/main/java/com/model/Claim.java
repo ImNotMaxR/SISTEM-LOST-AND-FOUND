@@ -21,6 +21,7 @@ public class Claim implements Verifiable{
         this.claimId = claimId;
         this.user = user;
         this.item = item;
+        this.relatedReportId = relatedReportId;
         this.documents = new ArrayList<>();
         this.status = ClaimStatus.PENDING;
         this.dateClaim = LocalDateTime.now();
@@ -58,6 +59,10 @@ public class Claim implements Verifiable{
         this.status = status;
     }
 
+    public void setDateClaim(LocalDateTime dateClaim) {
+        this.dateClaim = dateClaim;
+    }
+
     public void addDocument(VerificationDocument doc) {
         if (doc == null) {
             System.out.println("Dokumen tidak boleh null.");
@@ -80,7 +85,7 @@ public class Claim implements Verifiable{
         }
  
         // Jika kategori butuh verifikasi dokumen, cek semua dokumen valid
-        if (item.getCategory() != null && item.getCategory().isVerificationRequired()) {
+        if (item.getCategory() != null) {
             if (documents.isEmpty()) {
                 System.out.println("Gagal validasi: kategori " + item.getCategory().getName() + " membutuhkan dokumen verifikasi.");
                 return false;
@@ -113,7 +118,7 @@ public class Claim implements Verifiable{
         System.out.println("Pengklaim   : " + user.getName() + " (" + user.getRole() + ")");
         System.out.println("Item        : " + item.getName());
         System.out.println("Kategori    : " + (item.getCategory() != null ? item.getCategory().getName() : "-"));
-        System.out.println("Butuh Dok.  : " + (item.getCategory() != null && item.getCategory().isVerificationRequired() ? "Ya" : "Tidak"));
+        System.out.println("Butuh Dok.  : Ya");
         System.out.println("Status Klaim: " + status);
         System.out.println("Status Item : " + item.getStatus());
         System.out.println("Tgl Klaim   : " + dateClaim.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")));

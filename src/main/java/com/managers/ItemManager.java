@@ -26,7 +26,7 @@ public class ItemManager implements Managerable{
     private void loadAllItemsFromDB() {
         items.clear();
         itemMap.clear();
-        String sql = "SELECT i.item_id, i.name, i.description, i.status, i.location, i.date, " + "c.category_id, c.name AS category_name, c.request_verification " + "FROM items i " + "LEFT JOIN categories c ON i.category_id = c.category_id";
+        String sql = "SELECT i.item_id, i.name, i.description, i.status, i.location, i.date, " + "c.category_id, c.name AS category_name " + "FROM items i " + "LEFT JOIN categories c ON i.category_id = c.category_id";
  
         try {
             Connection conn = dbConnection.getConnection();
@@ -57,7 +57,7 @@ public class ItemManager implements Managerable{
         Category category = null;
         String categoryId = rs.getString("category_id");
         if (categoryId != null) {
-            category = new Category(categoryId, rs.getString("category_name"), rs.getBoolean("request_verification"));
+            category = new Category(categoryId, rs.getString("category_name"));
         }
         
         Item item = new Item(itemID, name, description, category, location);

@@ -25,7 +25,7 @@ Sistem Lost and Found dirancang untuk membantu institusi atau organisasi dalam m
 
 ### Prasyarat
 
-- **Java JDK 11** atau lebih baru
+- **Java JDK 21** atau lebih baru
 - **Apache Maven** terinstall
 - **MySQL Server** berjalan di lokal
 - **NetBeans IDE** atau IDE Java lainnya (opsional)
