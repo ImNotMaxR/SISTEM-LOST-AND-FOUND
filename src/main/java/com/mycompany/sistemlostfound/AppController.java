@@ -347,24 +347,42 @@ public class AppController {
     private void editProfil(User user) {
         System.out.println("\n--- Edit Profil ---");
         System.out.println("Username saat ini : " + user.getUsername());
- 
-        System.out.print("Password lama untuk konfirmasi: ");
-        String oldPass = MissionUtil.getUserInput();
- 
-        if (!user.checkPassword(oldPass)) {
-            System.out.println("Password salah. Profil tidak diubah.");
-            return;
+        
+        System.out.println("1. Edit Username");
+        System.out.println("2. Ganti Password");
+        System.out.println("0. Batal");
+        System.out.print("Pilih: ");
+        String pilihan = MissionUtil.getUserInput();
+        
+        if (pilihan.equals("1")) {
+            System.out.print("Password lama untuk konfirmasi: ");
+            String oldPass = MissionUtil.getUserInput();
+            System.out.print("Username baru: ");
+            String newUsername = MissionUtil.getUserInput();
+            
+            try {
+                userManager.editUser(user, oldPass, newUsername);
+                System.out.println("Username berhasil diubah!");
+            } catch (Exception e) {
+                System.out.println("Gagal merubah username: " + e.getMessage());
+            }
+        } else if (pilihan.equals("2")) {
+            System.out.print("Password lama untuk konfirmasi: ");
+            String oldPass = MissionUtil.getUserInput();
+            System.out.print("Password baru: ");
+            String newPassword = MissionUtil.getUserInput();
+            System.out.print("Konfirmasi password baru: ");
+            String confirmPassword = MissionUtil.getUserInput();
+            
+            try {
+                userManager.editUser(user, oldPass, newPassword, confirmPassword);
+                System.out.println("Password berhasil diubah!");
+            } catch (Exception e) {
+                System.out.println("Gagal merubah password: " + e.getMessage());
+            }
+        } else {
+            System.out.println("Batal mengubah profil.");
         }
- 
-        System.out.print("Username baru (Enter untuk skip): ");
-        String newUsername = MissionUtil.getUserInput();
-        if (newUsername.isEmpty()) newUsername = user.getUsername();
- 
-        System.out.print("Password baru (Enter untuk skip): ");
-        String newPassword = MissionUtil.getUserInput();
-        if (newPassword.isEmpty()) newPassword = user.getPassword();
- 
-        userManager.editUser(user, user.getUserId(), newUsername, newPassword);
     }
  
     // ================================================================

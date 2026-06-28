@@ -478,20 +478,16 @@ public class AdminProfilePanel extends JPanel {
             AppDialog.warning(this, "Form Tidak Lengkap", "Password lama dan username baru wajib diisi.");
             return;
         }
-        if (!currentUser.checkPassword(oldPassword)) {
-            AppDialog.error(this, "Autentikasi Gagal", "Password lama yang Anda masukkan salah.");
-            return;
+        try {
+            userManager.editUser(currentUser, oldPassword, newUsername);
+            currentUser.setUsername(newUsername);
+            currentUsernameField.setText(newUsername);
+            oldPasswordForUsernameField.setText("");
+            newUsernameField.setText("");
+            AppDialog.success(this, "Berhasil", "Username admin berhasil diubah.");
+        } catch (Exception e) {
+            AppDialog.error(this, "Gagal", e.getMessage());
         }
-        if (newUsername.equals(currentUser.getUsername())) {
-            AppDialog.warning(this, "Tidak Ada Perubahan", "Username baru sama dengan username saat ini.");
-            return;
-        }
-        userManager.editUser(currentUser, currentUser.getUserId(), newUsername, currentUser.getPassword());
-        currentUser.setUsername(newUsername);
-        currentUsernameField.setText(newUsername);
-        oldPasswordForUsernameField.setText("");
-        newUsernameField.setText("");
-        AppDialog.success(this, "Berhasil", "Username admin berhasil diubah.");
     }
 
     private void updatePassword() {
@@ -506,28 +502,16 @@ public class AdminProfilePanel extends JPanel {
             AppDialog.warning(this, "Form Tidak Lengkap", "Semua kolom password wajib diisi.");
             return;
         }
-        if (!currentUser.checkPassword(oldPassword)) {
-            AppDialog.error(this, "Autentikasi Gagal", "Password lama yang Anda masukkan salah.");
-            return;
+        try {
+            userManager.editUser(currentUser, oldPassword, newPassword, confirmPassword);
+            currentUser.setPassword(newPassword);
+            oldPasswordField.setText("");
+            newPasswordField.setText("");
+            confirmPasswordField.setText("");
+            AppDialog.success(this, "Berhasil", "Password admin berhasil diubah.");
+        } catch (Exception e) {
+            AppDialog.error(this, "Gagal", e.getMessage());
         }
-        if (!newPassword.equals(confirmPassword)) {
-            AppDialog.error(this, "Konfirmasi Gagal", "Password baru dan konfirmasi tidak cocok.");
-            return;
-        }
-        if (newPassword.length() < 8) {
-            AppDialog.warning(this, "Password Lemah", "Password baru minimal 8 karakter.");
-            return;
-        }
-        if (!newPassword.matches(".*[!@#$%^&*(),.?\":{}|<>].*")) {
-            AppDialog.warning(this, "Password Lemah", "Password baru harus mengandung minimal 1 karakter spesial.");
-            return;
-        }
-        userManager.editUser(currentUser, currentUser.getUserId(), currentUser.getUsername(), newPassword);
-        currentUser.setPassword(newPassword);
-        oldPasswordField.setText("");
-        newPasswordField.setText("");
-        confirmPasswordField.setText("");
-        AppDialog.success(this, "Berhasil", "Password admin berhasil diubah.");
     }
 
     // -------------------------------------------------------------------------

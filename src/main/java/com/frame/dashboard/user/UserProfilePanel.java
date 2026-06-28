@@ -563,28 +563,19 @@ public class UserProfilePanel extends JPanel {
             return;
         }
 
-        if (!currentUser.checkPassword(oldPass)) {
-            AppDialog.error(this, "Autentikasi Gagal", "Password Lama Yang Anda Masukkan Salah.");
-            return;
+        try {
+            userManager.editUser(currentUser, oldPass, newUsername);
+            currentUser.setUsername(newUsername);
+            
+            AppDialog.success(this, "Berhasil", "Username berhasil diubah!");
+            
+            // Clear fields
+            passLamaUserField.setText("");
+            usernameBaruField.setText("");
+            usernameSaatIniField.setText(newUsername);
+        } catch (Exception e) {
+            AppDialog.error(this, "Gagal", e.getMessage());
         }
-
-        if (newUsername.equals(currentUser.getUsername())) {
-            AppDialog.warning(this, "Tidak Ada Perubahan", "Username Baru Sama Dengan Yang Saat Ini.");
-            return;
-        }
-
-        userManager.editUser(currentUser, currentUser.getUserId(), newUsername, currentUser.getPassword());
-        currentUser.setUsername(newUsername);
-        
-        AppDialog.success(this, "Berhasil", "Username berhasil diubah!");
-        
-        // Clear fields
-        passLamaUserField.setText("");
-        usernameBaruField.setText("");
-        usernameSaatIniField.setText(newUsername);
-        
-        // Notifikasi untuk login ulang opsional
-        AppDialog.success(this, "Informasi", "Beberapa perubahan mungkin memerlukan Anda untuk relogin.");
     }
 
     private void updatePassword() {
@@ -597,36 +588,19 @@ public class UserProfilePanel extends JPanel {
             return;
         }
 
-        if (!currentUser.checkPassword(oldPass)) {
-            AppDialog.error(this, "Autentikasi Gagal", "Password Lama Yang Anda Masukkan Salah.");
-            return;
-        }
+        try {
+            userManager.editUser(currentUser, oldPass, newPass, confirmPass);
+            currentUser.setPassword(newPass);
 
-        if (!newPass.equals(confirmPass)) {
-            AppDialog.error(this, "Konfirmasi Gagal", "Password Baru Dan Konfirmasinya Tidak Cocok.");
-            return;
+            AppDialog.success(this, "Berhasil", "Password berhasil diubah secara permanen!");
+            
+            // Clear fields
+            passLamaPassField.setText("");
+            passBaruField.setText("");
+            passBaruConfirmField.setText("");
+        } catch (Exception e) {
+            AppDialog.error(this, "Gagal", e.getMessage());
         }
-
-        // Validate password complexity
-        if (newPass.length() < 8) {
-            AppDialog.warning(this, "Password Lemah", "Password Baru Minimal Harus 8 Karakter.");
-            return;
-        }
-        
-        if (!newPass.matches(".*[!@#$%^&*(),.?\":{}|<>].*")) {
-            AppDialog.warning(this, "Password Lemah", "Password Baru Harus Mengandung Minimal 1 Karakter Spesial.");
-            return;
-        }
-
-        userManager.editUser(currentUser, currentUser.getUserId(), currentUser.getUsername(), newPass);
-        currentUser.setPassword(newPass);
-
-        AppDialog.success(this, "Berhasil", "Password berhasil diubah secara permanen!");
-        
-        // Clear fields
-        passLamaPassField.setText("");
-        passBaruField.setText("");
-        passBaruConfirmField.setText("");
     }
 }
 
