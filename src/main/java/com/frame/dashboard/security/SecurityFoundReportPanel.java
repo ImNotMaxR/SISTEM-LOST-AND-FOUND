@@ -191,7 +191,7 @@ public class SecurityFoundReportPanel extends JDialog {
 
         return root;
     }
-
+    
     private JPanel createFormPanel() {
         UserDashboardComponents.RoundedPanel panel = new UserDashboardComponents.RoundedPanel(Color.WHITE, 20);
         panel.setBorder(BorderFactory.createCompoundBorder(
@@ -264,6 +264,7 @@ public class SecurityFoundReportPanel extends JDialog {
             }
         });
 
+        // Logika ketika security memilih lost report yang cocok
         lostReportComboBox.addActionListener(e -> {
             int idx = lostReportComboBox.getSelectedIndex();
             if (idx > 0) {
@@ -279,7 +280,7 @@ public class SecurityFoundReportPanel extends JDialog {
                 itemNameField.setEnabled(false);
                 itemDescriptionArea.setEnabled(false);
                 categoryComboBox.setEnabled(false);
-                applyMatchedPhoto(lr);
+                clearSelectedPhoto();
             } else {
                 itemNameField.setText("");
                 itemDescriptionArea.setText("");
@@ -340,24 +341,6 @@ public class SecurityFoundReportPanel extends JDialog {
     private JPanel createPhotoPanel() {
         photoPreviewPanel = new PhotoPreviewPanel(this::choosePhoto);
         return photoPreviewPanel;
-    }
-
-    private void applyMatchedPhoto(com.model.LostReport report) {
-        if (report == null || report.getPhotoPath() == null || report.getPhotoPath().isBlank()) {
-            clearSelectedPhoto();
-            return;
-        }
-
-        File photoFile = new File(report.getPhotoPath());
-        if (!photoFile.exists() || !isSupportedImage(photoFile)) {
-            clearSelectedPhoto();
-            return;
-        }
-
-        selectedPhotoFile = photoFile;
-        if (photoPreviewPanel != null) {
-            photoPreviewPanel.setImageFile(photoFile);
-        }
     }
 
     private void clearSelectedPhoto() {

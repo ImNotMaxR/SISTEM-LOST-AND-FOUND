@@ -3,7 +3,7 @@ package com.model;
 import com.enumeration.ItemStatus;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
+// Encapsulation
 public class StorageRecord {
     private String recordId;
     private Item item;
@@ -100,7 +100,7 @@ public class StorageRecord {
         System.out.println("Status       : " + (isReleased? "Sudah diambil pada " + dateReleased.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")): "Masih disimpan"));
         System.out.println("==========================");
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public String toString() {
         return "StorageRecord{recordId='" + recordId + "', item='" + item.getName() + "', location='" + storageLocation + "', isReleased=" + isReleased + "}";

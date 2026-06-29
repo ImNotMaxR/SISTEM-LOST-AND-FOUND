@@ -30,6 +30,10 @@ public class DBConnection {
         return instance;
     }
 
+    public static void setInstanceForTest(DBConnection mockInstance) {
+        instance = mockInstance;
+    }
+
     public Connection getConnection() {
         try {
             if (connection == null || connection.isClosed()) {

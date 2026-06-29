@@ -6,6 +6,7 @@ import com.enumeration.Role;
  *
  * @author MaxR
  */
+// Inheritance & Encapsulation
 public class Security extends User{
     private String securityID;
     private String bagian;
@@ -24,13 +25,12 @@ public class Security extends User{
     public String getBagian() {
         return bagian;
     }
-    
-    
+    // Polymorphism (Method Overriding)
     @Override
     public Role getRole() {
         return Role.SECURITY;
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public void displayInfo() {
         System.out.println("===== Info Security =====");
@@ -48,7 +48,7 @@ public class Security extends User{
         System.out.println("Petugas " + getName() + " membuat laporan barang ditemukan untuk: " + item.getName());
         return new FoundReport(reportId, this, item, "Barang ditemukan oleh petugas keamanan", foundLocation);
     }
- 
+    // Polymorphism (Method Overriding)
     @Override
     public String toString() {
         return "Security{userId='" + getUserId() + "', name='" + getName() + "', securityID='" + securityID + "', bagian='" + bagian + "'}";

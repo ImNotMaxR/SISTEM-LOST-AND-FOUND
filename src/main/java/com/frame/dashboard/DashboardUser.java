@@ -190,23 +190,13 @@ public class DashboardUser extends JFrame {
         gbc.gridy = 8;
         sidebar.add(createNavigationButton(PAGE_LOST_ITEMS, "Lihat Barang Dicari", "icon_location.png"), gbc);
 
-        if (currentUser.getRole() != com.enumeration.Role.SECURITY) {
-            gbc.gridy = 9;
-            gbc.insets = new Insets(14, 16, 8, 16);
-            sidebar.add(createSectionLabel("KLAIM"), gbc);
+        gbc.gridy = 9;
+        gbc.insets = new Insets(14, 16, 8, 16);
+        sidebar.add(createSectionLabel("KLAIM"), gbc);
 
-            gbc.gridy = 10;
-            gbc.insets = new Insets(0, 8, 8, 16);
-            sidebar.add(createNavigationButton(PAGE_CLAIMS, "Klaim Saya", "icon_handbag.png"), gbc);
-        } else {
-            gbc.gridy = 9;
-            gbc.insets = new Insets(14, 16, 8, 16);
-            sidebar.add(createSectionLabel("STORAGE"), gbc);
-
-            gbc.gridy = 10;
-            gbc.insets = new Insets(0, 8, 8, 16);
-            sidebar.add(createNavigationButton(PAGE_STORAGE, "Storage Record", "icon_briefcase.png"), gbc);
-        }
+        gbc.gridy = 10;
+        gbc.insets = new Insets(0, 8, 8, 16);
+        sidebar.add(createNavigationButton(PAGE_CLAIMS, "Klaim Saya", "icon_handbag.png"), gbc);
 
         gbc.gridy = 11;
         gbc.insets = new Insets(14, 16, 8, 16);
@@ -302,9 +292,6 @@ public class DashboardUser extends JFrame {
         pageContainer.add(new LostItemsPanel(reportManager), PAGE_LOST_ITEMS);
         pageContainer.add(new UserClaimsPanel(currentUser, claimManager, reportManager), PAGE_CLAIMS);
         pageContainer.add(new UserProfilePanel(currentUser), PAGE_PROFILE);
-        if (currentUser.getRole() == com.enumeration.Role.SECURITY) {
-            pageContainer.add(new SecurityStoragePanel(currentUser.getUserId()), PAGE_STORAGE);
-        }
     }
 
     // =========================
@@ -427,7 +414,7 @@ public class DashboardUser extends JFrame {
     // =========================
 
     private void showPage(String pageKey) {
-        if (PAGE_CLAIMS.equals(pageKey) || PAGE_FOUND_ITEMS.equals(pageKey) || PAGE_LOST_ITEMS.equals(pageKey) || PAGE_STORAGE.equals(pageKey)) {
+        if (PAGE_CLAIMS.equals(pageKey) || PAGE_FOUND_ITEMS.equals(pageKey) || PAGE_LOST_ITEMS.equals(pageKey)) {
             reportManager.reload();
             claimManager.refreshClaimsFromDatabase();
             rebuildPages();

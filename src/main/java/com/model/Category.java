@@ -1,5 +1,5 @@
 package com.model;
-
+// Encapsulation
 public class Category {
     private String categoryID;
     private String name;
@@ -24,7 +24,7 @@ public class Category {
     public void setName(String name) {
         this.name = name; 
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public String toString() {
         return "Category{categoryID='" + categoryID + "', name='" + name + "'}";

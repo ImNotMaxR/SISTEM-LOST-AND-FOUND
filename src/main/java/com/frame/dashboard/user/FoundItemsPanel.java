@@ -76,14 +76,18 @@ public class FoundItemsPanel extends JPanel {
         
         ArrayList<String> categoryList = new ArrayList<>();
         categoryList.add("Semua");
-        for (FoundReport report : reportManager.getFoundReports()) {
-            if (report.isValid() && report.getMatchedLostReport() == null && report.getItem().getCategory() != null) {
-                String catName = report.getItem().getCategory().getName();
-                if (!categoryList.contains(catName)) {
-                    categoryList.add(catName);
-                }
+        
+        try {
+            java.sql.Connection conn = com.database.DBConnection.getInstance().getConnection();
+            java.sql.PreparedStatement ps = conn.prepareStatement("SELECT name FROM categories ORDER BY name ASC");
+            java.sql.ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                categoryList.add(rs.getString("name"));
             }
+        } catch (java.sql.SQLException e) {
+            System.out.println("Gagal load kategori: " + e.getMessage());
         }
+        
         String[] filters = categoryList.toArray(new String[0]);
         
         UserDashboardComponents.FilterPill[] pillButtons = new UserDashboardComponents.FilterPill[filters.length];
@@ -147,7 +151,14 @@ public class FoundItemsPanel extends JPanel {
         }
         
         if (filteredReports.isEmpty()) {
-            grid.add(UserDashboardComponents.emptyState(EMPTY_MESSAGE));
+            String emptyMessage = currentCategoryFilter.equals("Semua") 
+                ? EMPTY_MESSAGE 
+                : "Tidak ada barang temuan untuk kategori '" + currentCategoryFilter + "' saat ini.";
+            
+            if (!keyword.isEmpty()) {
+                emptyMessage = "Pencarian '" + keyword + "' tidak ditemukan.";
+            }
+            grid.add(UserDashboardComponents.emptyState(emptyMessage));
         }
         
         grid.revalidate();

@@ -119,7 +119,7 @@ public class AdminHomePanel extends JPanel {
 
         panel.add(AdminDashboardComponents.statCard(
                 "Total Pengajuan Klaim",
-                claimManager.getAllClaims().size(),
+                claimManager.getClaims().size(),
                 "Menunggu Dan Sudah Diverifikasi",
                 new Color(245, 169, 58),
                 new Color(255, 204, 99)
@@ -211,7 +211,7 @@ public class AdminHomePanel extends JPanel {
     }
 
     private Object[][] createClaimRows() {
-        ArrayList<Claim> claims = claimManager.getAllClaims();
+        ArrayList<Claim> claims = claimManager.getClaims();
         if (claims.isEmpty()) {
             return emptyRows("Belum ada klaim");
         }

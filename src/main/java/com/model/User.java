@@ -2,7 +2,7 @@ package com.model;
 
 import com.enumeration.Role;
 import com.interfaces.AuthServices;
-
+// Abstraction & Encapsulation
 public abstract class User implements AuthServices{
     protected String userId;
     protected String name;
@@ -60,18 +60,19 @@ public abstract class User implements AuthServices{
 
     public abstract Role getRole();
     
+    // Polymorphism (Method Overriding)
     @Override
     public void login(){
         System.out.println(name + " Berhasil Login Sebagai " + getRole());
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public void logout(){
         System.out.println(name + " Berhasil LogOut");
     }
 
     public abstract void displayInfo();
-    
+    // Polymorphism (Method Overriding)
     @Override
     public String toString() {
         return "ID User: " + userId + ", Nama: "+ name + ", Role: " + getRole();

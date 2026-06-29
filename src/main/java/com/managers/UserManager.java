@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import com.exception.ValidationException;
 
+// Abstraction & Encapsulation
 public class UserManager implements Managerable{
     private ArrayList<User> users;
     private HashMap<String, User> userMap;
@@ -26,18 +27,22 @@ public class UserManager implements Managerable{
         loadAllUsersFromDB();
     }
     
+    //Load Data Dari DB
     private void loadAllUsersFromDB() {
+        //clear data lama
         users.clear();
         userMap.clear();
+        //sql gabungan tabel user
         String sql = "SELECT u.user_id, u.name, u.username, u.password, u.role, " + "m.nim, m.fakultas, m.jurusan, m.kelas, " + "d.nip, d.bidang, " + "st.staff_id, st.bagian AS staff_bagian, " + "a.admin_id, " + "sc.security_id, sc.bagian AS security_bagian " + "FROM users u " + "LEFT JOIN mahasiswa m ON u.user_id = m.user_id " + "LEFT JOIN dosen d ON u.user_id = d.user_id " + "LEFT JOIN staff st ON u.user_id = st.user_id " + "LEFT JOIN admin a ON u.user_id = a.user_id " + "LEFT JOIN security sc ON u.user_id = sc.user_id";
  
         try {
             Connection conn = dbConnection.getConnection();
             PreparedStatement ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
- 
+            //looping data
             while (rs.next()) {
                 User user = buildUserFromResultSet(rs);
+                //masukan user ke list dan map
                 if (user != null) {
                     users.add(user);
                     userMap.put(user.getUserId(), user);
@@ -49,13 +54,15 @@ public class UserManager implements Managerable{
         }
     }
     
+    //Mapping data ke object
     private User buildUserFromResultSet(ResultSet rs) throws SQLException {
         String userId = rs.getString("user_id");
         String name = rs.getString("name");
         String username = rs.getString("username");
         String password = rs.getString("password");
         Role role = Role.valueOf(rs.getString("role"));
- 
+        
+        //cek role lalu return object yg sesuai
         switch (role) {
             case MAHASISWA:
                 return new Mahasiswa(userId, name, username, password, rs.getString("nim"), rs.getString("fakultas"), rs.getString("jurusan"), rs.getString("kelas"));
@@ -76,42 +83,52 @@ public class UserManager implements Managerable{
                 return null;
         }
     }
-    
+    // Polymorphism (Method Overriding Dari Interface Managerable)
     @Override
     public void add(Object obj) {
          if (obj instanceof User) {
             addUser((User) obj);
         }
     }
-
+    // Polymorphism (Method Overriding Dari Interface Managerable)
     @Override
     public void delete(String id) {
         deleteUser(id);
     }
     
+    //Method Ini Untuk Mengambil Data User berdasarkan ID
     public User getUserById(String userId) {
+        //cek apakah user ada
         if (userMap.containsKey(userId)) {
             return userMap.get(userId);
         }
         return null;
     }
-    
+
+    //Method Ini Untuk Mengambil Data User berdasarkan Role
     public ArrayList<User> getAllUsers(){
         return users;
     }
     
+    //Method Ini Untuk Mengambil Data User berdasarkan Role
     public ArrayList<User> getUsersByRole(Role role) {
+        //Buat ArrayList untuk menyimpan user
         ArrayList<User> result = new ArrayList<>();
+        //Looping data user
         for (User user : users) {
+            //cek apakah user sesuai dengan role
             if (user.getRole() == role) {
                 result.add(user);
             }
         }
+        //return hasil user sesuai role
         return result;
     }
-    
+
+    // Polymorphism (Method Overriding Dari Interface Managerable)
     @Override
     public Object findById(String id) {
+        //Mencari data user berdasarkan ID
         return getUserById(id);
     }
     

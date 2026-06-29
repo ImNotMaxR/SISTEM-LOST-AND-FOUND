@@ -2,7 +2,7 @@ package com.model;
 
 import com.interfaces.Verifiable;
 import java.io.File;
-
+// Abstraction & Encapsulation
 public class VerificationDocument implements Verifiable{
     private String documentId;
     private String type;
@@ -43,7 +43,7 @@ public class VerificationDocument implements Verifiable{
     public void setDescription(String description) {
         this.description = description;
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public boolean validate() {
         if (type == null || type.isEmpty()) {
@@ -76,7 +76,7 @@ public class VerificationDocument implements Verifiable{
         System.out.println("Valid       : " + (validate() ? "Ya" : "Tidak"));
         System.out.println("==========================");
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public String toString() {
         return "VerificationDocument{documentId='" + documentId + "', type='" + type + "', file='" + (file != null ? file.getName() : "null") + "'}";

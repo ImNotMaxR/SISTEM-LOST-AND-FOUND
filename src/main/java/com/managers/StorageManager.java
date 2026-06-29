@@ -14,7 +14,7 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-
+// Abstraction & Encapsulation
 public class StorageManager implements Managerable {
 
     private ArrayList<StorageRecord> records;
@@ -71,7 +71,7 @@ public class StorageManager implements Managerable {
             System.out.println("Gagal load all storage records: " + e.getMessage());
         }
     }
-
+    // Polymorphism (Method Overriding dari interface Managerable)
     @Override
     public void add(Object obj) {
         if (obj instanceof StorageRecord) {
@@ -92,12 +92,12 @@ public class StorageManager implements Managerable {
             }
         }
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public void delete(String id) {
         deleteStorageRecord(id);
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public Object findById(String id) {
         return recordMap.get(id);

@@ -1,18 +1,10 @@
 package com.frame.dashboard.shared;
 
-import com.enumeration.ItemStatus;
-import com.enumeration.ReportStatus;
-import com.exception.ValidationException;
+import com.enumeration.ClaimStatus;
 import com.frame.AppDialog;
-import com.managers.ClaimManager;
-import com.managers.ReportManager;
-import com.model.Admin;
 import com.model.Claim;
-import com.model.FoundReport;
 import com.model.Item;
-import com.model.LostReport;
 import com.model.Report;
-import com.model.Security;
 import com.model.User;
 import com.service.AuthService;
 import java.awt.BorderLayout;
@@ -38,8 +30,9 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.plaf.basic.BasicScrollBarUI;
+import java.time.format.DateTimeFormatter;
 
-public class ReportDetailFrame extends JDialog {
+public class ClaimDetailFrame extends JDialog {
 
     private static final Dimension DEFAULT_FRAME_SIZE = new Dimension(960, 720);
     private static final Dimension MINIMUM_FRAME_SIZE = new Dimension(760, 560);
@@ -51,14 +44,14 @@ public class ReportDetailFrame extends JDialog {
     // Frame Setup
     // -------------------------------------------------------------------------
 
-    public ReportDetailFrame(Report report) {
-        super((java.awt.Frame) null, "Detail Laporan - " + (report != null ? report.getReportId() : ""), true);
+    public ClaimDetailFrame(Claim claim, Report sourceReport) {
+        super((java.awt.Frame) null, "Detail Klaim - " + (claim != null ? claim.getClaimId() : ""), true);
         Dimension frameSize = responsiveFrameSize();
         setMinimumSize(MINIMUM_FRAME_SIZE);
         setPreferredSize(frameSize);
         setSize(frameSize);
         setResizable(true);
-        setContentPane(createContent(report));
+        setContentPane(createContent(claim, sourceReport));
         pack();
         setLocationRelativeTo(null);
     }
@@ -78,21 +71,21 @@ public class ReportDetailFrame extends JDialog {
     // Main Layout
     // -------------------------------------------------------------------------
 
-    private JPanel createContent(Report report) {
+    private JPanel createContent(Claim claim, Report sourceReport) {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(DashboardUi.SURFACE);
         root.setBorder(BorderFactory.createEmptyBorder(24, 28, 24, 28));
-        root.add(DashboardUi.section("Detail Laporan", getHeaderSubtitle(report)), BorderLayout.NORTH);
+        root.add(DashboardUi.section("Detail Klaim", getHeaderSubtitle(claim)), BorderLayout.NORTH);
 
         JPanel center = new JPanel(new BorderLayout());
         center.setOpaque(false);
         center.setBorder(BorderFactory.createEmptyBorder(22, 0, 0, 0));
-        center.add(createScrollContent(report), BorderLayout.CENTER);
+        center.add(createScrollContent(claim, sourceReport), BorderLayout.CENTER);
         root.add(center, BorderLayout.CENTER);
         return root;
     }
 
-    private JScrollPane createScrollContent(Report report) {
+    private JScrollPane createScrollContent(Claim claim, Report sourceReport) {
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
@@ -101,7 +94,7 @@ public class ReportDetailFrame extends JDialog {
         gbc.weightx = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.NORTHWEST;
-        wrapper.add(createDetailCard(report), gbc);
+        wrapper.add(createDetailCard(claim, sourceReport), gbc);
 
         gbc.gridy = 1;
         gbc.weighty = 1;
@@ -112,15 +105,10 @@ public class ReportDetailFrame extends JDialog {
 
         JScrollPane scrollPane = new JScrollPane(wrapper);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        scrollPane.setBackground(DashboardUi.SURFACE);
-        scrollPane.getViewport().setBackground(DashboardUi.SURFACE);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
         applyScrollStyle(scrollPane.getVerticalScrollBar());
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            scrollPane.getVerticalScrollBar().setValue(0);
-        });
-        
         return scrollPane;
     }
 
@@ -128,7 +116,7 @@ public class ReportDetailFrame extends JDialog {
     // Detail UI
     // -------------------------------------------------------------------------
 
-    private JPanel createDetailCard(Report report) {
+    private JPanel createDetailCard(Claim claim, Report sourceReport) {
         DashboardUi.RoundedPanel card = new DashboardUi.RoundedPanel(Color.WHITE, 22);
         card.setLayout(new GridBagLayout());
         card.setBorder(BorderFactory.createCompoundBorder(
@@ -138,22 +126,22 @@ public class ReportDetailFrame extends JDialog {
 
         GridBagConstraints gbc = DashboardUi.contentConstraints();
         gbc.gridy = 0;
-        card.add(createPhotoPanel(report), gbc);
+        card.add(createPhotoPanel(sourceReport), gbc);
 
         gbc.gridy = 1;
         gbc.insets = new Insets(18, 0, 0, 0);
-        card.add(createBody(report), gbc);
+        card.add(createBody(claim), gbc);
         return card;
     }
 
-    private JPanel createPhotoPanel(Report report) {
+    private JPanel createPhotoPanel(Report sourceReport) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
-        panel.add(new DetailPhotoPanel(report), BorderLayout.CENTER);
+        panel.add(new DetailPhotoPanel(sourceReport), BorderLayout.CENTER);
         return panel;
     }
 
-    private JPanel createBody(Report report) {
+    private JPanel createBody(Claim claim) {
         JPanel body = new JPanel(new GridBagLayout());
         body.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
@@ -164,47 +152,42 @@ public class ReportDetailFrame extends JDialog {
         gbc.gridx = 0;
         gbc.weightx = 0.62;
         gbc.insets = new Insets(0, 0, 0, 16);
-        body.add(createInfoCard(report), gbc);
+        body.add(createInfoCard(claim), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 0.38;
         gbc.insets = new Insets(0, 16, 0, 0);
-        body.add(createActionCard(report), gbc);
+        body.add(createActionCard(claim), gbc);
         return body;
     }
 
-    private JPanel createInfoCard(Report report) {
+    private JPanel createInfoCard(Claim claim) {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setOpaque(false);
         GridBagConstraints gbc = DashboardUi.contentConstraints();
         gbc.gridy = 0;
-        panel.add(DashboardUi.label("Informasi Barang", 18, Font.BOLD, DashboardUi.TEXT_DARK), gbc);
+        panel.add(DashboardUi.label("Informasi Klaim", 18, Font.BOLD, DashboardUi.TEXT_DARK), gbc);
         gbc.gridy = 1;
         gbc.insets = new Insets(14, 0, 0, 0);
-        panel.add(createInfoGrid(report), gbc);
+        panel.add(createInfoGrid(claim), gbc);
 
         gbc.gridy = 2;
         gbc.insets = new Insets(16, 0, 0, 0);
-        panel.add(createDescriptionBox("Deskripsi", getReportDescription(report)), gbc);
-        if (report != null && report.getStatus() == com.enumeration.ReportStatus.DITOLAK) {
-            gbc.gridy = 3;
-            gbc.insets = new Insets(12, 0, 0, 0);
-            panel.add(createRejectedReasonBox(getRejectionReason(report)), gbc);
-        }
+        panel.add(createDescriptionBox("Deskripsi Item", getClaimDescription(claim)), gbc);
         return panel;
     }
 
-    private JPanel createInfoGrid(Report report) {
+    private JPanel createInfoGrid(Claim claim) {
         JPanel grid = new JPanel(new GridBagLayout());
         grid.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.weightx = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.NORTHWEST;
-        addInfoCell(grid, gbc, 0, 0, "Kategori", getReportCategoryName(report));
-        addInfoCell(grid, gbc, 1, 0, "Lokasi", getReportLocation(report));
-        addInfoCell(grid, gbc, 0, 1, "Tanggal", getReportDate(report));
-        addInfoCell(grid, gbc, 1, 1, "Status Laporan", getReportStatus(report));
+        addInfoCell(grid, gbc, 0, 0, "Kategori", getClaimCategoryName(claim));
+        addInfoCell(grid, gbc, 1, 0, "Lokasi", getClaimLocation(claim));
+        addInfoCell(grid, gbc, 0, 1, "Tanggal Klaim", getClaimDate(claim));
+        addInfoCell(grid, gbc, 1, 1, "Status Klaim", getClaimStatus(claim));
         return grid;
     }
 
@@ -247,22 +230,6 @@ public class ReportDetailFrame extends JDialog {
         return box;
     }
 
-    private JPanel createRejectedReasonBox(String value) {
-        DashboardUi.RoundedPanel box = new DashboardUi.RoundedPanel(new Color(255, 241, 242), 16);
-        box.setLayout(new GridBagLayout());
-        box.setBorder(BorderFactory.createCompoundBorder(
-                new DashboardUi.RoundedLineBorder(new Color(254, 205, 211), 16, 1),
-                BorderFactory.createEmptyBorder(14, 16, 14, 16)
-        ));
-        GridBagConstraints gbc = DashboardUi.contentConstraints();
-        gbc.gridy = 0;
-        box.add(DashboardUi.label("Alasan Ditolak", 12, Font.BOLD, new Color(190, 18, 60)), gbc);
-        gbc.gridy = 1;
-        gbc.insets = new Insets(8, 0, 0, 0);
-        box.add(createText(value, 13, Font.BOLD, new Color(90, 20, 35)), gbc);
-        return box;
-    }
-
     private JTextArea createText(String value, int size, int style, Color color) {
         JTextArea area = new JTextArea(value == null || value.isBlank() ? "-" : value);
         area.setFont(new Font("Poppins", style, size));
@@ -280,7 +247,7 @@ public class ReportDetailFrame extends JDialog {
     // Action UI
     // -------------------------------------------------------------------------
 
-    private JPanel createActionCard(Report report) {
+    private JPanel createActionCard(Claim claim) {
         DashboardUi.RoundedPanel panel = new DashboardUi.RoundedPanel(Color.WHITE, 20);
         panel.setBorder(BorderFactory.createCompoundBorder(
                 new DashboardUi.RoundedLineBorder(new Color(230, 230, 230), 20, 1),
@@ -290,65 +257,43 @@ public class ReportDetailFrame extends JDialog {
         GridBagConstraints gbc = DashboardUi.contentConstraints();
 
         gbc.gridy = 0;
-        panel.add(createStatusPill(getReportStatus(report)), gbc);
+        panel.add(createStatusPill(getClaimStatus(claim)), gbc);
+        
         gbc.gridy = 1;
         gbc.insets = new Insets(14, 0, 20, 0);
-        panel.add(createText("Semua user dapat melihat status dan klaim untuk transparansi pengelolaan barang kampus.", 12, Font.PLAIN, DashboardUi.TEXT_MUTED), gbc);
+        panel.add(createText("Halaman ini berisi rincian klaim yang telah Anda buat.", 12, Font.PLAIN, DashboardUi.TEXT_MUTED), gbc);
+        
         gbc.gridy = 2;
         gbc.weighty = 1;
         JPanel spacer = new JPanel();
         spacer.setOpaque(false);
         panel.add(spacer, gbc);
 
-        addActions(report, panel, gbc, 3);
+        addActions(claim, panel, gbc, 3);
         return panel;
     }
 
-    private void addActions(Report report, JPanel panel, GridBagConstraints gbc, int row) {
-        User currentUser = AuthService.getCurrentUser();
-        ClaimManager claimManager = new ClaimManager();
-        boolean hasSubmittedClaim = hasCurrentUserSubmittedActiveClaim(claimManager, currentUser, report);
+    private void addActions(Claim claim, JPanel panel, GridBagConstraints gbc, int row) {
         int actionRow = row;
 
-        if (hasSubmittedClaim) {
+        if (claim != null && (claim.getStatus() == ClaimStatus.VALID)) {
             gbc.gridy = actionRow++;
             gbc.weighty = 0;
             gbc.insets = new Insets(0, 0, 10, 0);
-            panel.add(createNoticeBox("Pengajuan sudah dilakukan. Mohon tunggu konfirmasi admin."), gbc);
-        }
-
-        boolean isOwner = currentUser != null && report != null && report.getUser() != null
-                && report.getUser().getUserId().equals(currentUser.getUserId());
-        boolean isPending = report != null && report.getStatus() == com.enumeration.ReportStatus.PENDING;
-        boolean isEditableTime = report != null && report.isEditable();
-        if (isOwner && isPending && isEditableTime) {
-            JButton editButton = createActionButton("Edit Laporan Saya", true);
-            editButton.addActionListener(event -> {
-                dispose();
-                new com.frame.panel.EditLostReportPanel(report, new ReportManager(), () -> {}).setVisible(true);
-            });
+            panel.add(createNoticeBox("Klaim Anda disetujui! Anda bisa mengambil barangnya di tempat pos keamanan Telkom Dekat Dagal."), gbc);
+        } else if (claim != null && claim.getStatus() == ClaimStatus.DITOLAK) {
             gbc.gridy = actionRow++;
+            gbc.weighty = 0;
             gbc.insets = new Insets(0, 0, 10, 0);
-            panel.add(editButton, gbc);
+            panel.add(createRejectedNoticeBox("Klaim Anda ditolak oleh Admin atau Petugas Keamanan."), gbc);
+        } else if (claim != null && claim.getStatus() == ClaimStatus.PENDING) {
+             gbc.gridy = actionRow++;
+            gbc.weighty = 0;
+            gbc.insets = new Insets(0, 0, 10, 0);
+            panel.add(createNoticeBox("Pengajuan klaim Anda masih menunggu verifikasi."), gbc);
         }
 
-        boolean isLostReport = report instanceof LostReport;
-        boolean isFoundReport = report instanceof FoundReport;
-        boolean isValid = report != null && report.getStatus() == ReportStatus.VALID;
-        boolean hasMatch = isFoundReport && ((FoundReport) report).hasMatch();
-        boolean canClaim = currentUser != null && !(currentUser instanceof Security) && !(currentUser instanceof Admin);
-        boolean isItemFound = report != null && report.getItem() != null && report.getItem().getStatus() == ItemStatus.DITEMUKAN;
-
-        if ((isFoundReport && isValid && !hasMatch && canClaim) || (isLostReport && isOwner && isItemFound && canClaim)) {
-            JButton claimButton = createActionButton(hasSubmittedClaim ? "Pengajuan Sudah Dilakukan" : "Klaim Barang", true);
-            claimButton.setEnabled(!hasSubmittedClaim);
-            claimButton.addActionListener(event -> handleClaim(report, currentUser, claimManager, claimButton));
-            gbc.gridy = actionRow++;
-            gbc.insets = new Insets(0, 0, 10, 0);
-            panel.add(claimButton, gbc);
-        }
-
-        JButton backButton = createActionButton("Kembali", false);
+        JButton backButton = createActionButton("Tutup", false);
         backButton.addActionListener(event -> dispose());
         gbc.gridy = actionRow;
         gbc.insets = new Insets(0, 0, 0, 0);
@@ -366,29 +311,15 @@ public class ReportDetailFrame extends JDialog {
         return box;
     }
 
-    // -------------------------------------------------------------------------
-    // Actions
-    // -------------------------------------------------------------------------
-
-    private void handleClaim(Report report, User currentUser, ClaimManager claimManager, JButton claimButton) {
-        if (requiresVerificationDocument(report)) {
-            new ClaimVerificationFrame(currentUser, report, claimManager, () -> {
-                claimButton.setText("Pengajuan Sudah Dilakukan");
-                claimButton.setEnabled(false);
-            }).setVisible(true);
-            return;
-        }
-        boolean confirm = AppDialog.confirm(this, "Konfirmasi Klaim", "Apakah Anda yakin ingin mengklaim barang ini?", "Ya, Klaim", "Batal");
-        if (!confirm) return;
-        Claim claim = new Claim("CLM-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase(), currentUser, report.getItem(), report.getReportId());
-        try {
-            claimManager.saveClaim(claim);
-            claimButton.setText("Pengajuan Sudah Dilakukan");
-            claimButton.setEnabled(false);
-            AppDialog.success(this, "Klaim Berhasil", "Permintaan klaim Anda telah diajukan dan menunggu persetujuan.");
-        } catch (ValidationException e) {
-            AppDialog.error(this, "Klaim Gagal", e.getMessage());
-        }
+    private JPanel createRejectedNoticeBox(String text) {
+        DashboardUi.RoundedPanel box = new DashboardUi.RoundedPanel(new Color(255, 241, 242), 14);
+        box.setLayout(new BorderLayout());
+        box.setBorder(BorderFactory.createCompoundBorder(
+                new DashboardUi.RoundedLineBorder(new Color(254, 205, 211), 14, 1),
+                BorderFactory.createEmptyBorder(10, 12, 10, 12)
+        ));
+        box.add(createText(text, 12, Font.BOLD, new Color(190, 18, 60)), BorderLayout.CENTER);
+        return box;
     }
 
     private JPanel createStatusPill(String status) {
@@ -479,52 +410,36 @@ public class ReportDetailFrame extends JDialog {
     }
 
     // -------------------------------------------------------------------------
-    // Report Text Helpers
+    // Text Helpers
     // -------------------------------------------------------------------------
 
-    private String getHeaderSubtitle(Report report) {
-        Item item = report == null ? null : report.getItem();
-        return item == null ? "Informasi detail laporan barang." : item.getName();
+    private String getHeaderSubtitle(Claim claim) {
+        Item item = claim == null ? null : claim.getItem();
+        return item == null ? "Informasi detail klaim barang." : item.getName();
     }
 
-    private String getReportCategoryName(Report report) {
-        if (report == null || report.getItem() == null || report.getItem().getCategory() == null) return "-";
-        return report.getItem().getCategory().getName();
+    private String getClaimCategoryName(Claim claim) {
+        if (claim == null || claim.getItem() == null || claim.getItem().getCategory() == null) return "-";
+        return claim.getItem().getCategory().getName();
     }
 
-    private String getReportDescription(Report report) { return report != null ? report.getDescription() : "-"; }
-    private String getReportLocation(Report report) { return report != null ? DashboardUi.location(report) : "-"; }
-    private String getReportItemStatus(Report report) { return report != null && report.getItem() != null ? report.getItem().getStatus().name() : "-"; }
-    private String getReportDate(Report report) { return report != null ? DashboardUi.date(report) : "-"; }
-
-    private String getReportStatus(Report report) {
-        if (report == null || report.getStatus() == null) return "-";
-        if (report.getStatus() == com.enumeration.ReportStatus.VALID && report.getItem() != null && report.getItem().getStatus() != null) {
-            return titleCase(report.getItem().getStatus().name());
-        }
-        return titleCase(report.getStatus().name());
+    private String getClaimDescription(Claim claim) { 
+        return (claim != null && claim.getItem() != null) ? claim.getItem().getDescription() : "-"; 
+    }
+    
+    private String getClaimLocation(Claim claim) { 
+        return (claim != null && claim.getItem() != null && claim.getItem().getLocation() != null && !claim.getItem().getLocation().isBlank()) ? claim.getItem().getLocation() : "-"; 
+    }
+    
+    private String getClaimDate(Claim claim) { 
+        if (claim == null || claim.getDateClaim() == null) return "-";
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
+        return claim.getDateClaim().format(dtf);
     }
 
-    private String getRejectionReason(Report report) {
-        return report == null || report.getRejectionReason() == null || report.getRejectionReason().isBlank() ? "-" : report.getRejectionReason();
-    }
-
-    private boolean hasCurrentUserSubmittedActiveClaim(ClaimManager claimManager, User currentUser, Report report) {
-        if (claimManager == null || currentUser == null || report == null || report.getItem() == null) return false;
-        if (claimManager.hasActiveClaimByUserForReportOrItem(currentUser.getUserId(), report.getReportId(), report.getItem().getItemID())) return true;
-        for (Claim claim : claimManager.getClaims()) {
-            if (claim.getUser() == null || claim.getItem() == null) continue;
-            boolean sameUser = currentUser.getUserId().equals(claim.getUser().getUserId());
-            boolean sameItem = report.getItem().getItemID().equals(claim.getItem().getItemID());
-            boolean sameReport = report.getReportId() != null && report.getReportId().equals(claim.getRelatedReportId());
-            boolean activeClaim = claim.getStatus() == com.enumeration.ClaimStatus.PENDING || claim.getStatus() == com.enumeration.ClaimStatus.VALID;
-            if (sameUser && activeClaim && (sameItem || sameReport)) return true;
-        }
-        return false;
-    }
-
-    private boolean requiresVerificationDocument(Report report) {
-        return report != null && report.getItem() != null && report.getItem().getCategory() != null;
+    private String getClaimStatus(Claim claim) {
+        if (claim == null || claim.getStatus() == null) return "-";
+        return titleCase(claim.getStatus().name());
     }
 
     private String titleCase(String value) {

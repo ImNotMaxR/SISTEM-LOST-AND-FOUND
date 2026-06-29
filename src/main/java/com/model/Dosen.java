@@ -1,7 +1,7 @@
 package com.model;
 
 import com.enumeration.Role;
-
+// Inheritance & Encapsulation
 public class Dosen extends User{
     private String nip;
     private String bidang;
@@ -20,12 +20,12 @@ public class Dosen extends User{
     public String getBidang() {
         return bidang;
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public Role getRole() {
         return Role.DOSEN;
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public void displayInfo() {
         System.out.println("===== Info Dosen =====");
@@ -37,7 +37,7 @@ public class Dosen extends User{
         System.out.println("Role     : " + getRole());
         System.out.println("======================");
     }
- 
+    // Polymorphism (Method Overriding)
     @Override
     public String toString() {
         return "Dosen{userId='" + getUserId() + "', name='" + getName() + "', nip='" + nip + "', bidang='" + bidang + "'}";

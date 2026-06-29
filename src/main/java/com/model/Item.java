@@ -4,7 +4,7 @@ import com.enumeration.ItemStatus;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
-
+// Encapsulation
 public class Item {
     private String itemID;
     private String name;
@@ -95,12 +95,12 @@ public class Item {
         System.out.println("Tanggal     : " + date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")));
         System.out.println("=====================");
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public String toString() {
         return "Item{itemID='" + itemID + "', name='" + name + "', status=" + status + "', location='" + location + "'}";
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public boolean equals(Object o){
         if (this == o) return true;

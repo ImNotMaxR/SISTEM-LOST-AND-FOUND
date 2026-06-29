@@ -24,8 +24,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.ArrayList;
-import java.util.HashMap;
 
+// Abstraction & Encapsulation
 public class ClaimManager implements Managerable{
     private ArrayList<Claim> claims;
     private HashMap<String, Claim> claimMap;
@@ -153,20 +153,24 @@ public class ClaimManager implements Managerable{
         saveClaim(claim);
     }
 
-    public void submitClaim(User user, Report report, String name, String address, String phone, File photoFile) throws ValidationException {
-        if (name == null || name.isEmpty() || address == null || address.isEmpty() || phone == null || phone.isEmpty() || photoFile == null) {
-            throw new ValidationException("Nama, alamat, no telepon, dan foto bukti wajib diisi.");
+    private void validatePhotoFile(File photoFile) throws ValidationException {
+        if (photoFile == null) {
+            throw new ValidationException("Foto barang wajib diunggah sebagai bukti validasi!");
         }
-
-        String fileName = photoFile.getName().toLowerCase();
-        if (!fileName.endsWith(".jpg") && !fileName.endsWith(".jpeg") && !fileName.endsWith(".png")) {
+        String name = photoFile.getName().toLowerCase();
+        if (!name.endsWith(".jpg") && !name.endsWith(".png") && !name.endsWith(".jpeg")) {
             throw new ValidationException("Foto harus berformat JPG atau PNG.");
         }
-
-        long fileSizeInMB = photoFile.length() / (1024 * 1024);
-        if (fileSizeInMB > 2) {
+        if (photoFile.length() > 2 * 1024 * 1024) { // 2MB
             throw new ValidationException("Ukuran foto maksimal 2 MB.");
         }
+    }
+
+    public void submitClaim(User user, Report report, String name, String address, String phone, File photoFile) throws ValidationException {
+        if (name == null || name.isEmpty() || address == null || address.isEmpty() || phone == null || phone.isEmpty()) {
+            throw new ValidationException("Nama, alamat, dan no telepon wajib diisi.");
+        }
+        validatePhotoFile(photoFile);
 
         Claim claim = new Claim("CLM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(), user, report.getItem(), report.getReportId());
         String description = "Nama: " + name + "\nAlamat: " + address + "\nNo Telepon: " + phone;
@@ -354,16 +358,8 @@ public class ClaimManager implements Managerable{
 
         return false;
     }
-
+    
     public ArrayList<Claim> getClaims() {
-        return claims;
-    }
-
-    public ArrayList<Claim> getAllClaims() {
-        return claims;
-    }
-
-    public ArrayList<?> getAll() {
         return claims;
     }
 

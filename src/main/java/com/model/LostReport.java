@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.format.DateTimeFormatter;
-
+// Inheritance & Encapsulation
 public class LostReport extends Report implements Reportable{
     private String lostLocation;
     
@@ -57,18 +57,13 @@ public class LostReport extends Report implements Reportable{
             System.out.println("Gagal menyalin foto: " + e.getMessage());
         }
     }
-    
-    public void addEvidence() {
-        this.photoPath = null;
-        System.out.println("Foto bukti dihapus.");
-    }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public void submitReport() {
         this.status = ReportStatus.PENDING;
         System.out.println("Laporan barang hilang " + reportId + " disubmit oleh " + user.getName() + ". Menunggu validasi Admin...");
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public void displayReport() {
         System.out.println("========== Laporan Barang Hilang ==========");
@@ -86,7 +81,7 @@ public class LostReport extends Report implements Reportable{
         System.out.println("Bisa Diklaim  : " + (isClaimable() ? "Ya" : "Tidak"));
         System.out.println("===========================================");
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public String toString() {
         return "LostReport{ID Report='" + reportId + "', user='" + user.getName()+ "', item='" + item.getName()+ "', lostLocation='" + lostLocation + "', status=" + status + ", description=" + item.getDescription()+ '}';

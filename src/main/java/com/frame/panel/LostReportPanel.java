@@ -521,28 +521,8 @@ public class LostReportPanel extends JDialog {
         String reportDescription = reportDescriptionArea.getText().trim();
         Category category = (Category) categoryComboBox.getSelectedItem();
 
-        // Memanggil method manager, Manager yang akan melemparkan ValidationException 
-        // apabila terdapat input yang kosong, file bermasalah, dsb.
-
-        if (selectedPhotoFile == null) {
-            boolean confirm = AppDialog.confirm(this, "Foto Belum Dipilih", "Anda belum menyertakan foto barang. Lanjutkan pembuatan laporan tanpa foto?", "Lanjut", "Batal");
-            if (!confirm) {
-                return;
-            }
-        }
-
-        String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-
         try {
-            Item item = new Item(itemId, itemName, itemDescription, category, lostLocation);
-            itemManager.addItem(item);
-
-            LostReport report = new LostReport(reportId, user, item, reportDescription, lostLocation);
-            if (selectedPhotoFile != null) {
-                report.addEvidence(selectedPhotoFile.getAbsolutePath());
-            }
-            reportManager.addReport(report);
+            reportManager.createLostReport(user, itemName, itemDescription, lostLocation, reportDescription, category, selectedPhotoFile, itemManager);
 
             if (onReportSaved != null) {
                 onReportSaved.run();
@@ -550,6 +530,8 @@ public class LostReportPanel extends JDialog {
 
             AppDialog.success(this, "Laporan Disimpan", "Laporan Barang Hilang Berhasil Dibuat.");
             dispose();
+        } catch (com.exception.ValidationException e) {
+            AppDialog.warning(this, "Data Tidak Valid", e.getMessage());
         } catch (Exception e) {
             AppDialog.error(this, "Terjadi Kesalahan", "Gagal menyimpan laporan: " + e.getMessage());
         }

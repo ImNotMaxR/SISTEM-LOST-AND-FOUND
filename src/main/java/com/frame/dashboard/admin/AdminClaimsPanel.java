@@ -225,7 +225,7 @@ public class AdminClaimsPanel extends JPanel {
     private ArrayList<Claim> getFilteredClaims(ClaimStatus status) {
         ArrayList<Claim> result = new ArrayList<>();
         String keyword = searchField == null ? "" : searchField.getText().trim().toLowerCase();
-        for (Claim claim : claimManager.getAllClaims()) {
+        for (Claim claim : claimManager.getClaims()) {
             if (claim.getStatus() != status) {
                 continue;
             }

@@ -5,6 +5,7 @@ import com.enumeration.ItemStatus;
 import com.frame.AppDialog;
 import com.frame.dashboard.user.UserDashboardComponents;
 import com.managers.ClaimManager;
+import com.managers.ItemManager;
 import com.managers.ReportManager;
 import com.managers.StorageManager;
 import com.model.Claim;
@@ -109,6 +110,11 @@ public class SecurityStorageDetailFrame extends JDialog {
         scrollPane.setBackground(UserDashboardComponents.SURFACE);
         scrollPane.getViewport().setBackground(UserDashboardComponents.SURFACE);
         styleScrollbar(scrollPane.getVerticalScrollBar());
+        
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            scrollPane.getVerticalScrollBar().setValue(0);
+        });
+        
         return scrollPane;
     }
 
@@ -422,21 +428,47 @@ public class SecurityStorageDetailFrame extends JDialog {
     }
 
     private void deleteRecord() {
+        Report related = findRelatedReport();
+        boolean isMatched = false;
+        if (related instanceof FoundReport) {
+             isMatched = ((FoundReport) related).getMatchedLostReport() != null;
+        }
+
+        String warningText = "Yakin ingin menghapus record ini?\n\n";
+        warningText += 
+        "PERINGATAN: Laporan barang temuan (Found Report) yang terkait dengan item ini juga akan ikut dihapus.";
+        if (!isMatched) {
+             warningText += "\nData fisik item juga akan ikut dihapus dari sistem.";
+        } else {
+             warningText += "\nData fisik item TIDAK akan dihapus karena terkait dengan laporan kehilangan milik pengguna.";
+        }
+
         boolean confirmed = AppDialog.confirm(
                 this,
                 "Hapus Storage Record",
-                "Hapus record storage ini? Data item tetap ada di sistem.",
+                warningText,
                 "Hapus",
                 "Batal"
         );
         if (!confirmed) {
             return;
         }
+
         storageManager.delete(record.getRecordId());
+        //Untuk menghapus laporan yang terkait
+        if (related != null) {
+             reportManager.delete(related.getReportId());
+             //Untuk menghapus item
+             if (!isMatched && related.getItem() != null) {
+                  ItemManager itemManager = new ItemManager();
+                  itemManager.delete(related.getItem().getItemID());
+             }
+        }
+
         if (onChanged != null) {
             onChanged.run();
         }
-        AppDialog.success(this, "Record Dihapus", "Storage record berhasil dihapus.");
+        AppDialog.success(this, "Record Dihapus", "Storage record beserta laporan terkait berhasil dihapus.");
         dispose();
     }
 
@@ -444,7 +476,7 @@ public class SecurityStorageDetailFrame extends JDialog {
         if (record.getItem() == null) {
             return "-";
         }
-        for (Object object : claimManager.getAll()) {
+        for (Object object : claimManager.getClaims()) {
             Claim claim = (Claim) object;
             if (claim.getItem() != null
                     && claim.getItem().getItemID().equals(record.getItem().getItemID())

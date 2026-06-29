@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.UUID;
 import java.io.File;
 import com.exception.ValidationException;
-
+// Abstraction & Encapsulation
 public class ReportManager implements Managerable{
     private ArrayList<Report> reports;
     private HashMap<String, Report> reportMap;
@@ -177,19 +177,19 @@ public class ReportManager implements Managerable{
             }
         }
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public void add(Object obj){
         if (obj instanceof Report) {
             addReport((Report) obj);
         }
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public void delete(String id){
         deleteReport(id);
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public Object findById(String id){
         for (Report report : reports) {
@@ -204,8 +204,8 @@ public class ReportManager implements Managerable{
         // Validasi role khusus FoundReport
         if (report instanceof FoundReport) {
             Role role = report.getUser().getRole();
-            if (role != Role.SECURITY && role != Role.ADMIN) {
-                System.out.println("Pembuatan Report Gagal. Hanya Security dan Admin yang bisa membuat laporan barang ditemukan.");
+            if (role != Role.SECURITY) {
+                System.out.println("Pembuatan Report Gagal. Hanya Security yang bisa membuat laporan barang ditemukan.");
                 return;
             }
         }
@@ -276,14 +276,15 @@ public class ReportManager implements Managerable{
     }
 
     private void validatePhotoFile(File photoFile) throws ValidationException {
-        if (photoFile != null) {
-            String name = photoFile.getName().toLowerCase();
-            if (!name.endsWith(".jpg") && !name.endsWith(".png") && !name.endsWith(".jpeg")) {
-                throw new ValidationException("Foto harus berformat JPG atau PNG.");
-            }
-            if (photoFile.length() > 2 * 1024 * 1024) { // 2MB
-                throw new ValidationException("Ukuran foto maksimal 2 MB.");
-            }
+        if (photoFile == null) {
+            throw new ValidationException("Foto barang wajib diunggah sebagai bukti validasi!");
+        }
+        String name = photoFile.getName().toLowerCase();
+        if (!name.endsWith(".jpg") && !name.endsWith(".png") && !name.endsWith(".jpeg")) {
+            throw new ValidationException("Foto harus berformat JPG atau PNG.");
+        }
+        if (photoFile.length() > 2 * 1024 * 1024) { // 2MB
+            throw new ValidationException("Ukuran foto maksimal 2 MB.");
         }
     }
 
@@ -294,12 +295,14 @@ public class ReportManager implements Managerable{
         if (itemName == null || itemName.trim().isEmpty() || itemDescription == null || itemDescription.trim().isEmpty() || lostLocation == null || lostLocation.trim().isEmpty() || reportDescription == null || reportDescription.trim().isEmpty() || category == null) {
             throw new ValidationException("Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
         }
+
         validatePhotoFile(photoFile);
 
         String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         Item item = new Item(itemId, itemName, itemDescription, category, lostLocation);
+        item.setStatus(ItemStatus.DITEMUKAN);
         itemManager.addItem(item);
 
         LostReport report = new LostReport(reportId, user, item, reportDescription, lostLocation);
@@ -312,6 +315,9 @@ public class ReportManager implements Managerable{
     public void createFoundReport(User user, String itemName, String itemDescription, String foundLocation, String storageLocation, String reportDescription, Category category, LostReport matched, File photoFile, ItemManager itemManager, StorageManager storageManager) throws ValidationException {
         if (user == null) {
             throw new ValidationException("Data user tidak ditemukan. Silakan login ulang.");
+        }
+        if (user.getRole() != Role.SECURITY) {
+            throw new ValidationException("Hanya Security yang dapat membuat Laporan Barang Ditemukan.");
         }
         if (itemName == null || itemName.trim().isEmpty() || itemDescription == null || itemDescription.trim().isEmpty() || foundLocation == null || foundLocation.trim().isEmpty() || storageLocation == null || storageLocation.trim().isEmpty() || reportDescription == null || reportDescription.trim().isEmpty() || category == null) {
             throw new ValidationException("Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
@@ -343,43 +349,15 @@ public class ReportManager implements Managerable{
         storageManager.saveStorageRecordToDB(storageRecord);
     }
 
-    public void createFoundReportByAdmin(User user, String itemName, String itemDescription, String foundLocation, String reportDescription, Category category, LostReport matched, File photoFile, ItemManager itemManager) throws ValidationException {
-        if (user == null) {
-            throw new ValidationException("Data user tidak ditemukan. Silakan login ulang.");
-        }
-        if (itemName == null || itemName.trim().isEmpty() || itemDescription == null || itemDescription.trim().isEmpty() || foundLocation == null || foundLocation.trim().isEmpty() || reportDescription == null || reportDescription.trim().isEmpty() || category == null) {
-            throw new ValidationException("Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
-        }
-        validatePhotoFile(photoFile);
-
-        String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-
-        Item item;
-        if (matched != null) {
-            item = matched.getItem();
-        } else {
-            String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-            item = new Item(itemId, itemName, itemDescription, category, foundLocation);
-            item.setStatus(ItemStatus.DITEMUKAN);
-            itemManager.addItem(item);
-        }
-
-        FoundReport report = new FoundReport(reportId, user, item, reportDescription, foundLocation);
-        if (matched != null) {
-            report.setMatchedLostReport(matched);
-        }
-        if (photoFile != null) {
-            report.setPhotoPath(photoFile.getAbsolutePath());
-        }
-        addReport(report);
-        validateReport(reportId, ReportStatus.VALID, (Admin) user, null);
-    }
-
     public void editLostReport(LostReport report, String itemName, String itemDesc, String lostLocation, String reportDesc, Category category, File photoFile, ItemManager itemManager) throws ValidationException {
         if (itemName == null || itemName.trim().isEmpty() || itemDesc == null || itemDesc.trim().isEmpty() || lostLocation == null || lostLocation.trim().isEmpty() || reportDesc == null || reportDesc.trim().isEmpty() || category == null) {
             throw new ValidationException("Semua Input Wajib Diisi Sebelum Memperbarui Laporan.");
         }
-        validatePhotoFile(photoFile);
+        if (photoFile != null) {
+            validatePhotoFile(photoFile);
+        } else if (report.getPhotoPath() == null || report.getPhotoPath().isEmpty()) {
+            throw new ValidationException("Foto barang wajib diunggah sebagai bukti validasi!");
+        }
 
         Item item = report.getItem();
         item.setName(itemName);
@@ -403,7 +381,11 @@ public class ReportManager implements Managerable{
         if (itemName == null || itemName.trim().isEmpty() || itemDesc == null || itemDesc.trim().isEmpty() || foundLocation == null || foundLocation.trim().isEmpty() || reportDesc == null || reportDesc.trim().isEmpty() || category == null) {
             throw new ValidationException("Semua Input Wajib Diisi Sebelum Memperbarui Laporan.");
         }
-        validatePhotoFile(photoFile);
+        if (photoFile != null) {
+            validatePhotoFile(photoFile);
+        } else if (report.getPhotoPath() == null || report.getPhotoPath().isEmpty()) {
+            throw new ValidationException("Foto barang wajib diunggah sebagai bukti validasi!");
+        }
 
         Item item = report.getItem();
         item.setName(itemName);
@@ -475,22 +457,28 @@ public class ReportManager implements Managerable{
             admin.validateReport(reportId);
         }
     }
-    
+
+    // Mencari Lost Report Yang Cocok Dengan Found Report
     private LostReport findMatchingLostReport(FoundReport foundReport) {
+        // looping dari semua reports
         for (Report r : reports) {
+            // mengecek apakah report adalah LostReport dan statusnya VALID
             if (r instanceof LostReport && r.getStatus() == ReportStatus.VALID) {
                 LostReport lr = (LostReport) r;
-                // Cocokin berdasarkan Nama Item dan kategori
+                // mencocokkan berdasarkan Nama Item dan kategori
                 boolean sameName = lr.getItem().getName().equalsIgnoreCase(foundReport.getItem().getName());
                 boolean sameCategory = lr.getItem().getCategory() != null && foundReport.getItem().getCategory() != null && lr.getItem().getCategory().getCategoryID().equals(foundReport.getItem().getCategory().getCategoryID());
+                // jika sama nama dan kategori maka return LostReport
                 if (sameName && sameCategory) {
                     return lr;
                 }
             }
         }
+        //jika tidak ada yang cocok maka return null
         return null;
     }
     
+    // Update Status Item Di Database
     private void updateItemStatusInDB(String itemId, ItemStatus status) {
         String sql = "UPDATE items SET status = ?, date = ? WHERE item_id = ?";
         try {

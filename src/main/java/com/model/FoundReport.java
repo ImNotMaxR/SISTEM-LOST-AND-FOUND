@@ -5,7 +5,7 @@ import com.enumeration.ReportStatus;
 import com.enumeration.Role;
 import com.interfaces.Reportable;
 import java.time.format.DateTimeFormatter;
-
+// Inheritance & Encapsulation
 public class FoundReport extends Report implements Reportable{
     private String foundLocation;
     //Buat Nanti Bisa cocokin FoundReport sama LostReport jadi nambah atribut
@@ -53,13 +53,13 @@ public class FoundReport extends Report implements Reportable{
             System.out.println("Tidak ada laporan hilang yang cocok untuk item " + item.getName() + ". Status item tetap DICARI.");
         }
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public void submitReport() {
         this.status = ReportStatus.PENDING;
         System.out.println("Laporan barang ditemukan " + reportId + " disubmit oleh " + user.getName() + ". Menunggu validasi Admin.");
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public void displayReport() {
         System.out.println("========== Laporan Barang Ditemukan ==========");
@@ -77,7 +77,7 @@ public class FoundReport extends Report implements Reportable{
         System.out.println("Bisa Diklaim     : " + (isClaimable() ? "Ya" : "Tidak"));
         System.out.println("==============================================");
     } 
-
+    // Polymorphism (Method Overriding)
     @Override
     public String toString() {
         return "FoundReport{ID Report ='" + reportId + "', user='" + user.getName()+ "', item='" + item.getName()+ "', foundLocation='" + foundLocation + "', status=" + status + ", description=" + item.getDescription()+ '}';

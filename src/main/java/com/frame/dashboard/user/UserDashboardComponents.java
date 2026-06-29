@@ -771,27 +771,30 @@ public final class UserDashboardComponents {
                     return new Dimension(0, 0);
                 }
 
-                Dimension leftSize = left.getPreferredSize();
-                Dimension rightSize = right == null ? new Dimension(0, 0) : right.getPreferredSize();
                 Insets insets = parent.getInsets();
-                int width = leftSize.width + (right == null ? 0 : gap + rightSize.width) + insets.left + insets.right;
+                Dimension rightSize = right == null ? new Dimension(0, 0) : right.getPreferredSize();
+                
+                int parentWidth = parent.getWidth();
+                if (parentWidth == 0) {
+                     Dimension leftSize = left.getPreferredSize();
+                     return new Dimension(leftSize.width + (right != null ? gap + rightSize.width : 0) + insets.left + insets.right, 
+                                          Math.max(leftSize.height, rightSize.height) + insets.top + insets.bottom);
+                }
+                
+                int availableWidth = Math.max(0, parentWidth - insets.left - insets.right);
+                int leftWidth = Math.max(0, availableWidth - (right != null ? rightSize.width + gap : 0));
+                
+                left.setSize(leftWidth, 1);
+                Dimension leftSize = left.getPreferredSize();
+                
                 int height = Math.max(leftSize.height, rightSize.height) + insets.top + insets.bottom;
-                return new Dimension(width, height);
+                return new Dimension(parentWidth, height);
             }
         }
 
         @Override
         public Dimension minimumLayoutSize(Container parent) {
-            synchronized (parent.getTreeLock()) {
-                Component left = getComponent(parent, 0);
-                Component right = getComponent(parent, 1);
-                Dimension leftSize = left == null ? new Dimension(0, 0) : left.getMinimumSize();
-                Dimension rightSize = right == null ? new Dimension(0, 0) : right.getMinimumSize();
-                Insets insets = parent.getInsets();
-                int width = Math.max(leftSize.width, rightSize.width) + insets.left + insets.right;
-                int height = leftSize.height + (right == null ? 0 : gap + rightSize.height) + insets.top + insets.bottom;
-                return new Dimension(width, height);
-            }
+            return preferredLayoutSize(parent);
         }
 
         @Override
@@ -805,27 +808,22 @@ public final class UserDashboardComponents {
 
                 Insets insets = parent.getInsets();
                 int availableWidth = Math.max(0, parent.getWidth() - insets.left - insets.right);
-                Dimension leftSize = left.getPreferredSize();
                 Dimension rightSize = right == null ? new Dimension(0, 0) : right.getPreferredSize();
-                boolean fitsInOneRow = right == null || leftSize.width + gap + rightSize.width <= availableWidth;
+                
+                int leftWidth = Math.max(0, availableWidth - (right != null ? rightSize.width + gap : 0));
+                left.setSize(leftWidth, 1);
+                Dimension leftSize = left.getPreferredSize();
+                
+                int rowHeight = Math.max(leftSize.height, rightSize.height);
 
-                if (fitsInOneRow) {
-                    int rowHeight = Math.max(leftSize.height, rightSize.height);
-                    left.setBounds(insets.left, insets.top, Math.max(0, availableWidth - rightSize.width - gap), rowHeight);
-                    if (right != null) {
-                        right.setBounds(
-                                insets.left + availableWidth - rightSize.width,
-                                insets.top + (rowHeight - rightSize.height) / 2,
-                                rightSize.width,
-                                rightSize.height
-                        );
-                    }
-                    return;
-                }
-
-                left.setBounds(insets.left, insets.top, availableWidth, leftSize.height);
+                left.setBounds(insets.left, insets.top, leftWidth, leftSize.height);
                 if (right != null) {
-                    right.setBounds(insets.left, insets.top + leftSize.height + gap, availableWidth, rightSize.height);
+                    right.setBounds(
+                            insets.left + availableWidth - rightSize.width,
+                            insets.top, // Align to top right
+                            rightSize.width,
+                            rightSize.height
+                    );
                 }
             }
         }
@@ -991,6 +989,8 @@ public final class UserDashboardComponents {
     }
 
     public static class ClaimCard extends RoundedPanel {
+        private final Claim claim;
+        private final Report sourceReport;
 
         public ClaimCard(Claim claim) {
             this(claim, null);
@@ -998,6 +998,8 @@ public final class UserDashboardComponents {
 
         public ClaimCard(Claim claim, Report sourceReport) {
             super(Color.WHITE, 20);
+            this.claim = claim;
+            this.sourceReport = sourceReport;
             setPreferredSize(CLAIM_CARD_SIZE);
             setLayout(new GridBagLayout());
             setBorder(BorderFactory.createCompoundBorder(
@@ -1031,6 +1033,70 @@ public final class UserDashboardComponents {
             gbc.anchor = GridBagConstraints.WEST;
             gbc.insets = new Insets(10, 0, 0, 0);
             add(createClaimStatusBadge(claim.getStatus().name()), gbc);
+            
+            installCardMouseHandlers(this);
+        }
+
+        private void installCardMouseHandlers(Component component) {
+            if (component instanceof JButton) {
+                return;
+            }
+
+            component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            component.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent event) {
+                    applyHoverBorder();
+                }
+
+                @Override
+                public void mouseExited(MouseEvent event) {
+                    java.awt.Point point = SwingUtilities.convertPoint(
+                            event.getComponent(),
+                            event.getPoint(),
+                            ClaimCard.this
+                    );
+                    if (!ClaimCard.this.contains(point)) {
+                        applyNormalBorder();
+                    }
+                }
+
+                @Override
+                public void mouseClicked(MouseEvent event) {
+                    openClaimDetail();
+                }
+            });
+
+            if (component instanceof Container) {
+                for (Component child : ((Container) component).getComponents()) {
+                    installCardMouseHandlers(child);
+                }
+            }
+        }
+
+        private void applyHoverBorder() {
+            setBorder(BorderFactory.createCompoundBorder(
+                    new RoundedLineBorder(new Color(150, 180, 225), 22, 2),
+                    BorderFactory.createEmptyBorder(10, 11, 14, 11)
+            ));
+            repaint();
+        }
+
+        private void applyNormalBorder() {
+            setBorder(BorderFactory.createCompoundBorder(
+                    new RoundedLineBorder(BORDER, 22, 1),
+                    BorderFactory.createEmptyBorder(12, 12, 12, 12)
+            ));
+            repaint();
+        }
+
+        private void openClaimDetail() {
+            try {
+                new com.frame.dashboard.shared.ClaimDetailFrame(claim, sourceReport).setVisible(true);
+            } catch (Throwable ex) {
+                // fallback: ignore
+                ex.printStackTrace();
+            }
         }
 
         private String getClaimMetaText(Claim claim) {
@@ -1225,7 +1291,7 @@ public final class UserDashboardComponents {
             this.showTitleOverlay = showTitleOverlay;
             setPreferredSize(size);
             setMinimumSize(new Dimension(Math.min(size.width, PHOTO_MINIMUM_SIZE.width), Math.min(size.height, PHOTO_MINIMUM_SIZE.height)));
-            setOpaque(true);
+            setOpaque(false);
         }
 
         @Override

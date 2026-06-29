@@ -54,7 +54,7 @@ public class UserClaimsPanel extends JPanel {
 
     private JPanel createClaimsGrid(User user, ClaimManager claimManager, ReportManager reportManager) {
         JPanel grid = UserDashboardComponents.cardGrid();
-        for (Claim claim : claimManager.getAllClaims()) {
+        for (Claim claim : claimManager.getClaims()) {
             if (isMine(user, claim)) {
                 grid.add(new UserDashboardComponents.ClaimCard(claim, findRelatedReport(reportManager, claim)));
             }

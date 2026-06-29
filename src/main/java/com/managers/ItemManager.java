@@ -10,7 +10,7 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.ArrayList;
-
+// Abstraction & Encapsulation
 public class ItemManager implements Managerable{
     private ArrayList<Item> items;
     private HashMap<String, Item> itemMap;
@@ -65,7 +65,7 @@ public class ItemManager implements Managerable{
         item.setStatus(ItemStatus.valueOf(statusStr));
         return item;
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public void add(Object obj) {
         if (obj instanceof Item) {
@@ -76,12 +76,12 @@ public class ItemManager implements Managerable{
             }
         }
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public void delete(String id) {
         deleteItem(id);
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public Object findById(String id) {
         return findItem(id);

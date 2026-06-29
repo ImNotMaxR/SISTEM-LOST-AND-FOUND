@@ -3,7 +3,7 @@ package com.model;
 import com.enumeration.ReportStatus;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
+// Abstraction & Encapsulation
 public abstract class Report {
     protected String reportId;
     protected User user;
@@ -12,7 +12,6 @@ public abstract class Report {
     protected String description;
     protected ReportStatus status;
     protected LocalDateTime editableUntil;
-    //Gatau Coba Aja Kalau ada file Poto untuk Khusus semua report
     protected String photoPath;
     protected String rejectionReason;
     private static final int EDITABLE_DURATION_MINUTES = 30;
@@ -122,7 +121,7 @@ public abstract class Report {
     }
     
     public abstract void displayReport();
-
+    // Polymorphism (Method Overriding)
     @Override
     public String toString() {
         return "Report{" + "ID Report =" + reportId + ", user=" + user + ", item=" + item + ", date=" + date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")) + ", description=" + description + '}';

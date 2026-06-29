@@ -1,7 +1,7 @@
 package com.model;
 
 import com.enumeration.Role;
-
+// Inheritance & Encapsulation
 public class Mahasiswa extends User {
     private String nim;
     private String fakultas;
@@ -32,12 +32,12 @@ public class Mahasiswa extends User {
     public String getKelas() {
         return kelas;
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public Role getRole() {
         return Role.MAHASISWA;
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public void displayInfo() {
         System.out.println("===== Info Mahasiswa =====");
@@ -51,7 +51,7 @@ public class Mahasiswa extends User {
         System.out.println("Role     : " + getRole());
         System.out.println("==========================");
     }
-    
+    // Polymorphism (Method Overriding)
     @Override
     public String toString() {
         return "Mahasiswa{userId='" + getUserId() + "', name='" + getName() + "', nim='" + nim + "', jurusan='" + jurusan + "'}";

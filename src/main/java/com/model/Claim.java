@@ -6,7 +6,7 @@ import com.interfaces.Verifiable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-
+// Abstraction & Encapsulation
 public class Claim implements Verifiable{
     private String claimId;
     private User user;
@@ -71,7 +71,7 @@ public class Claim implements Verifiable{
         documents.add(doc);
         System.out.println("Dokumen " + doc.getType() + " telah ditambahkan ke klaim " + claimId);
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public boolean validate() {
         if (item.getStatus() != ItemStatus.DITEMUKAN) {
@@ -129,7 +129,7 @@ public class Claim implements Verifiable{
         }
         System.out.println("==================================");
     }
-
+    // Polymorphism (Method Overriding)
     @Override
     public String toString() {
         return "Claim{claimId='" + claimId + "', user='" + user.getName() + "', item='" + item.getName() + "', status=" + status + "', dateClaim=" + dateClaim.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")) + "}";
