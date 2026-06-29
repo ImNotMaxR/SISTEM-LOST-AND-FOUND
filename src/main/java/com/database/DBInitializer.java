@@ -182,28 +182,28 @@ public class DBInitializer {
             st.executeUpdate("INSERT INTO admin VALUES ('USR001','ADM001')");
  
             // Security
-            st.executeUpdate("INSERT INTO users VALUES ('USR002','Budi Santoso','budi.security','password123','SECURITY')");
+            st.executeUpdate("INSERT INTO users VALUES ('USR002','Udin','udin.security','password123','SECURITY')");
             st.executeUpdate("INSERT INTO security VALUES ('USR002','SEC001','Gedung A')");
  
-            st.executeUpdate("INSERT INTO users VALUES ('USR003','Rudi Hartono','rudi.security','password123','SECURITY')");
+            st.executeUpdate("INSERT INTO users VALUES ('USR003','Asep','asep.security','password123','SECURITY')");
             st.executeUpdate("INSERT INTO security VALUES ('USR003','SEC002','Gedung B')");
  
             // Mahasiswa
             st.executeUpdate("INSERT INTO users VALUES ('USR004','Rico Rezkya','rico.mhs','password123','MAHASISWA')");
-            st.executeUpdate("INSERT INTO mahasiswa VALUES ('USR004','103022500008','FIF','Informatika','IF-46-01')");
+            st.executeUpdate("INSERT INTO mahasiswa VALUES ('USR004','103022500008','FIF','Rekayasa Perangkat Lunak','SE-49-04')");
  
             st.executeUpdate("INSERT INTO users VALUES ('USR005','Evan Oktavianus','evan.mhs','password123','MAHASISWA')");
-            st.executeUpdate("INSERT INTO mahasiswa VALUES ('USR005','103022530018','FIF','Informatika','IF-46-02')");
+            st.executeUpdate("INSERT INTO mahasiswa VALUES ('USR005','103022530018','FIF','Rekayasa Perangkat Lunak','SE-49-04')");
  
             st.executeUpdate("INSERT INTO users VALUES ('USR006','Fadil Fauzi','fadil.mhs','password123','MAHASISWA')");
-            st.executeUpdate("INSERT INTO mahasiswa VALUES ('USR006','103022530008','FIF','Informatika','IF-46-02')");
+            st.executeUpdate("INSERT INTO mahasiswa VALUES ('USR006','103022530008','FIF','Rekayasa Perangkat Lunak','SE-49-04')");
  
             // Dosen
             st.executeUpdate("INSERT INTO users VALUES ('USR007','Aaz M. Hafidz Azis','aaz.dosen','password123','DOSEN')");
             st.executeUpdate("INSERT INTO dosen VALUES ('USR007','NIP001','Pemrograman Berorientasi Objek')");
  
             // Staff
-            st.executeUpdate("INSERT INTO users VALUES ('USR008','Siti Aminah','siti.staff','password123','STAFF')");
+            st.executeUpdate("INSERT INTO users VALUES ('USR008','ladesh','ladesh.staff','password123','STAFF')");
             st.executeUpdate("INSERT INTO staff VALUES ('USR008','STF001','Tata Usaha')");
  
             // kategori

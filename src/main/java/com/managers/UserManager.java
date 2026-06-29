@@ -149,6 +149,9 @@ public class UserManager implements Managerable{
         if (newUsername.equals(currentUser.getUsername())) {
             throw new ValidationException("Username yang baru anda tulis sama seperti username sebelumnya.");
         }
+        if (newUsername.contains(" ")) {
+            throw new ValidationException("Username tidak boleh mengandung spasi.");
+        }
         for (User u : users) {
             if (!u.getUserId().equals(currentUser.getUserId()) && u.getUsername().equalsIgnoreCase(newUsername)) {
                 throw new ValidationException("Username sudah digunakan oleh pengguna lain.");
@@ -193,6 +196,9 @@ public class UserManager implements Managerable{
         }
         if (newPassword.equals(currentUser.getPassword())) {
             throw new ValidationException("Password yang baru anda tulis sama seperti password sebelumnya.");
+        }
+        if (newPassword.contains(" ")) {
+            throw new ValidationException("Password tidak boleh mengandung spasi.");
         }
 
         String sql = "UPDATE users SET password = ? WHERE user_id = ?";
