@@ -9,7 +9,7 @@ public class StorageRecord {
     private Item item;
     private Security storedBy;
     private String storageLocation;
-    public LocalDateTime dateStored;
+    private LocalDateTime dateStored;
     private boolean isReleased;
     private LocalDateTime dateReleased;
 
@@ -41,6 +41,10 @@ public class StorageRecord {
 
     public LocalDateTime getDateStored() {
         return dateStored;
+    }
+    
+    public void setDateStored(LocalDateTime dateStored) {
+        this.dateStored = dateStored;
     }
     
     public LocalDateTime getDateReleased() {

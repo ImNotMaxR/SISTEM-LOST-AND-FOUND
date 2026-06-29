@@ -11,11 +11,18 @@ import com.model.User;
 import com.model.FoundReport;
 import com.model.LostReport;
 import com.model.Report;
+import com.model.Mahasiswa;
+import com.model.Dosen;
+import com.model.Staff;
+import com.model.Admin;
+import com.model.Security;
+import com.model.StorageRecord;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+import java.io.File;
 import com.exception.ValidationException;
 
 public class ReportManager implements Managerable{
@@ -141,15 +148,15 @@ public class ReportManager implements Managerable{
     private User buildSimpleUser(String userId, String name, String username, String password, Role role) {
         switch (role) {
             case MAHASISWA:
-                return new com.model.Mahasiswa(userId, name, username, password, "", "", "", "");
+                return new Mahasiswa(userId, name, username, password, "", "", "", "");
             case DOSEN:
-                return new com.model.Dosen(userId, name, username, password, "", "");
+                return new Dosen(userId, name, username, password, "", "");
             case STAFF:
-                return new com.model.Staff(userId, name, username, password, "", "");
+                return new Staff(userId, name, username, password, "", "");
             case ADMIN:
-                return new com.model.Admin(userId, name, username, password, "");
+                return new Admin(userId, name, username, password, "");
             case SECURITY:
-                return new com.model.Security(userId, name, username, password, "", "");
+                return new Security(userId, name, username, password, "", "");
             default:
                 return null;
         }
@@ -268,13 +275,26 @@ public class ReportManager implements Managerable{
         }
     }
 
-    public void createLostReport(User user, String itemName, String itemDescription, String lostLocation, String reportDescription, Category category, java.io.File photoFile, ItemManager itemManager) throws ValidationException {
+    private void validatePhotoFile(File photoFile) throws ValidationException {
+        if (photoFile != null) {
+            String name = photoFile.getName().toLowerCase();
+            if (!name.endsWith(".jpg") && !name.endsWith(".png") && !name.endsWith(".jpeg")) {
+                throw new ValidationException("Foto harus berformat JPG atau PNG.");
+            }
+            if (photoFile.length() > 2 * 1024 * 1024) { // 2MB
+                throw new ValidationException("Ukuran foto maksimal 2 MB.");
+            }
+        }
+    }
+
+    public void createLostReport(User user, String itemName, String itemDescription, String lostLocation, String reportDescription, Category category, File photoFile, ItemManager itemManager) throws ValidationException {
         if (user == null) {
             throw new ValidationException("Data user tidak ditemukan. Silakan login ulang.");
         }
         if (itemName == null || itemName.trim().isEmpty() || itemDescription == null || itemDescription.trim().isEmpty() || lostLocation == null || lostLocation.trim().isEmpty() || reportDescription == null || reportDescription.trim().isEmpty() || category == null) {
             throw new ValidationException("Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
         }
+        validatePhotoFile(photoFile);
 
         String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -289,13 +309,14 @@ public class ReportManager implements Managerable{
         addReport(report);
     }
 
-    public void createFoundReport(User user, String itemName, String itemDescription, String foundLocation, String storageLocation, String reportDescription, Category category, com.model.LostReport matched, java.io.File photoFile, ItemManager itemManager, StorageManager storageManager) throws ValidationException {
+    public void createFoundReport(User user, String itemName, String itemDescription, String foundLocation, String storageLocation, String reportDescription, Category category, LostReport matched, File photoFile, ItemManager itemManager, StorageManager storageManager) throws ValidationException {
         if (user == null) {
             throw new ValidationException("Data user tidak ditemukan. Silakan login ulang.");
         }
         if (itemName == null || itemName.trim().isEmpty() || itemDescription == null || itemDescription.trim().isEmpty() || foundLocation == null || foundLocation.trim().isEmpty() || storageLocation == null || storageLocation.trim().isEmpty() || reportDescription == null || reportDescription.trim().isEmpty() || category == null) {
             throw new ValidationException("Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
         }
+        validatePhotoFile(photoFile);
 
         String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         String recordId = "STR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -318,17 +339,18 @@ public class ReportManager implements Managerable{
         }
         addReport(report);
 
-        com.model.StorageRecord storageRecord = new com.model.StorageRecord(recordId, item, (com.model.Security) user, storageLocation);
+        StorageRecord storageRecord = new StorageRecord(recordId, item, (Security) user, storageLocation);
         storageManager.saveStorageRecordToDB(storageRecord);
     }
 
-    public void createFoundReportByAdmin(User user, String itemName, String itemDescription, String foundLocation, String reportDescription, Category category, com.model.LostReport matched, java.io.File photoFile, ItemManager itemManager) throws ValidationException {
+    public void createFoundReportByAdmin(User user, String itemName, String itemDescription, String foundLocation, String reportDescription, Category category, LostReport matched, File photoFile, ItemManager itemManager) throws ValidationException {
         if (user == null) {
             throw new ValidationException("Data user tidak ditemukan. Silakan login ulang.");
         }
         if (itemName == null || itemName.trim().isEmpty() || itemDescription == null || itemDescription.trim().isEmpty() || foundLocation == null || foundLocation.trim().isEmpty() || reportDescription == null || reportDescription.trim().isEmpty() || category == null) {
             throw new ValidationException("Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
         }
+        validatePhotoFile(photoFile);
 
         String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
@@ -338,7 +360,7 @@ public class ReportManager implements Managerable{
         } else {
             String itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
             item = new Item(itemId, itemName, itemDescription, category, foundLocation);
-            item.setStatus(com.enumeration.ItemStatus.DITEMUKAN);
+            item.setStatus(ItemStatus.DITEMUKAN);
             itemManager.addItem(item);
         }
 
@@ -350,13 +372,14 @@ public class ReportManager implements Managerable{
             report.setPhotoPath(photoFile.getAbsolutePath());
         }
         addReport(report);
-        validateReport(reportId, com.enumeration.ReportStatus.VALID, (com.model.Admin) user, null);
+        validateReport(reportId, ReportStatus.VALID, (Admin) user, null);
     }
 
-    public void editLostReport(LostReport report, String itemName, String itemDesc, String lostLocation, String reportDesc, Category category, java.io.File photoFile, ItemManager itemManager) throws ValidationException {
+    public void editLostReport(LostReport report, String itemName, String itemDesc, String lostLocation, String reportDesc, Category category, File photoFile, ItemManager itemManager) throws ValidationException {
         if (itemName == null || itemName.trim().isEmpty() || itemDesc == null || itemDesc.trim().isEmpty() || lostLocation == null || lostLocation.trim().isEmpty() || reportDesc == null || reportDesc.trim().isEmpty() || category == null) {
             throw new ValidationException("Semua Input Wajib Diisi Sebelum Memperbarui Laporan.");
         }
+        validatePhotoFile(photoFile);
 
         Item item = report.getItem();
         item.setName(itemName);
@@ -376,10 +399,11 @@ public class ReportManager implements Managerable{
         }
     }
 
-    public void editFoundReport(FoundReport report, String itemName, String itemDesc, String foundLocation, String reportDesc, Category category, java.io.File photoFile, ItemManager itemManager) throws ValidationException {
+    public void editFoundReport(FoundReport report, String itemName, String itemDesc, String foundLocation, String reportDesc, Category category, File photoFile, ItemManager itemManager) throws ValidationException {
         if (itemName == null || itemName.trim().isEmpty() || itemDesc == null || itemDesc.trim().isEmpty() || foundLocation == null || foundLocation.trim().isEmpty() || reportDesc == null || reportDesc.trim().isEmpty() || category == null) {
             throw new ValidationException("Semua Input Wajib Diisi Sebelum Memperbarui Laporan.");
         }
+        validatePhotoFile(photoFile);
 
         Item item = report.getItem();
         item.setName(itemName);
@@ -417,15 +441,17 @@ public class ReportManager implements Managerable{
         }
     }
     
-    public void validateReport(String reportId, ReportStatus newStatus, com.model.Admin admin) {
+    public void validateReport(String reportId, ReportStatus newStatus, Admin admin) throws ValidationException {
         validateReport(reportId, newStatus, admin, null);
     }
 
-    public void validateReport(String reportId, ReportStatus newStatus, com.model.Admin admin, String rejectionReason) {
+    public void validateReport(String reportId, ReportStatus newStatus, Admin admin, String rejectionReason) throws ValidationException {
+        if (newStatus == ReportStatus.DITOLAK && (rejectionReason == null || rejectionReason.trim().isEmpty())) {
+            throw new ValidationException("Alasan Penolakan Tidak Boleh Kosong.");
+        }
         Report report = reportMap.get(reportId);
         if (report == null) {
-            System.out.println("Laporan tidak ditemukan.");
-            return;
+            throw new ValidationException("Laporan tidak ditemukan.");
         }
  
         report.setStatus(newStatus);

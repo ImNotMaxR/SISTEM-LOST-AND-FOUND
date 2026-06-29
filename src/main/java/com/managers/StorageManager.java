@@ -8,12 +8,9 @@ import com.model.StorageRecord;
 import com.model.User;
 import com.enumeration.Role;
 import com.enumeration.ItemStatus;
+import com.exception.ValidationException;
 import com.interfaces.Managerable;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,7 +54,7 @@ public class StorageManager implements Managerable {
                 Security sec = new Security(rs.getString("user_id"), rs.getString("user_name"), "dummy", "dummy", "", "");
 
                 StorageRecord sr = new StorageRecord(rs.getString("record_id"), item, sec, rs.getString("storage_location"));
-                sr.dateStored = rs.getTimestamp("date_stored").toLocalDateTime();
+                sr.setDateStored(rs.getTimestamp("date_stored").toLocalDateTime());
                 
                 boolean isRel = rs.getBoolean("is_released");
                 if (isRel) {
@@ -78,13 +75,21 @@ public class StorageManager implements Managerable {
     @Override
     public void add(Object obj) {
         if (obj instanceof StorageRecord) {
-            saveStorageRecordToDB((StorageRecord) obj);
+            try {
+                saveStorageRecordToDB((StorageRecord) obj);
+            } catch (ValidationException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
     public void update(Object obj) {
         if (obj instanceof StorageRecord) {
-            updateStorageRecordDB((StorageRecord) obj);
+            try {
+                updateStorageRecordDB((StorageRecord) obj);
+            } catch (ValidationException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
@@ -102,7 +107,10 @@ public class StorageManager implements Managerable {
         return records;
     }
 
-    public void saveStorageRecordToDB(StorageRecord record) {
+    public void saveStorageRecordToDB(StorageRecord record) throws ValidationException {
+        if (record == null || record.getStorageLocation() == null || record.getStorageLocation().trim().isEmpty()) {
+            throw new ValidationException("Lokasi penyimpanan tidak boleh kosong.");
+        }
         String sql = "INSERT INTO storage_records (record_id, item_id, security_user_id, storage_location, date_stored, is_released, date_released) VALUES (?,?,?,?,?,?,?)";
         try {
             Connection conn = dbConnection.getConnection();
@@ -146,7 +154,10 @@ public class StorageManager implements Managerable {
         }
     }
 
-    public void updateStorageRecordDB(StorageRecord record) {
+    public void updateStorageRecordDB(StorageRecord record) throws ValidationException {
+        if (record == null || record.getStorageLocation() == null || record.getStorageLocation().trim().isEmpty()) {
+            throw new ValidationException("Lokasi penyimpanan tidak boleh kosong.");
+        }
         String sql = "UPDATE storage_records SET storage_location = ? WHERE record_id = ?";
         try {
             Connection conn = dbConnection.getConnection();

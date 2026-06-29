@@ -1,7 +1,7 @@
 package com.interfaces;
 
 public interface Managerable {
-    public void add(Object obj);
-    public void delete(String id);
-    public Object findById(String id);
+    void add(Object obj);
+    void delete(String id);
+    Object findById(String id);
 }

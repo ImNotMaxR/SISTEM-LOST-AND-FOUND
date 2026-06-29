@@ -9,10 +9,20 @@ import com.model.Claim;
 import com.model.VerificationDocument;
 import com.enumeration.ClaimStatus;
 import com.enumeration.ItemStatus;
+import com.enumeration.Role;
 import com.interfaces.Managerable;
 import com.model.Category;
+import com.model.Report;
+import com.model.Mahasiswa;
+import com.model.Dosen;
+import com.model.Staff;
+import com.model.Security;
+import com.exception.ValidationException;
 import java.io.File;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.UUID;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -20,7 +30,6 @@ public class ClaimManager implements Managerable{
     private ArrayList<Claim> claims;
     private HashMap<String, Claim> claimMap;
     private DBConnection dbConnection;
-    private String lastErrorMessage;
 
     public ClaimManager() {
         this.claims = new ArrayList<>();
@@ -84,17 +93,17 @@ public class ClaimManager implements Managerable{
         String reportId = rs.getString("related_report_id");
  
         // Bangun User dari join
-        com.model.Category category = null;
+        Category category = null;
         String catId = rs.getString("category_id");
         if (catId != null) {
             category = new Category(catId, rs.getString("category_name"));
         }
  
         Item item = new Item(rs.getString("item_id"), rs.getString("item_name"), rs.getString("item_desc"), category, rs.getString("item_location"));
-        item.setStatus(com.enumeration.ItemStatus.valueOf(rs.getString("item_status")));
+        item.setStatus(ItemStatus.valueOf(rs.getString("item_status")));
  
         // Bangun User minimal dari join
-        User user = buildSimpleUser( rs.getString("user_id"), rs.getString("user_name"), rs.getString("username"), rs.getString("password"), com.enumeration.Role.valueOf(rs.getString("role")));
+        User user = buildSimpleUser( rs.getString("user_id"), rs.getString("user_name"), rs.getString("username"), rs.getString("password"), Role.valueOf(rs.getString("role")));
 
         Claim claim = new Claim(claimId, user, item, reportId);
         claim.setStatus(ClaimStatus.valueOf(statusStr));
@@ -105,18 +114,18 @@ public class ClaimManager implements Managerable{
         return claim;
     }
     
-    private User buildSimpleUser(String userId, String name, String username,String password, com.enumeration.Role role) {
+    private User buildSimpleUser(String userId, String name, String username, String password, Role role) {
         switch (role) {
             case MAHASISWA:
-                return new com.model.Mahasiswa(userId, name, username, password, "", "", "", "");
+                return new Mahasiswa(userId, name, username, password, "", "", "", "");
             case DOSEN:
-                return new com.model.Dosen(userId, name, username, password, "", "");
+                return new Dosen(userId, name, username, password, "", "");
             case STAFF:
-                return new com.model.Staff(userId, name, username, password, "", "");
+                return new Staff(userId, name, username, password, "", "");
             case ADMIN:
-                return new com.model.Admin(userId, name, username, password, "");
+                return new Admin(userId, name, username, password, "");
             case SECURITY:
-                return new com.model.Security(userId, name, username, password, "", "");
+                return new Security(userId, name, username, password, "", "");
             default:
                 return null;
         }
@@ -124,7 +133,11 @@ public class ClaimManager implements Managerable{
 
     public void add(Object obj) {
         if (obj instanceof Claim) {
-            addClaim((Claim) obj);
+            try {
+                addClaim((Claim) obj);
+            } catch (ValidationException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
@@ -136,40 +149,56 @@ public class ClaimManager implements Managerable{
         return claimMap.getOrDefault(id, null);
     }
 
-    public String getLastErrorMessage() {
-        return lastErrorMessage == null || lastErrorMessage.isBlank() ? "Pengajuan klaim belum tersimpan." : lastErrorMessage;
+    public void addClaim(Claim claim) throws ValidationException {
+        saveClaim(claim);
     }
 
-    public void addClaim(Claim claim) {
-        try {
-            saveClaim(claim);
-        } catch (com.exception.ValidationException e) {
-            System.out.println(e.getMessage());
+    public void submitClaim(User user, Report report, String name, String address, String phone, File photoFile) throws ValidationException {
+        if (name == null || name.isEmpty() || address == null || address.isEmpty() || phone == null || phone.isEmpty() || photoFile == null) {
+            throw new ValidationException("Nama, alamat, no telepon, dan foto bukti wajib diisi.");
         }
+
+        String fileName = photoFile.getName().toLowerCase();
+        if (!fileName.endsWith(".jpg") && !fileName.endsWith(".jpeg") && !fileName.endsWith(".png")) {
+            throw new ValidationException("Foto harus berformat JPG atau PNG.");
+        }
+
+        long fileSizeInMB = photoFile.length() / (1024 * 1024);
+        if (fileSizeInMB > 2) {
+            throw new ValidationException("Ukuran foto maksimal 2 MB.");
+        }
+
+        Claim claim = new Claim("CLM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(), user, report.getItem(), report.getReportId());
+        String description = "Nama: " + name + "\nAlamat: " + address + "\nNo Telepon: " + phone;
+        claim.addDocument(new VerificationDocument(
+                "DOC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(),
+                "Bukti Kepemilikan",
+                photoFile,
+                description
+        ));
+
+        saveClaim(claim);
     }
 
-    public void saveClaim(Claim claim) throws com.exception.ValidationException {
+    public void saveClaim(Claim claim) throws ValidationException {
         if (claim == null || claim.getItem() == null || claim.getUser() == null) {
-            throw new com.exception.ValidationException("Data klaim tidak lengkap. Silakan login ulang dan coba lagi.");
+            throw new ValidationException("Data klaim tidak lengkap. Silakan login ulang dan coba lagi.");
         }
 
-        // Validasi item harus DITEMUKAN
         if (claim.getItem().getStatus() != ItemStatus.DITEMUKAN) {
-            throw new com.exception.ValidationException("Barang \"" + claim.getItem().getName() + "\" tidak berstatus DITEMUKAN, sehingga belum bisa diklaim.");
+            throw new ValidationException("Barang \"" + claim.getItem().getName() + "\" tidak berstatus DITEMUKAN, sehingga belum bisa diklaim.");
         }
  
-        // Validasi tidak ada klaim aktif untuk item yang sama
         if (hasActiveClaim(claim.getItem().getItemID())) {
-            throw new com.exception.ValidationException("Barang \"" + claim.getItem().getName() + "\" sudah memiliki klaim yang sedang diproses.");
+            throw new ValidationException("Barang \"" + claim.getItem().getName() + "\" sudah memiliki klaim yang sedang diproses.");
         }
  
-        // Validasi dokumen jika kategori butuh verifikasi
         if (!claim.validate()) {
             if (claim.getItem().getCategory() != null 
                     && (claim.getDocuments() == null || claim.getDocuments().isEmpty())) {
-                throw new com.exception.ValidationException("Kategori \"" + claim.getItem().getCategory().getName() + "\" membutuhkan dokumen verifikasi sebelum klaim diajukan.");
+                throw new ValidationException("Kategori \"" + claim.getItem().getCategory().getName() + "\" membutuhkan dokumen verifikasi sebelum klaim diajukan.");
             } else {
-                throw new com.exception.ValidationException("Data klaim tidak lolos validasi. Silakan periksa status barang dan dokumen pendukung.");
+                throw new ValidationException("Data klaim tidak lolos validasi. Silakan periksa status barang dan dokumen pendukung.");
             }
         }
  
@@ -185,7 +214,6 @@ public class ClaimManager implements Managerable{
             ps.setString(6, claim.getRelatedReportId());
             ps.executeUpdate();
  
-            // Simpan dokumen verifikasi jika ada
             for (VerificationDocument doc : claim.getDocuments()) {
                 saveDocumentToDB(claim.getClaimId(), doc);
             }
@@ -194,7 +222,7 @@ public class ClaimManager implements Managerable{
             claimMap.put(claim.getClaimId(), claim);
             System.out.println("Klaim dengan ID: " + claim.getClaimId() + " berhasil diajukan.");
         } catch (SQLException e) {
-            throw new com.exception.ValidationException("Gagal menyimpan klaim ke database: " + e.getMessage());
+            throw new ValidationException("Gagal menyimpan klaim ke database: " + e.getMessage());
         }
     }
     
@@ -232,14 +260,18 @@ public class ClaimManager implements Managerable{
         }
     }
 
-    public void processClaim(String claimId, ClaimStatus newStatus, Admin admin) throws com.exception.ValidationException {
+    public void processClaim(String claimId, ClaimStatus newStatus, Admin admin, String reason) throws ValidationException {
+        if (newStatus == ClaimStatus.DITOLAK && (reason == null || reason.trim().isEmpty())) {
+            throw new ValidationException("Alasan penolakan tidak boleh kosong.");
+        }
+
         Claim claim = claimMap.get(claimId);
         if (claim == null) {
-            throw new com.exception.ValidationException("Data Klaim tidak ditemukan.");
+            throw new ValidationException("Data Klaim tidak ditemukan.");
         }
  
         if (claim.getStatus() != ClaimStatus.PENDING) {
-            throw new com.exception.ValidationException("Data Klaim ini sudah diproses sebelumnya dengan status: " + claim.getStatus());
+            throw new ValidationException("Klaim sudah diproses sebelumnya dan tidak dapat diubah lagi.");
         }
  
         claim.updateStatus(newStatus);

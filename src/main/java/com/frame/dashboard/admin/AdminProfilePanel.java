@@ -474,10 +474,6 @@ public class AdminProfilePanel extends JPanel {
         }
         String oldPassword = new String(oldPasswordForUsernameField.getPassword());
         String newUsername = newUsernameField.getText().trim();
-        if (oldPassword.isEmpty() || newUsername.isEmpty()) {
-            AppDialog.warning(this, "Form Tidak Lengkap", "Password lama dan username baru wajib diisi.");
-            return;
-        }
         try {
             userManager.editUser(currentUser, oldPassword, newUsername);
             currentUser.setUsername(newUsername);
@@ -485,7 +481,7 @@ public class AdminProfilePanel extends JPanel {
             oldPasswordForUsernameField.setText("");
             newUsernameField.setText("");
             AppDialog.success(this, "Berhasil", "Username admin berhasil diubah.");
-        } catch (Exception e) {
+        } catch (com.exception.ValidationException e) {
             AppDialog.error(this, "Gagal", e.getMessage());
         }
     }
@@ -498,10 +494,6 @@ public class AdminProfilePanel extends JPanel {
         String oldPassword = new String(oldPasswordField.getPassword());
         String newPassword = new String(newPasswordField.getPassword());
         String confirmPassword = new String(confirmPasswordField.getPassword());
-        if (oldPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
-            AppDialog.warning(this, "Form Tidak Lengkap", "Semua kolom password wajib diisi.");
-            return;
-        }
         try {
             userManager.editUser(currentUser, oldPassword, newPassword, confirmPassword);
             currentUser.setPassword(newPassword);
@@ -509,7 +501,7 @@ public class AdminProfilePanel extends JPanel {
             newPasswordField.setText("");
             confirmPasswordField.setText("");
             AppDialog.success(this, "Berhasil", "Password admin berhasil diubah.");
-        } catch (Exception e) {
+        } catch (com.exception.ValidationException e) {
             AppDialog.error(this, "Gagal", e.getMessage());
         }
     }

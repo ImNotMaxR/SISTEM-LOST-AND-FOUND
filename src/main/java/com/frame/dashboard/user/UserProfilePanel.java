@@ -558,11 +558,6 @@ public class UserProfilePanel extends JPanel {
         String oldPass = new String(passLamaUserField.getPassword());
         String newUsername = usernameBaruField.getText().trim();
 
-        if (oldPass.isEmpty() || newUsername.isEmpty()) {
-            AppDialog.warning(this, "Form Tidak Lengkap", "Password Lama Dan Username Baru Wajib Diisi!");
-            return;
-        }
-
         try {
             userManager.editUser(currentUser, oldPass, newUsername);
             currentUser.setUsername(newUsername);
@@ -573,7 +568,7 @@ public class UserProfilePanel extends JPanel {
             passLamaUserField.setText("");
             usernameBaruField.setText("");
             usernameSaatIniField.setText(newUsername);
-        } catch (Exception e) {
+        } catch (com.exception.ValidationException e) {
             AppDialog.error(this, "Gagal", e.getMessage());
         }
     }
@@ -582,11 +577,6 @@ public class UserProfilePanel extends JPanel {
         String oldPass = new String(passLamaPassField.getPassword());
         String newPass = new String(passBaruField.getPassword());
         String confirmPass = new String(passBaruConfirmField.getPassword());
-
-        if (oldPass.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
-            AppDialog.warning(this, "Form Tidak Lengkap", "Semua Kolom Password Wajib Diisi!");
-            return;
-        }
 
         try {
             userManager.editUser(currentUser, oldPass, newPass, confirmPass);
@@ -598,7 +588,7 @@ public class UserProfilePanel extends JPanel {
             passLamaPassField.setText("");
             passBaruField.setText("");
             passBaruConfirmField.setText("");
-        } catch (Exception e) {
+        } catch (com.exception.ValidationException e) {
             AppDialog.error(this, "Gagal", e.getMessage());
         }
     }

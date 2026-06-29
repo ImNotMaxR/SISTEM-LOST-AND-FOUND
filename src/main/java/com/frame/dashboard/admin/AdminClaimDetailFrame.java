@@ -466,11 +466,11 @@ public class AdminClaimDetailFrame extends JDialog {
             return;
         }
         try {
-            claimManager.processClaim(claim.getClaimId(), ClaimStatus.VALID, currentAdmin());
+            claimManager.processClaim(claim.getClaimId(), ClaimStatus.VALID, currentAdmin(), null);
             AppDialog.success(this, "Klaim Diterima", "Pengajuan klaim berhasil diterima.");
             notifyUpdated();
         } catch (ValidationException e) {
-            AppDialog.error(this, "Gagal Menerima Klaim", e.getMessage());
+            AppDialog.warning(this, "Validasi Gagal", e.getMessage());
         }
     }
 
@@ -480,20 +480,16 @@ public class AdminClaimDetailFrame extends JDialog {
             return;
         }
         reason = reason.trim();
-        if (reason.isBlank()) {
-            AppDialog.warning(this, "Alasan Wajib Diisi", "Alasan Penolakan Tidak Boleh Kosong.");
-            return;
-        }
         boolean confirmed = AppDialog.confirm(this, "Konfirmasi Tolak", "Tolak Pengajuan Klaim Ini?", "Tolak", "Batal");
         if (!confirmed) {
             return;
         }
         try {
-            claimManager.processClaim(claim.getClaimId(), ClaimStatus.DITOLAK, currentAdmin());
+            claimManager.processClaim(claim.getClaimId(), ClaimStatus.DITOLAK, currentAdmin(), reason);
             AppDialog.success(this, "Klaim Ditolak", "Pengajuan klaim berhasil ditolak.");
             notifyUpdated();
         } catch (ValidationException e) {
-            AppDialog.error(this, "Gagal Menolak Klaim", e.getMessage());
+            AppDialog.warning(this, "Validasi Gagal", e.getMessage());
         }
     }
 

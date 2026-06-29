@@ -280,14 +280,6 @@ public class ClaimVerificationFrame extends JDialog {
         }
 
         File file = new File(fileDialog.getDirectory(), fileDialog.getFile());
-        if (!isSupportedImage(file)) {
-            AppDialog.warning(this, "Format Tidak Didukung", "Foto harus berformat JPG atau PNG.");
-            return;
-        }
-        if (file.length() / (1024 * 1024) > 2) {
-            AppDialog.warning(this, "Ukuran File Terlalu Besar", "Ukuran foto maksimal 2 MB.");
-            return;
-        }
         selectedPhotoFile = file;
         photoPreviewPanel.setImageFile(file);
     }
@@ -296,47 +288,25 @@ public class ClaimVerificationFrame extends JDialog {
         String name = nameField.getText().trim();
         String address = addressField.getText().trim();
         String phone = phoneField.getText().trim();
-        if (name.isEmpty() || address.isEmpty() || phone.isEmpty() || selectedPhotoFile == null) {
-            AppDialog.warning(this, "Data Belum Lengkap", "Nama, alamat, no telepon, dan foto bukti wajib diisi.");
-            return;
-        }
 
         boolean confirm = AppDialog.confirm(this, "Konfirmasi Klaim", "Ajukan klaim barang dengan data verifikasi ini?", "Ajukan", "Batal");
         if (!confirm) {
             return;
         }
 
-        Claim claim = new Claim("CLM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(), user, report.getItem(), report.getReportId());
-        String description = "Nama: " + name + "\nAlamat: " + address + "\nNo Telepon: " + phone;
-        claim.addDocument(new VerificationDocument(
-                "DOC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(),
-                "Bukti Kepemilikan",
-                selectedPhotoFile,
-                description
-        ));
-
         try {
-            claimManager.saveClaim(claim);
+            claimManager.submitClaim(user, report, name, address, phone, selectedPhotoFile);
             if (onSaved != null) {
                 onSaved.run();
             }
             AppDialog.success(this, "Klaim Berhasil", "Permintaan klaim Anda telah diajukan dan menunggu persetujuan.");
             dispose();
         } catch (com.exception.ValidationException e) {
-            AppDialog.error(this, "Klaim Gagal", e.getMessage());
+            AppDialog.warning(this, "Validasi Gagal", e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            AppDialog.error(this, "Terjadi Kesalahan", "Terjadi kesalahan sistem:\n" + e.getMessage());
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // Validation Helpers
-    // -------------------------------------------------------------------------
-
-    private boolean isSupportedImage(File file) {
-        if (file == null) {
-            return false;
-        }
-        String name = file.getName().toLowerCase();
-        return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png");
     }
 
     // -------------------------------------------------------------------------

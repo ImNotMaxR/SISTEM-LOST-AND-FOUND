@@ -501,14 +501,6 @@ public class AdminFoundReportFormFrame extends JDialog {
         }
 
         File file = new File(fileDialog.getDirectory(), fileDialog.getFile());
-        if (!isSupportedImage(file)) {
-            AppDialog.warning(this, "Format Tidak Didukung", "Foto harus berformat JPG atau PNG.");
-            return;
-        }
-        if (file.length() / (1024 * 1024) > 2) {
-            AppDialog.warning(this, "Ukuran File Terlalu Besar", "Ukuran foto maksimal 2 MB.");
-            return;
-        }
 
         selectedPhotoFile = file;
         photoPreviewPanel.setImageFile(file);

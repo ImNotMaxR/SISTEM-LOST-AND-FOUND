@@ -2,6 +2,7 @@ package com.managers;
 
 import com.database.DBConnection;
 import com.enumeration.ItemStatus;
+import com.exception.ValidationException;
 import com.interfaces.Managerable;
 import com.model.Category;
 import com.model.Item;
@@ -68,7 +69,11 @@ public class ItemManager implements Managerable{
     @Override
     public void add(Object obj) {
         if (obj instanceof Item) {
-            addItem((Item) obj);
+            try {
+                addItem((Item) obj);
+            } catch (ValidationException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
@@ -82,7 +87,12 @@ public class ItemManager implements Managerable{
         return findItem(id);
     }
 
-    public void addItem(Item item) {
+    public void addItem(Item item) throws ValidationException {
+        if (item == null || item.getName() == null || item.getName().trim().isEmpty() ||
+            item.getDescription() == null || item.getDescription().trim().isEmpty() ||
+            item.getLocation() == null || item.getLocation().trim().isEmpty()) {
+            throw new ValidationException("Data barang tidak lengkap.");
+        }
         String sql = "INSERT INTO items (item_id, name, description, category_id, status, location, date) " + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try {
             Connection conn = dbConnection.getConnection();
@@ -104,7 +114,12 @@ public class ItemManager implements Managerable{
         }
     }
 
-    public void editItem(String itemId, String newName, String newDescription, String newLocation) {
+    public void editItem(String itemId, String newName, String newDescription, String newLocation) throws ValidationException {
+        if (newName == null || newName.trim().isEmpty() ||
+            newDescription == null || newDescription.trim().isEmpty() ||
+            newLocation == null || newLocation.trim().isEmpty()) {
+            throw new ValidationException("Data barang tidak lengkap.");
+        }
         String sql = "UPDATE items SET name = ?, description = ?, location = ? WHERE item_id = ?";
         try {
             Connection conn = dbConnection.getConnection();
@@ -127,7 +142,12 @@ public class ItemManager implements Managerable{
         }
     }
 
-    public boolean updateItem(Item item) {
+    public boolean updateItem(Item item) throws ValidationException {
+        if (item == null || item.getName() == null || item.getName().trim().isEmpty() ||
+            item.getDescription() == null || item.getDescription().trim().isEmpty() ||
+            item.getLocation() == null || item.getLocation().trim().isEmpty()) {
+            throw new ValidationException("Data barang tidak lengkap.");
+        }
         String sql = "UPDATE items SET name = ?, description = ?, category_id = ?, location = ? WHERE item_id = ?";
         try {
             Connection conn = dbConnection.getConnection();
