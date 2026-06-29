@@ -522,16 +522,6 @@ public class EditLostReportPanel extends JDialog {
         }
 
         File file = new File(fileDialog.getDirectory(), fileDialog.getFile());
-        if (!isSupportedImage(file)) {
-            AppDialog.warning(this, "Format Tidak Didukung", "Foto harus berformat JPG atau PNG.");
-            return;
-        }
-        
-        long fileSizeInMB = file.length() / (1024 * 1024);
-        if (fileSizeInMB > 2) {
-            AppDialog.warning(this, "Ukuran File Terlalu Besar", "Ukuran foto maksimal 2 MB.");
-            return;
-        }
 
         selectedPhotoFile = file;
         photoPreviewPanel.setImageFile(file);
@@ -544,43 +534,21 @@ public class EditLostReportPanel extends JDialog {
         String reportDescription = reportDescriptionArea.getText().trim();
         Category category = (Category) categoryComboBox.getSelectedItem();
 
-        if (itemName.isEmpty() || itemDescription.isEmpty() || lostLocation.isEmpty()
-                || reportDescription.isEmpty() || category == null) {
-            AppDialog.warning(this, "Data Belum Lengkap", "Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
-            return;
-        }
-
         try {
-            Item item = existingReport.getItem();
-            item.setName(itemName);
-            item.setDescription(itemDescription);
-            item.setCategory(category);
-            item.setLocation(lostLocation);
-            
-            if (selectedPhotoFile != null) {
-                existingReport.setPhotoPath(selectedPhotoFile.getAbsolutePath());
-            }
-
-            existingReport.setDescription(reportDescription);
             if (existingReport instanceof com.model.LostReport) {
-                ((com.model.LostReport) existingReport).setLostLocation(lostLocation);
+                reportManager.editLostReport((com.model.LostReport) existingReport, itemName, itemDescription, lostLocation, reportDescription, category, selectedPhotoFile, itemManager);
             } else if (existingReport instanceof com.model.FoundReport) {
-                ((com.model.FoundReport) existingReport).setFoundLocation(lostLocation);
-            }
-            
-            boolean itemUpdated = itemManager.updateItem(item);
-            boolean reportUpdated = reportManager.updateReport(existingReport);
-
-            if (itemUpdated && reportUpdated) {
-                AppDialog.success(this, "Berhasil", "Laporan Anda Telah Berhasil Diperbarui!");
-                if (onReportSaved != null) {
-                    onReportSaved.run();
-                }
-                dispose();
-            } else {
-                AppDialog.error(this, "Gagal", "Gagal Memperbarui Laporan. Silakan Coba Lagi.");
+                reportManager.editFoundReport((com.model.FoundReport) existingReport, itemName, itemDescription, lostLocation, reportDescription, category, selectedPhotoFile, itemManager);
             }
 
+            AppDialog.success(this, "Berhasil", "Laporan Anda Telah Berhasil Diperbarui!");
+            if (onReportSaved != null) {
+                onReportSaved.run();
+            }
+            dispose();
+
+        } catch (com.exception.ValidationException e) {
+            AppDialog.warning(this, "Data Tidak Valid", e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             AppDialog.error(this, "Terjadi Kesalahan", "Terjadi kesalahan sistem:\n" + e.getMessage());

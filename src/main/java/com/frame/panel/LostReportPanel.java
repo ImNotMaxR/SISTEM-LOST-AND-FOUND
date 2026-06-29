@@ -501,16 +501,9 @@ public class LostReportPanel extends JDialog {
         }
 
         File file = new File(fileDialog.getDirectory(), fileDialog.getFile());
-        if (!isSupportedImage(file)) {
-            AppDialog.warning(this, "Format Tidak Didukung", "Foto harus berformat JPG atau PNG.");
-            return;
-        }
-        
-        long fileSizeInMB = file.length() / (1024 * 1024);
-        if (fileSizeInMB > 2) {
-            AppDialog.warning(this, "Ukuran File Terlalu Besar", "Ukuran foto maksimal 2 MB.");
-            return;
-        }
+        String itemDesc = itemDescriptionArea.getText().trim();
+        String location = lostLocationField.getText().trim();
+        String reportDesc = reportDescriptionArea.getText().trim();
 
         selectedPhotoFile = file;
         photoPreviewPanel.setImageFile(file);
@@ -528,11 +521,8 @@ public class LostReportPanel extends JDialog {
         String reportDescription = reportDescriptionArea.getText().trim();
         Category category = (Category) categoryComboBox.getSelectedItem();
 
-        if (itemName.isEmpty() || itemDescription.isEmpty() || lostLocation.isEmpty()
-                || reportDescription.isEmpty() || category == null) {
-            AppDialog.warning(this, "Data Belum Lengkap", "Semua Input Wajib Diisi Sebelum Menyimpan Laporan.");
-            return;
-        }
+        // Memanggil method manager, Manager yang akan melemparkan ValidationException 
+        // apabila terdapat input yang kosong, file bermasalah, dsb.
 
         if (selectedPhotoFile == null) {
             boolean confirm = AppDialog.confirm(this, "Foto Belum Dipilih", "Anda belum menyertakan foto barang. Lanjutkan pembuatan laporan tanpa foto?", "Lanjut", "Batal");

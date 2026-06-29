@@ -12,6 +12,7 @@ import com.model.Staff;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.ArrayList;
+import com.exception.ValidationException;
 
 public class UserManager implements Managerable{
     private ArrayList<User> users;
@@ -135,19 +136,25 @@ public class UserManager implements Managerable{
     }
     
     // Method Overloading: Untuk Edit Username
-    public void editUser(User currentUser, String oldPassword, String newUsername) throws Exception {
+    public void editUser(User currentUser, String oldPassword, String newUsername) throws ValidationException {
+        if (oldPassword == null || oldPassword.trim().isEmpty() || newUsername == null || newUsername.trim().isEmpty()) {
+            throw new ValidationException("Password Lama Dan Username Baru Wajib Diisi!");
+        }
         if (!currentUser.checkPassword(oldPassword)) {
-            throw new Exception("Password lama yang Anda masukkan salah.");
+            throw new ValidationException("Password lama yang Anda masukkan salah.");
         }
         if (newUsername.length() < 4) {
-            throw new Exception("Username harus memiliki minimal 4 karakter.");
+            throw new ValidationException("Username harus memiliki minimal 4 karakter.");
         }
         if (newUsername.equals(currentUser.getUsername())) {
-            throw new Exception("Username yang baru anda tulis sama seperti username sebelumnya.");
+            throw new ValidationException("Username yang baru anda tulis sama seperti username sebelumnya.");
+        }
+        if (newUsername.contains(" ")) {
+            throw new ValidationException("Username tidak boleh mengandung spasi.");
         }
         for (User u : users) {
             if (!u.getUserId().equals(currentUser.getUserId()) && u.getUsername().equalsIgnoreCase(newUsername)) {
-                throw new Exception("Username sudah digunakan oleh pengguna lain.");
+                throw new ValidationException("Username sudah digunakan oleh pengguna lain.");
             }
         }
 
@@ -166,26 +173,32 @@ public class UserManager implements Managerable{
             System.out.println("Username berhasil diperbarui.");
         } catch (SQLException e) {
             System.out.println("Gagal Update Data User: " + e.getMessage());
-            throw new Exception("Terjadi kesalahan sistem saat memperbarui data.");
+            throw new ValidationException("Terjadi kesalahan sistem saat memperbarui data.");
         }
     }
     
     // Method Overloading: Untuk Ganti Password
-    public void editUser(User currentUser, String oldPassword, String newPassword, String confirmPassword) throws Exception {
+    public void editUser(User currentUser, String oldPassword, String newPassword, String confirmPassword) throws ValidationException {
+        if (oldPassword == null || oldPassword.trim().isEmpty() || newPassword == null || newPassword.trim().isEmpty() || confirmPassword == null || confirmPassword.trim().isEmpty()) {
+            throw new ValidationException("Semua Kolom Password Wajib Diisi!");
+        }
         if (!currentUser.checkPassword(oldPassword)) {
-            throw new Exception("Password lama yang Anda masukkan salah.");
+            throw new ValidationException("Password lama yang Anda masukkan salah.");
         }
         if (!newPassword.equals(confirmPassword)) {
-            throw new Exception("Password baru dan konfirmasi tidak cocok.");
+            throw new ValidationException("Password baru dan konfirmasi tidak cocok.");
         }
         if (newPassword.length() < 8) {
-            throw new Exception("Password baru minimal harus 8 karakter.");
+            throw new ValidationException("Password baru minimal harus 8 karakter.");
         }
         if (!newPassword.matches(".*[!@#$%^&*(),.?\":{}|<>].*")) {
-            throw new Exception("Password baru harus mengandung minimal 1 karakter spesial.");
+            throw new ValidationException("Password baru harus mengandung minimal 1 karakter spesial.");
         }
         if (newPassword.equals(currentUser.getPassword())) {
-            throw new Exception("Password yang baru anda tulis sama seperti password sebelumnya.");
+            throw new ValidationException("Password yang baru anda tulis sama seperti password sebelumnya.");
+        }
+        if (newPassword.contains(" ")) {
+            throw new ValidationException("Password tidak boleh mengandung spasi.");
         }
 
         String sql = "UPDATE users SET password = ? WHERE user_id = ?";
@@ -203,7 +216,7 @@ public class UserManager implements Managerable{
             System.out.println("Password berhasil diperbarui.");
         } catch (SQLException e) {
             System.out.println("Gagal Update Data User: " + e.getMessage());
-            throw new Exception("Terjadi kesalahan sistem saat memperbarui data.");
+            throw new ValidationException("Terjadi kesalahan sistem saat memperbarui data.");
         }
     }
     

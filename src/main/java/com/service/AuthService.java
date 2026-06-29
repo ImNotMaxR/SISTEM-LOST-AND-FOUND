@@ -37,6 +37,9 @@ public class AuthService {
     // Query DB, cocokkan username dan password
     // Buat object sesuai role menggunakan metode dynamic binding.
     public static User login(String username, String password) throws ValidationException {
+        if (username == null || username.trim().isEmpty() || password == null || password.trim().isEmpty()) {
+            throw new ValidationException("Username dan Password Wajib diisi.");
+        }
         String sql =
             "SELECT u.user_id, u.name, u.username, u.password, u.role, " +
             "m.nim, m.fakultas, m.jurusan, m.kelas, " +

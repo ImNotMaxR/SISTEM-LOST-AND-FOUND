@@ -8,6 +8,7 @@ import com.enumeration.Role;
 import com.managers.ClaimManager;
 import com.managers.ItemManager;
 import com.managers.ReportManager;
+import com.managers.StorageManager;
 import com.managers.UserManager;
 import com.model.Admin;
 import com.model.Claim;
@@ -21,6 +22,7 @@ import com.model.StorageRecord;
 import com.model.User;
 import com.model.VerificationDocument;
 import com.service.AuthService;
+import com.exception.ValidationException;
 import java.io.*;
 import java.sql.*;
 import java.util.UUID;
@@ -33,6 +35,7 @@ public class AppController {
     private ItemManager itemManager;
     private ReportManager reportManager;
     private ClaimManager claimManager;
+    private StorageManager storageManager;
     private DBConnection dbConnection;
  
     public AppController(AuthService authService) {
@@ -41,6 +44,7 @@ public class AppController {
         this.itemManager   = new ItemManager();
         this.reportManager = new ReportManager();
         this.claimManager  = new ClaimManager();
+        this.storageManager = new StorageManager();
         this.dbConnection  = DBConnection.getInstance();
     }
  
@@ -60,6 +64,12 @@ public class AppController {
     // ================================================================
     // MENU USER BIASA
     // ================================================================
+    /**
+     * PENJELASAN METHOD showUserMenu:
+     * Method ini adalah perulangan menu utama untuk User biasa menggunakan antarmuka command-line (CLI).
+     * Menggunakan while(running) supaya menu tidak langsung keluar setelah eksekusi.
+     * Switch-case digunakan untuk memanggil method lain berdasarkan input nomor dari user.
+     */
     private void showUserMenu(User user) {
         boolean running = true;
         while (running) {
@@ -138,7 +148,15 @@ public class AppController {
  
         // Buat Item sekaligus dengan laporan
         Item item = new Item(itemId, namaBarang, deskripsiBarang, kategori, lokasiHilang);
-        itemManager.addItem(item);
+        
+        // MENGGUNAKAN TRY-CATCH: Ini untuk menangkap error (ValidationException)
+        // jika data barang tidak memenuhi syarat (misal kosong) saat ditambahkan ke sistem (ItemManager).
+        try {
+            itemManager.addItem(item);
+        } catch (ValidationException e) {
+            System.out.println("Gagal menambahkan item: " + e.getMessage());
+            return; // Jika gagal, hentikan proses pembuatan laporan barang hilang.
+        }
  
         LostReport report = new LostReport(reportId, user, item, deskripsiLaporan, lokasiHilang);
         if (!fotoPath.isEmpty()) {
@@ -156,6 +174,12 @@ public class AppController {
     // ----------------------------------------------------------------
     // 2. LIHAT LAPORAN USER
     // ----------------------------------------------------------------
+    /**
+     * PENJELASAN METHOD lihatLaporanUser:
+     * Menampilkan semua laporan kehilangan yang khusus dibuat oleh pengguna (user) ini saja.
+     * Dilakukan pencarian (looping) ke semua laporan dan difilter dengan mencocokkan user_id 
+     * milik laporan dengan user_id pengguna yang sedang menggunakan sistem.
+     */
     private void lihatLaporanUser(User user) {
         System.out.println("\n--- Laporan Saya ---");
         ArrayList<LostReport> lostReports = reportManager.getLostReports();
@@ -174,6 +198,12 @@ public class AppController {
     // ----------------------------------------------------------------
     // 3. EDIT LAPORAN USER (hanya dalam 30 menit)
     // ----------------------------------------------------------------
+    /**
+     * PENJELASAN METHOD editLaporanUser:
+     * Berfungsi membiarkan user mengedit deskripsi laporan atau mengganti fotonya.
+     * Logika utamanya memeriksa status `.isEditable()` yang memiliki rentang waktu 30 menit.
+     * Jika sudah lewat waktu, aplikasi memblokir pengeditan.
+     */
     private void editLaporanUser(User user) {
         System.out.println("\n--- Edit Laporan ---");
  
@@ -235,6 +265,12 @@ public class AppController {
     // ----------------------------------------------------------------
     // 4. LIHAT BARANG DITEMUKAN (hanya yang VALID)
     // ----------------------------------------------------------------
+    /**
+     * PENJELASAN METHOD lihatBarangDitemukan:
+     * Method ini berguna bagi user yang kehilangan barang agar bisa mencari
+     * barang temuan yang laporan temuannya sudah di-"VALIDASI" oleh pihak Admin.
+     * Ini menjamin bahwa laporan penemuan barang (FoundReport) adalah asli.
+     */
     private void lihatBarangDitemukan() {
         System.out.println("\n--- Barang yang Ditemukan (Tervalidasi) ---");
         ArrayList<Report> validReports = reportManager.getValidReports();
@@ -320,7 +356,15 @@ public class AppController {
             claim.addDocument(doc);
         }
  
-        claimManager.addClaim(claim);
+        // MENGGUNAKAN TRY-CATCH: Menangkap exception dari proses penambahan klaim di ClaimManager.
+        // Jika klaim sudah ada, status barang salah, atau dokumen tidak lengkap, sistem akan 
+        // melemparkan pesan error yang ditangkap di sini, sehingga program tidak crash (berhenti paksa).
+        try {
+            claimManager.addClaim(claim);
+            System.out.println("Klaim berhasil diajukan!");
+        } catch (ValidationException e) {
+            System.out.println("Gagal mengajukan klaim: " + e.getMessage());
+        }
     }
  
     // ----------------------------------------------------------------
@@ -344,6 +388,13 @@ public class AppController {
     // ----------------------------------------------------------------
     // 7. EDIT PROFIL
     // ----------------------------------------------------------------
+    /**
+     * PENJELASAN METHOD editProfil:
+     * CLI untuk update profil (Ganti Username atau Password).
+     * Memiliki dua mode (if/else), dan meneruskan input ke method editUser di UserManager.
+     * MENGGUNAKAN TRY-CATCH: karena proses validasi di UserManager (seperti cek panjang password)
+     * akan melemparkan exception, sehingga pesan gagal di print menggunakan System.out.println().
+     */
     private void editProfil(User user) {
         System.out.println("\n--- Edit Profil ---");
         System.out.println("Username saat ini : " + user.getUsername());
@@ -483,7 +534,15 @@ public class AppController {
         } else {
             itemId = "ITM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
             item   = new Item(itemId, namaBarang, deskripsiBarang, kategori, lokasiDitemukan);
-            itemManager.addItem(item);
+            
+            // MENGGUNAKAN TRY-CATCH: Saat security mencatat item baru, validasi dilakukan.
+            // Jika ada parameter kosong, aplikasi menampilkan pesan gagal ke console alih-alih crash.
+            try {
+                itemManager.addItem(item);
+            } catch (ValidationException e) {
+                System.out.println("Gagal menambahkan item baru: " + e.getMessage());
+                return;
+            }
         }
  
         String reportId = "RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -518,7 +577,7 @@ public class AppController {
         String recordId = "SRD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         StorageRecord sr = new StorageRecord(recordId, item, security, lokasiSimpan);
         sr.storeItem();
-        saveStorageRecordToDB(sr);
+        storageManager.add(sr);
  
         System.out.println("\nLaporan ditemukan berhasil dibuat.");
         System.out.println("Report ID  : " + reportId);
@@ -542,7 +601,7 @@ public class AppController {
  
     private void kelolaStorage(Security security) {
         System.out.println("\n--- Kelola Storage ---");
-        ArrayList<StorageRecord> records = getStorageRecordsBySecurity(security.getUserId());
+        ArrayList<StorageRecord> records = storageManager.getStorageRecordsBySecurity(security.getUserId());
  
         if (records.isEmpty()) { System.out.println("Tidak ada barang di storage kamu."); return; }
  
@@ -565,7 +624,7 @@ public class AppController {
  
         StorageRecord target = records.get(pilih);
         target.releaseItem();
-        if (target.isReleased()) updateStorageReleasedDB(target.getRecordId());
+        if (target.isReleased()) storageManager.updateStorageReleasedDB(target.getRecordId());
     }
  
     // ================================================================
@@ -646,8 +705,16 @@ public class AppController {
         String keputusan = MissionUtil.getUserInput();
  
         ReportStatus newStatus = keputusan.equals("1") ? ReportStatus.VALID : ReportStatus.DITOLAK;
-        reportManager.validateReport(target.getReportId(), newStatus, admin);
-        System.out.println("Laporan " + target.getReportId() + " diubah ke: " + newStatus);
+        
+        // MENGGUNAKAN TRY-CATCH: Saat admin memvalidasi laporan, ReportManager akan 
+        // memeriksa aturan bisnis. Jika melanggar, error akan dilempar (throw) dan 
+        // ditangkap di blok catch ini untuk dicetak sebagai pesan informasi.
+        try {
+            reportManager.validateReport(target.getReportId(), newStatus, admin);
+            System.out.println("Laporan " + target.getReportId() + " diubah ke: " + newStatus);
+        } catch (ValidationException e) {
+            System.out.println("Gagal memvalidasi laporan: " + e.getMessage());
+        }
     }
  
     private void lihatSemuaKlaim() {
@@ -689,9 +756,10 @@ public class AppController {
  
         ClaimStatus newStatus = keputusan.equals("1") ? ClaimStatus.VALID : ClaimStatus.DITOLAK;
         try {
-            claimManager.processClaim(target.getClaimId(), newStatus, admin);
+            String reason = newStatus == ClaimStatus.DITOLAK ? "Ditolak dari console" : null;
+            claimManager.processClaim(target.getClaimId(), newStatus, admin, reason);
             System.out.println("Klaim berhasil diproses.");
-        } catch (com.exception.ValidationException e) {
+        } catch (ValidationException e) {
             System.out.println("Gagal proses klaim: " + e.getMessage());
         }
     }
@@ -712,7 +780,7 @@ public class AppController {
  
     private void lihatSemuaStorage() {
         System.out.println("\n--- Storage Record ---");
-        ArrayList<StorageRecord> semua = getAllStorageRecords();
+        ArrayList<StorageRecord> semua = storageManager.getStorageRecords();
         if (semua.isEmpty()) { System.out.println("Tidak ada data storage."); return; }
         for (StorageRecord sr : semua) sr.displayStorage();
     }
@@ -757,94 +825,5 @@ public class AppController {
         } catch (SQLException e) {
             System.out.println("Gagal update foto: " + e.getMessage());
         }
-    }
- 
-    private void saveStorageRecordToDB(StorageRecord sr) {
-        String sql = "INSERT INTO storage_records (record_id, item_id, security_user_id, storage_location, date_stored, is_released, date_released) VALUES (?,?,?,?,?,?,?)";
-        try {
-            Connection conn = dbConnection.getConnection();
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, sr.getRecordId());
-            ps.setString(2, sr.getItem().getItemID());
-            ps.setString(3, sr.getStoredBy().getUserId());
-            ps.setString(4, sr.getStorageLocation());
-            ps.setTimestamp(5, java.sql.Timestamp.valueOf(sr.getDateStored()));
-            ps.setBoolean(6, sr.isReleased());
-            ps.setNull(7, java.sql.Types.TIMESTAMP);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            System.out.println("Gagal simpan storage record: " + e.getMessage());
-        }
-    }
- 
-    private void updateStorageReleasedDB(String recordId) {
-        try {
-            Connection conn = dbConnection.getConnection();
-            PreparedStatement ps = conn.prepareStatement("UPDATE storage_records SET is_released = true, date_released = NOW() WHERE record_id = ?");
-            ps.setString(1, recordId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            System.out.println("Gagal update storage released: " + e.getMessage());
-        }
-    }
- 
-    private ArrayList<StorageRecord> getStorageRecordsBySecurity(String securityUserId) {
-        ArrayList<StorageRecord> list = new ArrayList<>();
-        String sql = "SELECT sr.record_id, sr.storage_location, sr.date_stored, sr.is_released, sr.date_released, "
-                   + "i.item_id, i.name AS item_name, i.description AS item_desc, i.status AS item_status, i.location AS item_location, "
-                   + "c.category_id, c.name AS cat_name, c.request_verification "
-                   + "FROM storage_records sr "
-                   + "JOIN items i ON sr.item_id = i.item_id "
-                   + "LEFT JOIN categories c ON i.category_id = c.category_id "
-                   + "WHERE sr.security_user_id = ?";
-        try {
-            Connection conn = dbConnection.getConnection();
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, securityUserId);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                Category cat = rs.getString("category_id") != null
-                    ? new Category(rs.getString("category_id"), rs.getString("cat_name"))
-                    : null;
-                Item item = new Item(rs.getString("item_id"), rs.getString("item_name"), rs.getString("item_desc"), cat, rs.getString("item_location"));
-                item.setStatus(ItemStatus.valueOf(rs.getString("item_status")));
-                Security sec = (Security) authService.getCurrentUser();
-                StorageRecord sr2 = new StorageRecord(rs.getString("record_id"), item, sec, rs.getString("storage_location"));
-                list.add(sr2);
-            }
-        } catch (SQLException e) {
-            System.out.println("Gagal load storage: " + e.getMessage());
-        }
-        return list;
-    }
- 
-    private ArrayList<StorageRecord> getAllStorageRecords() {
-        ArrayList<StorageRecord> list = new ArrayList<>();
-        String sql = "SELECT sr.record_id, sr.storage_location, sr.date_stored, sr.is_released, "
-                   + "i.item_id, i.name AS item_name, i.description AS item_desc, i.status AS item_status, i.location AS item_location, "
-                   + "c.category_id, c.name AS cat_name, c.request_verification, "
-                   + "u.user_id, u.name AS sec_name, u.username, u.password "
-                   + "FROM storage_records sr "
-                   + "JOIN items i ON sr.item_id = i.item_id "
-                   + "LEFT JOIN categories c ON i.category_id = c.category_id "
-                   + "JOIN users u ON sr.security_user_id = u.user_id";
-        try {
-            Connection conn = dbConnection.getConnection();
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                Category cat = rs.getString("category_id") != null
-                    ? new Category(rs.getString("category_id"), rs.getString("cat_name"))
-                    : null;
-                Item item = new Item(rs.getString("item_id"), rs.getString("item_name"), rs.getString("item_desc"), cat, rs.getString("item_location"));
-                item.setStatus(ItemStatus.valueOf(rs.getString("item_status")));
-                Security sec = new Security(rs.getString("user_id"), rs.getString("sec_name"), rs.getString("username"), rs.getString("password"), "", "");
-                StorageRecord sr2 = new StorageRecord(rs.getString("record_id"), item, sec, rs.getString("storage_location"));
-                list.add(sr2);
-            }
-        } catch (SQLException e) {
-            System.out.println("Gagal load semua storage: " + e.getMessage());
-        }
-        return list;
     }
 }

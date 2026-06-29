@@ -23,6 +23,7 @@ public class FoundItemsPanel extends JPanel {
     private ReportManager reportManager;
     private JPanel grid;
     private JTextField searchField;
+    private String currentCategoryFilter = "Semua";
 
     public FoundItemsPanel(ReportManager reportManager) {
         this.reportManager = reportManager;
@@ -46,56 +47,79 @@ public class FoundItemsPanel extends JPanel {
         GridBagConstraints gbc = UserDashboardComponents.contentConstraints();
         gbc.gridy = 0;
         
-        searchField = createSearchBar();
-        JPanel searchContainer = new JPanel(new GridBagLayout());
-        searchContainer.setOpaque(false);
-        GridBagConstraints searchGbc = new GridBagConstraints();
-        searchGbc.gridx = 0;
-        searchGbc.gridy = 0;
-        searchGbc.weightx = 1;
-        searchGbc.fill = GridBagConstraints.HORIZONTAL;
-        searchContainer.add(searchField, searchGbc);
-
         JPanel headerPanel = UserDashboardComponents.responsiveActionRow(
                 UserDashboardComponents.section(TITLE, SUBTITLE),
-                searchContainer
+                new JPanel() // empty panel instead of search field for the right side of header
         );
-
+        headerPanel.setOpaque(false);
         content.add(headerPanel, gbc);
 
         gbc.gridy = 1;
+        gbc.insets = new Insets(16, 0, 0, 0);
+        content.add(createFilterSearchPanel(), gbc);
+
+        gbc.gridy = 2;
         gbc.insets = new Insets(14, 0, 0, 0);
         grid = UserDashboardComponents.cardGrid();
         content.add(grid, gbc);
 
-        gbc.gridy = 2;
+        gbc.gridy = 3;
         gbc.weighty = 1;
         content.add(new JPanel(), gbc);
 
         return content;
     }
 
-    private JTextField createSearchBar() {
-        JTextField textField = new UserDashboardComponents.SearchField("Cari Barang...");
+    private JPanel createFilterSearchPanel() {
+        JPanel pillsPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 10, 8));
+        pillsPanel.setOpaque(false);
         
-        textField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                updateGrid(textField.getText());
+        ArrayList<String> categoryList = new ArrayList<>();
+        categoryList.add("Semua");
+        for (FoundReport report : reportManager.getFoundReports()) {
+            if (report.isValid() && report.getMatchedLostReport() == null && report.getItem().getCategory() != null) {
+                String catName = report.getItem().getCategory().getName();
+                if (!categoryList.contains(catName)) {
+                    categoryList.add(catName);
+                }
             }
+        }
+        String[] filters = categoryList.toArray(new String[0]);
+        
+        UserDashboardComponents.FilterPill[] pillButtons = new UserDashboardComponents.FilterPill[filters.length];
+        
+        for (int i = 0; i < filters.length; i++) {
+            String filter = filters[i];
+            UserDashboardComponents.FilterPill pill = new UserDashboardComponents.FilterPill(filter, filter.equals(currentCategoryFilter));
+            pillButtons[i] = pill;
+            pill.addActionListener(e -> {
+                for (UserDashboardComponents.FilterPill p : pillButtons) {
+                    p.setActive(false);
+                }
+                pill.setActive(true);
+                currentCategoryFilter = filter;
+                updateGrid(searchField != null ? searchField.getText() : "");
+            });
+            pillsPanel.add(pill);
+        }
 
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                updateGrid(textField.getText());
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                updateGrid(textField.getText());
-            }
+        searchField = new UserDashboardComponents.SearchField("Cari Barang...");
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { updateGrid(searchField.getText()); }
+            public void removeUpdate(DocumentEvent e) { updateGrid(searchField.getText()); }
+            public void changedUpdate(DocumentEvent e) { updateGrid(searchField.getText()); }
         });
         
-        return textField;
+        JPanel searchWrapper = new JPanel(new GridBagLayout());
+        searchWrapper.setOpaque(false);
+        GridBagConstraints searchGbc = new GridBagConstraints();
+        searchGbc.gridx = 0;
+        searchGbc.gridy = 0;
+        searchGbc.weightx = 1;
+        searchGbc.fill = GridBagConstraints.HORIZONTAL;
+        searchWrapper.add(searchField, searchGbc);
+
+        return UserDashboardComponents.responsiveActionRow(pillsPanel, searchWrapper);
     }
 
     private void updateGrid(String keyword) {
@@ -106,7 +130,11 @@ public class FoundItemsPanel extends JPanel {
         
         for (FoundReport report : allFoundReports) {
             if (report.isValid() && report.getMatchedLostReport() == null) {
-                if (keyword.isEmpty() || report.getItem().getName().toLowerCase().contains(keyword.toLowerCase())) {
+                boolean matchSearch = keyword.isEmpty() || report.getItem().getName().toLowerCase().contains(keyword.toLowerCase());
+                boolean matchCategory = currentCategoryFilter.equals("Semua") || 
+                        (report.getItem().getCategory() != null && report.getItem().getCategory().getName().equals(currentCategoryFilter));
+                
+                if (matchSearch && matchCategory) {
                     filteredReports.add(report);
                 }
             }

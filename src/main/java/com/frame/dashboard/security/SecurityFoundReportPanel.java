@@ -4,10 +4,12 @@ import com.database.DBConnection;
 import com.frame.AppDialog;
 import com.frame.dashboard.user.UserDashboardComponents;
 import com.managers.ItemManager;
+import com.managers.StorageManager;
 import com.managers.ReportManager;
 import com.model.Category;
 import com.model.Item;
-import com.model.FoundReport; import com.model.FoundReport; import com.model.StorageRecord; import com.managers.StorageManager;
+import com.model.FoundReport; 
+import com.model.StorageRecord;
 import com.model.User;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
@@ -618,16 +620,6 @@ public class SecurityFoundReportPanel extends JDialog {
         }
 
         File file = new File(fileDialog.getDirectory(), fileDialog.getFile());
-        if (!isSupportedImage(file)) {
-            AppDialog.warning(this, "Format Tidak Didukung", "Foto harus berformat JPG atau PNG.");
-            return;
-        }
-        
-        long fileSizeInMB = file.length() / (1024 * 1024);
-        if (fileSizeInMB > 2) {
-            AppDialog.warning(this, "Ukuran File Terlalu Besar", "Ukuran foto maksimal 2 MB.");
-            return;
-        }
 
         selectedPhotoFile = file;
         photoPreviewPanel.setImageFile(file);

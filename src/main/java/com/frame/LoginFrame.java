@@ -369,10 +369,6 @@ public class LoginFrame extends JFrame {
 
     private void handleLoginAction() {
         LoginCredentials credentials = readCredentials();
-        if (!credentials.isComplete()) {
-            AppDialog.warning(rootPane, "Login Belum Lengkap", "Username dan Password Wajib diisi.");
-            return;
-        }
 
         setLoginLoading(true);
         try {

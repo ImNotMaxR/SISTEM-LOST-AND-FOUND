@@ -386,24 +386,28 @@ public class AdminFoundReportDetailFrame extends JDialog {
     private void acceptReport() {
         boolean confirmed = AppDialog.confirm(this, "Konfirmasi Terima", "Terima Laporan Barang Ditemukan Ini?", "Terima", "Batal");
         if (!confirmed) return;
-        reportManager.validateReport(report.getReportId(), ReportStatus.VALID, currentAdmin(), null);
-        AppDialog.success(this, "Status Diperbarui", "Laporan Barang Ditemukan Berhasil Diterima.");
-        notifyUpdated();
+        try {
+            reportManager.validateReport(report.getReportId(), ReportStatus.VALID, currentAdmin(), null);
+            AppDialog.success(this, "Status Diperbarui", "Laporan Barang Ditemukan Berhasil Diterima.");
+            notifyUpdated();
+        } catch (com.exception.ValidationException e) {
+            AppDialog.warning(this, "Validasi Gagal", e.getMessage());
+        }
     }
 
     private void rejectReport() {
         String reason = AppDialog.promptText(this, "Alasan Penolakan", "Masukkan Alasan Penolakan Yang Akan Dilihat Oleh Security Dan User.", "Lanjut", "Batal");
         if (reason == null) return;
         reason = reason.trim();
-        if (reason.isBlank()) {
-            AppDialog.warning(this, "Alasan Wajib Diisi", "Alasan Penolakan Tidak Boleh Kosong.");
-            return;
-        }
         boolean confirmed = AppDialog.confirm(this, "Konfirmasi Tolak", "Tolak Laporan Barang Ditemukan Ini?", "Tolak", "Batal");
         if (!confirmed) return;
-        reportManager.validateReport(report.getReportId(), ReportStatus.DITOLAK, currentAdmin(), reason);
-        AppDialog.success(this, "Status Diperbarui", "Laporan Barang Ditemukan Berhasil Ditolak.");
-        notifyUpdated();
+        try {
+            reportManager.validateReport(report.getReportId(), ReportStatus.DITOLAK, currentAdmin(), reason);
+            AppDialog.success(this, "Status Diperbarui", "Laporan Barang Ditemukan Berhasil Ditolak.");
+            notifyUpdated();
+        } catch (com.exception.ValidationException e) {
+            AppDialog.warning(this, "Validasi Gagal", e.getMessage());
+        }
     }
 
     private void deleteReport() {
