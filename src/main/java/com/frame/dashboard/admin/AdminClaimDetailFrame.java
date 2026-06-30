@@ -358,13 +358,13 @@ public class AdminClaimDetailFrame extends JDialog {
 
         gbc.gridy = 3;
         gbc.insets = new Insets(12, 0, 0, 0);
-        String fileName = document.getFile() == null ? "-" : document.getFile().getName();
+        String filePath = document.getFile();
+        String fileName = filePath == null || filePath.isBlank() ? "-" : new File(filePath).getName();
         panel.add(DashboardUi.label("File: " + fileName, 12, Font.BOLD, DashboardUi.TEXT_MUTED), gbc);
 
         gbc.gridy = 4;
         gbc.insets = new Insets(4, 0, 0, 0);
-        String path = document.getFile() == null ? "-" : document.getFile().getAbsolutePath();
-        panel.add(createMutedText(path), gbc);
+        panel.add(createMutedText(filePath == null || filePath.isBlank() ? "-" : filePath), gbc);
         return panel;
     }
 
@@ -569,11 +569,10 @@ public class AdminClaimDetailFrame extends JDialog {
     }
 
     private static class EvidencePhotoPanel extends JPanel {
-        private final File file;
         private Image image;
 
-        EvidencePhotoPanel(File file) {
-            this.file = file;
+        EvidencePhotoPanel(String filePath) {
+            File file = filePath == null || filePath.isBlank() ? null : new File(filePath);
             if (file != null && file.exists()) {
                 this.image = new ImageIcon(file.getAbsolutePath()).getImage();
             }

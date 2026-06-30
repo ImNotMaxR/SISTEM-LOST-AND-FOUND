@@ -30,7 +30,7 @@ public class SistemLostFound {
         // 4. Tutup koneksi saat program selesai
         db.closeConnection();
     }
- 
+    
     private static void runLoginMenu(AuthService authService) {
         SwingUtilities.invokeLater(() -> {
         LoginFrame loginFrame = new LoginFrame();

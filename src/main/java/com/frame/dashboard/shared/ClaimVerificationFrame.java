@@ -52,7 +52,7 @@ public class ClaimVerificationFrame extends JDialog {
     private JTextField addressField;
     private JTextField phoneField;
     private PhotoPreviewPanel photoPreviewPanel;
-    private File selectedPhotoFile;
+    private String selectedPhotoPath;
 
     // -------------------------------------------------------------------------
     // Frame Setup
@@ -280,7 +280,7 @@ public class ClaimVerificationFrame extends JDialog {
         }
 
         File file = new File(fileDialog.getDirectory(), fileDialog.getFile());
-        selectedPhotoFile = file;
+        selectedPhotoPath = file.getAbsolutePath();
         photoPreviewPanel.setImageFile(file);
     }
 
@@ -295,7 +295,7 @@ public class ClaimVerificationFrame extends JDialog {
         }
 
         try {
-            claimManager.submitClaim(user, report, name, address, phone, selectedPhotoFile);
+            claimManager.submitClaim(user, report, name, address, phone, selectedPhotoPath);
             if (onSaved != null) {
                 onSaved.run();
             }

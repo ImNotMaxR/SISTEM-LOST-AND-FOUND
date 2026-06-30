@@ -16,8 +16,8 @@ public class FoundReport extends Report implements Reportable{
         this.foundLocation = foundLocation;
         this.matchedLostReport = null;
         
-        //Cek Role biar security yang bisa buat sama admin
-        if (user.getRole() != Role.SECURITY && user.getRole() != Role.ADMIN) {
+        //Cek Role biar security yang bisa buat
+        if (user.getRole() != Role.SECURITY) {
             System.out.println(user.getName() + " tidak memiliki hak untuk membuat laporan barang ditemukan.");
         }
     }
