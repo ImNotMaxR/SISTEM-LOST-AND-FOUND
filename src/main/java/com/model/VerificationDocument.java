@@ -1,15 +1,14 @@
 package com.model;
 
 import com.interfaces.Verifiable;
-import java.io.File;
 
 public class VerificationDocument implements Verifiable{
     private String documentId;
     private String type;
-    private File file;
+    private String file;
     private String description;
 
-    public VerificationDocument(String documentId, String type, File file, String description) {
+    public VerificationDocument(String documentId, String type, String file, String description) {
         this.documentId = documentId;
         this.type = type;
         this.file = file;
@@ -24,7 +23,7 @@ public class VerificationDocument implements Verifiable{
         return type; 
     }
     
-    public File getFile() {
+    public String getFile() {
         return file; 
     }
     
@@ -36,7 +35,7 @@ public class VerificationDocument implements Verifiable{
         this.type = type;
     }
     
-    public void setFile(File file) {
+    public void setFile(String file) {
         this.file = file;
     }
     
@@ -50,15 +49,11 @@ public class VerificationDocument implements Verifiable{
             System.out.println("Tipe Dokumen Tidak Boleh Kosong");
             return false;
         }
-        if (file == null) {
+        if (file == null || file.isBlank()) {
             System.out.println("File Tidak Ada");
             return false;
         }
-        if (!file.exists()) {
-            System.out.println("File tidak ditemukan di path " + file.getAbsolutePath());
-            return false;
-        }
-        System.out.println("Dokumen Claim " + documentId + " valid. File: " + file.getName());
+        System.out.println("Dokumen Claim " + documentId + " valid. File: " + file);
         return true;
     }
     
@@ -70,8 +65,7 @@ public class VerificationDocument implements Verifiable{
         System.out.println("======= Info Dokumen =======");
         System.out.println("Dokumen ID  : " + documentId);
         System.out.println("Tipe        : " + type);
-        System.out.println("File        : " + (file != null ? file.getName() : "-"));
-        System.out.println("Path        : " + (file != null ? file.getAbsolutePath() : "-"));
+        System.out.println("File        : " + file);
         System.out.println("Deskripsi   : " + description);
         System.out.println("Valid       : " + (validate() ? "Ya" : "Tidak"));
         System.out.println("==========================");
@@ -79,6 +73,6 @@ public class VerificationDocument implements Verifiable{
     
     @Override
     public String toString() {
-        return "VerificationDocument{documentId='" + documentId + "', type='" + type + "', file='" + (file != null ? file.getName() : "null") + "'}";
+        return "VerificationDocument{documentId='" + documentId + "', type='" + type + "', file='" + file + "'}";
     }
 }

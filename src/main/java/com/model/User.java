@@ -62,7 +62,7 @@ public abstract class User implements AuthServices{
     
     @Override
     public void login(){
-        System.out.println(name + " Berhasil Login Sebagai " + getRole());
+        System.out.println("Halo!! "+ name + " Berhasil Login Sebagai " + getRole());
     }
 
     @Override

@@ -20,8 +20,6 @@ import com.model.Security;
 import com.exception.ValidationException;
 import java.io.File;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -76,9 +74,8 @@ public class ClaimManager implements Managerable{
             while (rs.next()) {
                 String docId = rs.getString("document_id");
                 String type = rs.getString("type");
-                String path = rs.getString("file_path");
                 String desc = rs.getString("description");
-                File file = path != null ? new File(path) : null;
+                String file = rs.getString("file_path");
                 VerificationDocument doc = new VerificationDocument(docId, type, file, desc);
                 claim.addDocument(doc);
             }
@@ -153,18 +150,22 @@ public class ClaimManager implements Managerable{
         saveClaim(claim);
     }
 
-    public void submitClaim(User user, Report report, String name, String address, String phone, File photoFile) throws ValidationException {
-        if (name == null || name.isEmpty() || address == null || address.isEmpty() || phone == null || phone.isEmpty() || photoFile == null) {
+    public void submitClaim(User user, Report report, String name, String address, String phone, String photoPath) throws ValidationException {
+        if (name == null || name.isEmpty() || address == null || address.isEmpty() || phone == null || phone.isEmpty() || photoPath == null || photoPath.isBlank()) {
             throw new ValidationException("Nama, alamat, no telepon, dan foto bukti wajib diisi.");
         }
 
-        String fileName = photoFile.getName().toLowerCase();
+        File evidenceFile = new File(photoPath);
+        if (!evidenceFile.exists() || !evidenceFile.isFile()) {
+            throw new ValidationException("File bukti tidak ditemukan.");
+        }
+
+        String fileName = evidenceFile.getName().toLowerCase();
         if (!fileName.endsWith(".jpg") && !fileName.endsWith(".jpeg") && !fileName.endsWith(".png")) {
             throw new ValidationException("Foto harus berformat JPG atau PNG.");
         }
 
-        long fileSizeInMB = photoFile.length() / (1024 * 1024);
-        if (fileSizeInMB > 2) {
+        if (evidenceFile.length() > 2 * 1024 * 1024) {
             throw new ValidationException("Ukuran foto maksimal 2 MB.");
         }
 
@@ -173,7 +174,7 @@ public class ClaimManager implements Managerable{
         claim.addDocument(new VerificationDocument(
                 "DOC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(),
                 "Bukti Kepemilikan",
-                photoFile,
+                evidenceFile.getAbsolutePath(),
                 description
         ));
 
@@ -234,7 +235,7 @@ public class ClaimManager implements Managerable{
             ps.setString(1, doc.getDocumentId());
             ps.setString(2, claimId);
             ps.setString(3, doc.getType());
-            ps.setString(4, doc.getFile() != null ? doc.getFile().getAbsolutePath() : null);
+            ps.setString(4, doc.getFile());
             ps.setString(5, doc.getDescription());
             ps.executeUpdate();
         } catch (SQLException e) {

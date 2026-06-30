@@ -351,8 +351,8 @@ public class AppController {
             String ketDoc = MissionUtil.getUserInput();
  
             String docId = "DOC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-            File fileDoc = pathDoc.isEmpty() ? null : new File(pathDoc);
-            VerificationDocument doc = new VerificationDocument(docId, tipeDoc, fileDoc, ketDoc);
+            String fileDoc = pathDoc.trim().replace("\"", "");
+            VerificationDocument doc = new VerificationDocument(docId, tipeDoc, fileDoc.isEmpty() ? null : fileDoc, ketDoc);
             claim.addDocument(doc);
         }
  
